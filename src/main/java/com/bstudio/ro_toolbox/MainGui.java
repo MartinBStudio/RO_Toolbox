@@ -7,6 +7,10 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 public class MainGui {
     // Open the Loot Manager GUI using the provided service. Parent frame (services launcher) may be passed
@@ -215,11 +219,47 @@ public class MainGui {
             }).start();
         });
 
-        // Patch
+        // Patch (choose existing resource subfolder)
         patchBtn.addActionListener((ActionEvent e) -> {
-            String input = JOptionPane.showInputDialog(frame, "Enter resources subfolder name to patch from:", "poc");
-            if (input == null) return;
-            String folderName = input.trim().isEmpty() ? "poc" : input.trim();
+            // build candidate list from resources folder and alternate resources (near game base)
+            List<String> candidates = new ArrayList<>();
+            try {
+                Path resRoot = svc.getResourcesDir();
+                if (Files.exists(resRoot) && Files.isDirectory(resRoot)) {
+                    try (var ds = Files.newDirectoryStream(resRoot)) {
+                        for (Path p : ds) {
+                            if (Files.isDirectory(p)) candidates.add(p.getFileName().toString());
+                        }
+                    }
+                }
+                // also check alt location: <gameBaseSibling>/resources if game base set
+                Path altRoot = (svc.getSelectedGameBase() != null) ? svc.getSelectedGameBase().resolveSibling(svc.getResourcesDir().getFileName()) : null;
+                if (altRoot != null && Files.exists(altRoot) && Files.isDirectory(altRoot)) {
+                    try (var ds = Files.newDirectoryStream(altRoot)) {
+                        for (Path p : ds) if (Files.isDirectory(p)) candidates.add(p.getFileName().toString());
+                    }
+                }
+            } catch (Exception ex) {
+                // ignore — validation below will handle empty list
+            }
+
+            // dedupe while preserving order
+            Set<String> unique = new LinkedHashSet<>(candidates);
+            candidates.clear();
+            candidates.addAll(unique);
+
+            if (candidates.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "No resource subfolders found under 'resources' or alternate resources.", "No sources", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            JComboBox<String> combo = new JComboBox<>(candidates.toArray(new String[0]));
+            int choice = JOptionPane.showConfirmDialog(frame, combo, "Select resource subfolder to patch from", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            if (choice != JOptionPane.OK_OPTION) return;
+
+            String folderName = (String) combo.getSelectedItem();
+            if (folderName == null || folderName.trim().isEmpty()) return;
+
             patchBtn.setEnabled(false);
             new Thread(() -> {
                 try {
