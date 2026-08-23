@@ -12,23 +12,7 @@ public class GuiStarter {
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady(ApplicationReadyEvent ev) {
-        // Allow forcing GUI even if GraphicsEnvironment reports headless:
-        // - System property: -Dro.gui.force=true
-        // - Environment variable: FORCE_GUI=true
-        String forceProp = System.getProperty("ro.gui.force");
-        String forceEnv = System.getenv("FORCE_GUI");
-        boolean forceGui = "true".equalsIgnoreCase(forceProp) || "true".equalsIgnoreCase(forceEnv);
-
-        if (GraphicsEnvironment.isHeadless()) {
-            if (!forceGui) {
-                System.err.println("Headless environment detected — GUI will not be started.");
-                return;
-            }
-            // Force GUI: try to disable headless mode
-            System.err.println("Headless environment detected but FORCE GUI requested — attempting to start GUI.");
-            System.setProperty("java.awt.headless", "false");
-        }
-
+        // Always start GUI when Spring Boot is up (spring.application.setHeadless(false) is applied).
         try {
             SwingUtilities.invokeLater(() -> {
                 try {
