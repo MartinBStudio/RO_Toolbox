@@ -94,6 +94,19 @@ public class MainGui {
         // Wire service logger to UI log area
         svc.setLogger(msg -> SwingUtilities.invokeLater(() -> log.append(msg)));
 
+        // enable/disable UI depending on whether item folder is configured
+        Runnable updateEnabled = () -> SwingUtilities.invokeLater(() -> {
+            boolean itemConfigured = svc.getSelectedGameItemFolder() != null;
+            browseItemBtn.setEnabled(itemConfigured);
+            clearItemBtn.setEnabled(itemConfigured && svc.isDirectoryNonEmpty(svc.getSelectedGameItemFolder()));
+            patchBtn.setEnabled(itemConfigured);
+            // resources operations remain available
+        });
+        // initial state
+        updateEnabled.run();
+        // listen for changes
+        svc.addChangeListener(updateEnabled);
+
         if (svc.getSelectedGameBase() != null) {
             log.append("Loaded saved installation folder: " + svc.getSelectedGameBase().toAbsolutePath() + "\n");
         }
@@ -213,6 +226,8 @@ public class MainGui {
                     if (svc.getSelectedGameItemFolder() == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
                     var pocSource = svc.findPocSource(folderName);
                     if (pocSource == null) { svc.guiMessage("Source folder not found: " + folderName); return; }
+                    // If destination has contents, delete them first
+                    svc.clearSelectedItemFolder();
                     svc.copyDirectoryContents(pocSource, svc.getSelectedGameItemFolder());
                     SwingUtilities.invokeLater(() -> { log.append("Patch completed: " + folderName + " copied.\n"); refreshView.run(); });
                 } catch (Exception ex) {

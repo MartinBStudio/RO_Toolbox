@@ -14,7 +14,7 @@ import java.util.zip.ZipInputStream;
 
 public class LootManagerService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
-    private static final Path RESOURCES_DIR = Paths.get("resources");
+    private static final Path RESOURCES_DIR = Paths.get("resources/lootManager");
     private static volatile Path selectedGameBase = null; // base installation folder (no suffix)
     private static final Path GAME_SUFFIX = Paths.get("3ddata", "item");
 
@@ -27,6 +27,9 @@ public class LootManagerService {
     private Consumer<String> logger;
 
     private static volatile LootManagerService INSTANCE;
+
+    // listeners notified when configuration changes (e.g., selected game base changed)
+    private final java.util.List<Runnable> changeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
     private LootManagerService(Consumer<String> logger) {
         this.logger = logger;
@@ -52,6 +55,9 @@ public class LootManagerService {
         LOG.info(s);
         if (logger != null) logger.accept(s + "\n");
     }
+
+    public void addChangeListener(Runnable r) { if (r != null) changeListeners.add(r); }
+    private void notifyChangeListeners() { for (Runnable r : changeListeners) { try { r.run(); } catch (Throwable ignored) {} } }
 
     // Allow GUI callers to publish messages to both GUI and underlying logger
     public void guiMessage(String s) { log(s); }
@@ -84,6 +90,7 @@ public class LootManagerService {
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
             selectedGameBase = base;
             log("Selected game base saved: " + base.toAbsolutePath());
+            notifyChangeListeners();
         } catch (Exception ignored) {
         }
     }

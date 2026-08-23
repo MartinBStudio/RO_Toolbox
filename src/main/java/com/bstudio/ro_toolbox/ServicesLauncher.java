@@ -52,9 +52,15 @@ public class ServicesLauncher {
             }
         });
 
+        // disable if no installation base selected
+        lootBtn.setEnabled(svc.getSelectedGameBase() != null);
+
         buttons.add(lootBtn);
 
         frame.add(buttons, BorderLayout.CENTER);
+
+        // listen for changes so we can enable the loot button when user saves settings
+        svc.addChangeListener(() -> SwingUtilities.invokeLater(() -> lootBtn.setEnabled(svc.getSelectedGameBase() != null)));
 
         // Settings action: show current folder and allow change with validation
         settings.addActionListener((ActionEvent e) -> {
