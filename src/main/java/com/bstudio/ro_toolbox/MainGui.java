@@ -3,6 +3,7 @@ package com.bstudio.ro_toolbox;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -93,6 +94,12 @@ public class MainGui {
         center.add(logScroll, BorderLayout.SOUTH);
 
         panel.add(center, BorderLayout.CENTER);
+
+        JLabel footer = new JLabel("Created by BStudio • v" + AppInfo.getVersion(), SwingConstants.CENTER);
+        footer.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
+        footer.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        panel.add(footer, BorderLayout.SOUTH);
+
         frame.setContentPane(panel);
 
         // Wire service logger to UI log area

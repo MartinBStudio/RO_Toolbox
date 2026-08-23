@@ -59,6 +59,11 @@ public class ServicesLauncher {
 
         frame.add(buttons, BorderLayout.CENTER);
 
+        JLabel footer = new JLabel("Created by BStudio • v" + AppInfo.getVersion(), SwingConstants.CENTER);
+        footer.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
+        footer.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        frame.add(footer, BorderLayout.SOUTH);
+
         // listen for changes so we can enable the loot button when user saves settings
         svc.addChangeListener(() -> SwingUtilities.invokeLater(() -> lootBtn.setEnabled(svc.getSelectedGameBase() != null)));
 

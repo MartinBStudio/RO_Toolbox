@@ -31,6 +31,22 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
+tasks.named('processResources') {
+    filesMatching('application.properties') {
+        expand(projectVersion: project.version)
+    }
+}
+
+tasks.named('jar') {
+    archiveBaseName = 'RO_Toolbox'
+    archiveVersion = project.version.toString()
+}
+
+tasks.named('bootJar') {
+    archiveBaseName = 'RO_Toolbox'
+    archiveVersion = project.version.toString()
+}
+
 tasks.named('test') {
     useJUnitPlatform()
 }

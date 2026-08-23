@@ -26,6 +26,7 @@ Usage notes
 - Each profile folder should mirror the directory structure of `poc`.
 - Keep filenames and subfolders consistent with the game installation so RO_LootManager can map items correctly.
 - When adding a new profile, create a new top-level folder (profile name) and place the copied/adjusted files inside.
+- Any new top-level profile folder MUST include a manifest.json with the following fields: name, version, upload_date (ISO 8601), description.
 
 Contributing
 ------------
