@@ -20,7 +20,6 @@ public class MainGui {
     }
 
     private static void createAndShowGui(LootManagerService svc, JFrame parent) {
-        if (svc == null) svc = LootManagerService.getInstance();
 
         JFrame frame = new JFrame("RO LootManager - Resources Puller");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
