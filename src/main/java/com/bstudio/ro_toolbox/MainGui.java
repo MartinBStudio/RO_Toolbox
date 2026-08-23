@@ -228,7 +228,8 @@ public class MainGui {
                 if (Files.exists(resRoot) && Files.isDirectory(resRoot)) {
                     try (var ds = Files.newDirectoryStream(resRoot)) {
                         for (Path p : ds) {
-                            if (Files.isDirectory(p)) candidates.add(p.getFileName().toString());
+                            String nm = p.getFileName().toString();
+                            if (Files.isDirectory(p) && !nm.startsWith(".")) candidates.add(nm);
                         }
                     }
                 }
@@ -236,7 +237,10 @@ public class MainGui {
                 Path altRoot = (svc.getSelectedGameBase() != null) ? svc.getSelectedGameBase().resolveSibling(svc.getResourcesDir().getFileName()) : null;
                 if (altRoot != null && Files.exists(altRoot) && Files.isDirectory(altRoot)) {
                     try (var ds = Files.newDirectoryStream(altRoot)) {
-                        for (Path p : ds) if (Files.isDirectory(p)) candidates.add(p.getFileName().toString());
+                        for (Path p : ds) {
+                            String nm = p.getFileName().toString();
+                            if (Files.isDirectory(p) && !nm.startsWith(".")) candidates.add(nm);
+                        }
                     }
                 }
             } catch (Exception ex) {
