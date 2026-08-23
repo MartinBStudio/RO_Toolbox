@@ -16,7 +16,8 @@ public class GuiStarter {
         try {
             SwingUtilities.invokeLater(() -> {
                 try {
-                    MainGui.main(new String[0]);
+                    // Launch a small services launcher window; it will open specific service GUIs when buttons are pressed
+                    ServicesLauncher.main(new String[0]);
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
