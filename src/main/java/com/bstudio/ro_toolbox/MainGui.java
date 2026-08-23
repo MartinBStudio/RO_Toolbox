@@ -20,6 +20,7 @@ public class MainGui {
     }
 
     public static void main(String[] args) {
+        UiTheme.install();
         // For backward compatibility: use singleton service without GUI logger
         open(LootManagerService.getInstance(), null);
     }
@@ -28,13 +29,17 @@ public class MainGui {
 
         JFrame frame = new JFrame("RO LootManager - Resources Puller");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setSize(700, 380);
+        frame.setSize(700, 420);
+        frame.getContentPane().setBackground(UiTheme.BG);
 
         JPanel panel = new JPanel(new BorderLayout(8, 8));
+        panel.setBackground(UiTheme.BG);
 
         // Top bar with back button
         JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setBackground(UiTheme.BG);
         JButton backBtn = new JButton("← Back");
+        UiTheme.styleButton(backBtn);
         backBtn.addActionListener((ActionEvent e) -> {
             frame.dispose();
             if (parent != null) parent.setVisible(true);
@@ -44,24 +49,40 @@ public class MainGui {
         panel.add(topBar, BorderLayout.NORTH);
 
         JPanel center = new JPanel(new BorderLayout(8,8));
+        center.setBackground(UiTheme.BG);
         JButton pullBtn = new JButton("Pull resources");
+        UiTheme.styleButton(pullBtn);
 
         JTextArea log = new JTextArea();
         log.setEditable(false);
+        log.setBackground(UiTheme.PANEL_ALT);
+        log.setForeground(UiTheme.TEXT);
+        log.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+        log.setCaretColor(UiTheme.ACCENT_2);
         JScrollPane logScroll = new JScrollPane(log);
         logScroll.setPreferredSize(new Dimension(680, 140));
+        logScroll.setBackground(UiTheme.BG);
 
         DefaultListModel<String> listModel = new DefaultListModel<>();
         JList<String> folderList = new JList<>(listModel);
         folderList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        folderList.setBackground(UiTheme.PANEL_ALT);
+        folderList.setForeground(UiTheme.TEXT);
+        folderList.setSelectionBackground(UiTheme.ACCENT_2);
+        folderList.setSelectionForeground(UiTheme.BG);
         JScrollPane folderScroll = new JScrollPane(folderList);
         folderScroll.setPreferredSize(new Dimension(680, 160));
+        folderScroll.setBackground(UiTheme.BG);
 
         JPanel resourcesPanel = new JPanel();
         resourcesPanel.setLayout(new BoxLayout(resourcesPanel, BoxLayout.Y_AXIS));
-        resourcesPanel.setBorder(BorderFactory.createTitledBorder("Resources"));
+        resourcesPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "Resources"));
+        resourcesPanel.setBackground(UiTheme.PANEL);
+        resourcesPanel.setForeground(UiTheme.TEXT);
         JButton browseBtn = new JButton("Browse resources");
         JButton clearResourcesBtn = new JButton("Clear resources");
+        UiTheme.styleButton(browseBtn);
+        UiTheme.styleButton(clearResourcesBtn);
 
         resourcesPanel.add(pullBtn);
         resourcesPanel.add(Box.createVerticalStrut(6));
@@ -71,11 +92,17 @@ public class MainGui {
 
         JPanel gamePanel = new JPanel();
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.Y_AXIS));
-        gamePanel.setBorder(BorderFactory.createTitledBorder("Game Files"));
+        gamePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "Game Files"));
+        gamePanel.setBackground(UiTheme.PANEL);
+        gamePanel.setForeground(UiTheme.TEXT);
         JButton browseItemBtn = new JButton("Browse item folder");
         JButton clearItemBtn = new JButton("Clear item folder");
         JButton patchBtn = new JButton("Patch poc data");
+        UiTheme.styleButton(browseItemBtn);
+        UiTheme.styleButton(clearItemBtn);
+        UiTheme.styleButton(patchBtn);
         JLabel destLabel = new JLabel("Destination: " + (svc.getSelectedGameItemFolder() != null ? svc.getSelectedGameItemFolder().toAbsolutePath() : "resources"));
+        UiTheme.styleLabel(destLabel);
 
         gamePanel.add(browseItemBtn);
         gamePanel.add(Box.createVerticalStrut(6));
@@ -96,8 +123,8 @@ public class MainGui {
         panel.add(center, BorderLayout.CENTER);
 
         JLabel footer = new JLabel("Created by BStudio • v" + AppInfo.getVersion(), SwingConstants.CENTER);
+        UiTheme.styleFooter(footer);
         footer.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
-        footer.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
         panel.add(footer, BorderLayout.SOUTH);
 
         frame.setContentPane(panel);

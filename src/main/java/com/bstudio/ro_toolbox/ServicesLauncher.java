@@ -10,29 +10,36 @@ import java.nio.file.Path;
 
 public class ServicesLauncher {
     public static void main(String[] args) {
+        UiTheme.install();
         SwingUtilities.invokeLater(ServicesLauncher::createAndShow);
     }
 
     private static void createAndShow() {
         JFrame frame = new JFrame("RO Toolbox - Services");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(360, 180);
+        frame.setSize(360, 210);
         frame.setLayout(new BorderLayout(8, 8));
+        frame.getContentPane().setBackground(UiTheme.BG);
 
         JPanel top = new JPanel(new BorderLayout());
+        top.setBackground(UiTheme.BG);
         JLabel title = new JLabel("Services");
+        UiTheme.styleLabel(title);
+        title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
         title.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
         top.add(title, BorderLayout.WEST);
 
         // Settings (cog) button
         JButton settings = new JButton("⚙");
         settings.setToolTipText("Settings");
+        UiTheme.styleButton(settings);
         top.add(settings, BorderLayout.EAST);
 
         frame.add(top, BorderLayout.NORTH);
 
         JPanel buttons = new JPanel();
         buttons.setLayout(new GridLayout(0, 1, 6, 6));
+        buttons.setBackground(UiTheme.BG);
         buttons.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
         // instantiate singleton service
@@ -40,6 +47,8 @@ public class ServicesLauncher {
 
         // Loot Manager service button
         JButton lootBtn = new JButton("Loot Manager");
+        UiTheme.styleButton(lootBtn);
+        lootBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         lootBtn.addActionListener((ActionEvent e) -> {
             try {
                 // hide launcher and open detailed GUI with shared service
@@ -60,8 +69,8 @@ public class ServicesLauncher {
         frame.add(buttons, BorderLayout.CENTER);
 
         JLabel footer = new JLabel("Created by BStudio • v" + AppInfo.getVersion(), SwingConstants.CENTER);
+        UiTheme.styleFooter(footer);
         footer.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
-        footer.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
         frame.add(footer, BorderLayout.SOUTH);
 
         // listen for changes so we can enable the loot button when user saves settings
