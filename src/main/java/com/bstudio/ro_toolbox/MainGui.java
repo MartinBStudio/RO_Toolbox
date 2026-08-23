@@ -219,61 +219,33 @@ public class MainGui {
             }).start();
         });
 
-        // Patch (choose existing resource subfolder)
+        // Patch (choose existing resource subfolder with manifest.json)
         patchBtn.addActionListener((ActionEvent e) -> {
-            // build candidate list from resources folder and alternate resources (near game base)
-            List<String> candidates = new ArrayList<>();
-            try {
-                Path resRoot = svc.getResourcesDir();
-                if (Files.exists(resRoot) && Files.isDirectory(resRoot)) {
-                    try (var ds = Files.newDirectoryStream(resRoot)) {
-                        for (Path p : ds) {
-                            String nm = p.getFileName().toString();
-                            if (Files.isDirectory(p) && !nm.startsWith(".")) candidates.add(nm);
-                        }
-                    }
-                }
-                // also check alt location: <gameBaseSibling>/resources if game base set
-                Path altRoot = (svc.getSelectedGameBase() != null) ? svc.getSelectedGameBase().resolveSibling(svc.getResourcesDir().getFileName()) : null;
-                if (altRoot != null && Files.exists(altRoot) && Files.isDirectory(altRoot)) {
-                    try (var ds = Files.newDirectoryStream(altRoot)) {
-                        for (Path p : ds) {
-                            String nm = p.getFileName().toString();
-                            if (Files.isDirectory(p) && !nm.startsWith(".")) candidates.add(nm);
-                        }
-                    }
-                }
-            } catch (Exception ex) {
-                // ignore — validation below will handle empty list
-            }
-
-            // dedupe while preserving order
-            Set<String> unique = new LinkedHashSet<>(candidates);
-            candidates.clear();
-            candidates.addAll(unique);
-
-            if (candidates.isEmpty()) {
-                JOptionPane.showMessageDialog(frame, "No resource subfolders found under 'resources' or alternate resources.", "No sources", JOptionPane.WARNING_MESSAGE);
+            List<PatchChoice> choices = collectPatchChoices(svc);
+            if (choices.isEmpty()) {
+                JOptionPane.showMessageDialog(frame, "No resource folders with manifest.json were found under 'resources' or the alternate resources folder.", "No sources", JOptionPane.WARNING_MESSAGE);
                 return;
             }
 
-            JComboBox<String> combo = new JComboBox<>(candidates.toArray(new String[0]));
+            DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
+            for (PatchChoice c : choices) model.addElement(c.label);
+            JComboBox<String> combo = new JComboBox<>(model);
             int choice = JOptionPane.showConfirmDialog(frame, combo, "Select resource subfolder to patch from", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
             if (choice != JOptionPane.OK_OPTION) return;
 
-            String folderName = (String) combo.getSelectedItem();
-            if (folderName == null || folderName.trim().isEmpty()) return;
+            String selectedLabel = (String) combo.getSelectedItem();
+            if (selectedLabel == null || selectedLabel.trim().isEmpty()) return;
+            PatchChoice selected = choices.stream().filter(c -> c.label.equals(selectedLabel)).findFirst().orElse(null);
+            if (selected == null) return;
 
             patchBtn.setEnabled(false);
             new Thread(() -> {
                 try {
                     if (svc.getSelectedGameItemFolder() == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
-                    var pocSource = svc.findPocSource(folderName);
-                    if (pocSource == null) { svc.guiMessage("Source folder not found: " + folderName); return; }
-                    // If destination has contents, delete them first
+                    // Clear destination before copy to ensure a clean patch.
                     svc.clearSelectedItemFolder();
-                    svc.copyDirectoryContents(pocSource, svc.getSelectedGameItemFolder());
-                    SwingUtilities.invokeLater(() -> { log.append("Patch completed: " + folderName + " copied.\n"); refreshView.run(); });
+                    svc.copyDirectoryContents(selected.source, svc.getSelectedGameItemFolder());
+                    SwingUtilities.invokeLater(() -> { log.append("Patch completed: " + selected.source.getFileName() + " copied.\n"); refreshView.run(); });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
                     SwingUtilities.invokeLater(() -> log.append("Error patching destination: " + ex.getMessage() + "\n" + sw.toString()));
@@ -294,5 +266,60 @@ public class MainGui {
 
         // initial view
         refreshView.run();
+    }
+
+    private static final class PatchChoice {
+        private final String label;
+        private final Path source;
+
+        private PatchChoice(String label, Path source) {
+            this.label = label;
+            this.source = source;
+        }
+    }
+
+    private static List<PatchChoice> collectPatchChoices(LootManagerService svc) {
+        List<PatchChoice> results = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+
+        List<Path> roots = new ArrayList<>();
+        roots.add(svc.getResourcesDir());
+        if (svc.getSelectedGameBase() != null) {
+            roots.add(svc.getSelectedGameBase().resolveSibling(svc.getResourcesDir().getFileName()));
+        }
+
+        for (Path root : roots) {
+            if (root == null || !Files.exists(root) || !Files.isDirectory(root)) continue;
+            try (var stream = Files.walk(root)) {
+                for (Path p : (Iterable<Path>) stream::iterator) {
+                    if (!Files.isDirectory(p)) continue;
+                    String name = p.getFileName().toString();
+                    if (name.startsWith(".")) continue;
+                    Path manifest = p.resolve("manifest.json");
+                    if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
+                    String desc = readManifestDescription(manifest);
+                    String label = (desc == null || desc.isBlank()) ? name : name + " - " + desc;
+                    if (seen.add(label)) {
+                        results.add(new PatchChoice(label, p));
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+        }
+
+        results.sort((a, b) -> a.label.compareToIgnoreCase(b.label));
+        return results;
+    }
+
+    private static String readManifestDescription(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"description\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }
