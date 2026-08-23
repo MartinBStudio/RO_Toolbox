@@ -12,10 +12,21 @@ public class GuiStarter {
 
     @EventListener(ApplicationReadyEvent.class)
     public void onApplicationReady(ApplicationReadyEvent ev) {
-        // Avoid launching Swing in headless environments (e.g., CI/servers)
+        // Allow forcing GUI even if GraphicsEnvironment reports headless:
+        // - System property: -Dro.gui.force=true
+        // - Environment variable: FORCE_GUI=true
+        String forceProp = System.getProperty("ro.gui.force");
+        String forceEnv = System.getenv("FORCE_GUI");
+        boolean forceGui = "true".equalsIgnoreCase(forceProp) || "true".equalsIgnoreCase(forceEnv);
+
         if (GraphicsEnvironment.isHeadless()) {
-            System.err.println("Headless environment detected — GUI will not be started.");
-            return;
+            if (!forceGui) {
+                System.err.println("Headless environment detected — GUI will not be started.");
+                return;
+            }
+            // Force GUI: try to disable headless mode
+            System.err.println("Headless environment detected but FORCE GUI requested — attempting to start GUI.");
+            System.setProperty("java.awt.headless", "false");
         }
 
         try {
