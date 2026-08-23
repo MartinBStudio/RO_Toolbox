@@ -1,5 +1,8 @@
 package com.bstudio.ro_toolbox;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -18,6 +21,10 @@ public class LootManagerService {
     private static final Path CONFIG_DIR = Paths.get(System.getProperty("user.home"), ".ro_lootmanager");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
 
+
+
+    private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
+
     private final Consumer<String> logger;
 
     public LootManagerService(Consumer<String> logger) {
@@ -25,9 +32,13 @@ public class LootManagerService {
         loadConfig();
     }
 
-    private void log(String s) {
+    void log(String s) {
+        LOG.info(s);
         if (logger != null) logger.accept(s + "\n");
     }
+
+    // Allow GUI callers to publish messages to both GUI and underlying logger
+    public void guiMessage(String s) { log(s); }
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
     public Path getSelectedGameDest() { return selectedGameDest; }

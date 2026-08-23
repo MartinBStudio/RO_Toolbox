@@ -104,7 +104,7 @@ public class MainGui {
                 Path toOpen = svc.getResourcesDir();
                 if (!Files.exists(toOpen)) Files.createDirectories(toOpen);
                 if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(toOpen.toFile());
-                svc.log("Opened resources folder: " + toOpen.toAbsolutePath());
+                svc.guiMessage("Opened resources folder: " + toOpen.toAbsolutePath());
             } catch (Exception ex) {
                 StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
                 SwingUtilities.invokeLater(() -> log.append("Error opening resources folder: " + ex.getMessage() + "\n" + sw.toString()));
@@ -115,10 +115,10 @@ public class MainGui {
         browseItemBtn.addActionListener((ActionEvent e) -> {
             try {
                 Path toOpen = svc.getSelectedGameDest();
-                if (toOpen == null) { svc.log("No game destination selected. Use 'Select game folder' first."); return; }
+                if (toOpen == null) { svc.guiMessage("No game destination selected. Use 'Select game folder' first."); return; }
                 if (!Files.exists(toOpen)) Files.createDirectories(toOpen);
                 if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(toOpen.toFile());
-                svc.log("Opened item folder: " + toOpen.toAbsolutePath());
+                svc.guiMessage("Opened item folder: " + toOpen.toAbsolutePath());
             } catch (Exception ex) {
                 StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
                 SwingUtilities.invokeLater(() -> log.append("Error opening item folder: " + ex.getMessage() + "\n" + sw.toString()));
