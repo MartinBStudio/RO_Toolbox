@@ -21,18 +21,34 @@ public class LootManagerService {
     private static final Path CONFIG_DIR = Paths.get(System.getProperty("user.home"), ".ro_lootmanager");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
 
-
-
     private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
 
-    private final Consumer<String> logger;
+    // logger can be updated by the GUI to forward messages
+    private Consumer<String> logger;
 
-    public LootManagerService(Consumer<String> logger) {
+    private static volatile LootManagerService INSTANCE;
+
+    private LootManagerService(Consumer<String> logger) {
         this.logger = logger;
         loadConfig();
     }
 
-    void log(String s) {
+    public static LootManagerService getInstance(Consumer<String> logger) {
+        if (INSTANCE == null) {
+            synchronized (LootManagerService.class) {
+                if (INSTANCE == null) INSTANCE = new LootManagerService(logger);
+            }
+        } else {
+            if (logger != null) INSTANCE.setLogger(logger);
+        }
+        return INSTANCE;
+    }
+
+    public static LootManagerService getInstance() { return getInstance(null); }
+
+    public void setLogger(Consumer<String> logger) { this.logger = logger; }
+
+    private void log(String s) {
         LOG.info(s);
         if (logger != null) logger.accept(s + "\n");
     }
@@ -65,6 +81,7 @@ public class LootManagerService {
             prop.setProperty("selectedGame", p.toAbsolutePath().toString());
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
             selectedGameDest = p;
+            log("Selected game saved: " + p.toAbsolutePath());
         } catch (Exception ignored) {
         }
     }

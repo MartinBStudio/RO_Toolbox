@@ -7,19 +7,39 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 
 public class MainGui {
-    public static void main(String[] args) {
-        SwingUtilities.invokeLater(MainGui::createAndShowGui);
+    // Open the Loot Manager GUI using the provided service. Parent frame (services launcher) may be passed
+    public static void open(LootManagerService svc, JFrame parent) {
+        SwingUtilities.invokeLater(() -> createAndShowGui(svc, parent));
     }
 
-    private static void createAndShowGui() {
+    public static void main(String[] args) {
+        // For backward compatibility: use singleton service without GUI logger
+        open(LootManagerService.getInstance(), null);
+    }
+
+    private static void createAndShowGui(LootManagerService svc, JFrame parent) {
+        if (svc == null) svc = LootManagerService.getInstance();
+
         JFrame frame = new JFrame("RO LootManager - Resources Puller");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setSize(700, 380);
 
         JPanel panel = new JPanel(new BorderLayout(8, 8));
+
+        // Top bar with back button
+        JPanel topBar = new JPanel(new BorderLayout());
+        JButton backBtn = new JButton("← Back");
+        backBtn.addActionListener((ActionEvent e) -> {
+            frame.dispose();
+            if (parent != null) parent.setVisible(true);
+        });
+        topBar.add(backBtn, BorderLayout.WEST);
+
+        panel.add(topBar, BorderLayout.NORTH);
+
+        JPanel center = new JPanel(new BorderLayout(8,8));
         JButton pullBtn = new JButton("Pull resources");
 
         JTextArea log = new JTextArea();
@@ -49,13 +69,10 @@ public class MainGui {
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.Y_AXIS));
         gamePanel.setBorder(BorderFactory.createTitledBorder("Game Files"));
         JButton browseItemBtn = new JButton("Browse item folder");
-        JButton selectGameBtn = new JButton("Select game folder");
         JButton clearItemBtn = new JButton("Clear item folder");
         JButton patchBtn = new JButton("Patch poc data");
-        JLabel destLabel = new JLabel("Destination: resources");
+        JLabel destLabel = new JLabel("Destination: " + (svc.getSelectedGameDest() != null ? svc.getSelectedGameDest().toAbsolutePath() : "resources"));
 
-        gamePanel.add(selectGameBtn);
-        gamePanel.add(Box.createVerticalStrut(6));
         gamePanel.add(browseItemBtn);
         gamePanel.add(Box.createVerticalStrut(6));
         gamePanel.add(clearItemBtn);
@@ -68,16 +85,17 @@ public class MainGui {
         topWrapper.add(resourcesPanel);
         topWrapper.add(gamePanel);
 
-        panel.add(topWrapper, BorderLayout.NORTH);
-        panel.add(folderScroll, BorderLayout.CENTER);
-        panel.add(logScroll, BorderLayout.SOUTH);
+        center.add(topWrapper, BorderLayout.NORTH);
+        center.add(folderScroll, BorderLayout.CENTER);
+        center.add(logScroll, BorderLayout.SOUTH);
+
+        panel.add(center, BorderLayout.CENTER);
         frame.setContentPane(panel);
 
-        // Create service with logger that appends safely to JTextArea
-        LootManagerService svc = new LootManagerService(msg -> SwingUtilities.invokeLater(() -> log.append(msg)));
+        // Wire service logger to UI log area
+        svc.setLogger(msg -> SwingUtilities.invokeLater(() -> log.append(msg)));
 
         if (svc.getSelectedGameDest() != null) {
-            destLabel.setText("Destination: " + svc.getSelectedGameDest().toAbsolutePath());
             log.append("Loaded saved destination: " + svc.getSelectedGameDest().toAbsolutePath() + "\n");
         }
 
@@ -115,7 +133,7 @@ public class MainGui {
         browseItemBtn.addActionListener((ActionEvent e) -> {
             try {
                 Path toOpen = svc.getSelectedGameDest();
-                if (toOpen == null) { svc.guiMessage("No game destination selected. Use 'Select game folder' first."); return; }
+                if (toOpen == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
                 if (!Files.exists(toOpen)) Files.createDirectories(toOpen);
                 if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(toOpen.toFile());
                 svc.guiMessage("Opened item folder: " + toOpen.toAbsolutePath());
@@ -185,32 +203,6 @@ public class MainGui {
             }).start();
         });
 
-        // Select game folder
-        selectGameBtn.addActionListener((ActionEvent e) -> {
-            try {
-                JFileChooser chooser = new JFileChooser();
-                chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                chooser.setDialogTitle("Select game installation folder (base)");
-                int res = chooser.showOpenDialog(frame);
-                if (res == JFileChooser.APPROVE_OPTION) {
-                    Path picked = chooser.getSelectedFile().toPath();
-                    Path selected;
-                    if (picked.endsWith(Paths.get("3ddata", "item"))) selected = picked;
-                    else selected = picked.resolve(Paths.get("3ddata", "item"));
-                    Files.createDirectories(selected);
-                    svc.saveSelectedGame(selected);
-                    SwingUtilities.invokeLater(() -> {
-                        destLabel.setText("Destination: " + selected.toAbsolutePath());
-                        log.append("Selected game destination: " + selected.toAbsolutePath() + "\n");
-                        refreshView.run();
-                    });
-                }
-            } catch (Exception ex) {
-                StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                SwingUtilities.invokeLater(() -> log.append("Error selecting game folder: " + ex.getMessage() + "\n" + sw.toString()));
-            }
-        });
-
         // Patch
         patchBtn.addActionListener((ActionEvent e) -> {
             String input = JOptionPane.showInputDialog(frame, "Enter resources subfolder name to patch from:", "poc");
@@ -219,9 +211,9 @@ public class MainGui {
             patchBtn.setEnabled(false);
             new Thread(() -> {
                 try {
-                    if (svc.getSelectedGameDest() == null) { svc.log("No game destination selected. Use 'Select game folder' first."); return; }
+                    if (svc.getSelectedGameDest() == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
                     var pocSource = svc.findPocSource(folderName);
-                    if (pocSource == null) { svc.log("Source folder not found: " + folderName); return; }
+                    if (pocSource == null) { svc.guiMessage("Source folder not found: " + folderName); return; }
                     svc.copyDirectoryContents(pocSource, svc.getSelectedGameDest());
                     SwingUtilities.invokeLater(() -> { log.append("Patch completed: " + folderName + " copied.\n"); refreshView.run(); });
                 } catch (Exception ex) {
