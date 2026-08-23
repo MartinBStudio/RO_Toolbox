@@ -59,7 +59,7 @@ public class ServicesLauncher {
         // Settings action: show current folder and allow change with validation
         settings.addActionListener((ActionEvent e) -> {
             try {
-                Path current = svc.getSelectedGameDest();
+                Path current = svc.getSelectedGameBase();
                 String currentText = (current == null) ? "Not set" : current.toAbsolutePath().toString();
                 int opt = JOptionPane.showOptionDialog(frame,
                         "Current installation folder:\n" + currentText,
@@ -77,21 +77,30 @@ public class ServicesLauncher {
                 int res = chooser.showOpenDialog(frame);
                 if (res == JFileChooser.APPROVE_OPTION) {
                     Path picked = chooser.getSelectedFile().toPath();
-                    Path selected = picked.endsWith(Path.of("3ddata", "item")) ? picked : picked.resolve(Path.of("3ddata", "item"));
+                    Path base;
+                    if (picked.endsWith(Path.of("3ddata", "item"))) {
+                        // user selected the item folder; derive base (two parents up)
+                        Path p = picked.getParent();
+                        if (p != null) p = p.getParent();
+                        base = (p != null) ? p : picked;
+                    } else {
+                        base = picked;
+                    }
 
-                    boolean valid = Files.exists(selected) && Files.isDirectory(selected);
+                    Path itemFolder = base.resolve(Path.of("3ddata", "item"));
+                    boolean valid = Files.exists(itemFolder) && Files.isDirectory(itemFolder);
                     if (!valid) {
                         int confirm = JOptionPane.showConfirmDialog(frame,
-                                "The chosen folder does not contain '3ddata/item'. Save anyway?",
+                                "The chosen base folder does not contain '3ddata/item'. Save base anyway?",
                                 "Validate installation folder",
                                 JOptionPane.YES_NO_OPTION,
                                 JOptionPane.WARNING_MESSAGE);
                         if (confirm != JOptionPane.YES_OPTION) return;
                     }
 
-                    Files.createDirectories(selected);
-                    svc.saveSelectedGame(selected);
-                    JOptionPane.showMessageDialog(frame, "Saved installation folder: " + selected.toAbsolutePath());
+                    Files.createDirectories(base);
+                    svc.saveSelectedGame(base);
+                    JOptionPane.showMessageDialog(frame, "Saved installation folder (base): " + base.toAbsolutePath());
                 }
             } catch (Exception ex) {
                 StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));

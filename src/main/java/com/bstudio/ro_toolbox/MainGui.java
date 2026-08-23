@@ -70,7 +70,7 @@ public class MainGui {
         JButton browseItemBtn = new JButton("Browse item folder");
         JButton clearItemBtn = new JButton("Clear item folder");
         JButton patchBtn = new JButton("Patch poc data");
-        JLabel destLabel = new JLabel("Destination: " + (svc.getSelectedGameDest() != null ? svc.getSelectedGameDest().toAbsolutePath() : "resources"));
+        JLabel destLabel = new JLabel("Destination: " + (svc.getSelectedGameItemFolder() != null ? svc.getSelectedGameItemFolder().toAbsolutePath() : "resources"));
 
         gamePanel.add(browseItemBtn);
         gamePanel.add(Box.createVerticalStrut(6));
@@ -94,8 +94,8 @@ public class MainGui {
         // Wire service logger to UI log area
         svc.setLogger(msg -> SwingUtilities.invokeLater(() -> log.append(msg)));
 
-        if (svc.getSelectedGameDest() != null) {
-            log.append("Loaded saved destination: " + svc.getSelectedGameDest().toAbsolutePath() + "\n");
+        if (svc.getSelectedGameBase() != null) {
+            log.append("Loaded saved installation folder: " + svc.getSelectedGameBase().toAbsolutePath() + "\n");
         }
 
         Runnable refreshView = () -> {
@@ -131,7 +131,7 @@ public class MainGui {
         // Browse item folder
         browseItemBtn.addActionListener((ActionEvent e) -> {
             try {
-                Path toOpen = svc.getSelectedGameDest();
+                Path toOpen = svc.getSelectedGameItemFolder();
                 if (toOpen == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
                 if (!Files.exists(toOpen)) Files.createDirectories(toOpen);
                 if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(toOpen.toFile());
@@ -210,10 +210,10 @@ public class MainGui {
             patchBtn.setEnabled(false);
             new Thread(() -> {
                 try {
-                    if (svc.getSelectedGameDest() == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
+                    if (svc.getSelectedGameItemFolder() == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
                     var pocSource = svc.findPocSource(folderName);
                     if (pocSource == null) { svc.guiMessage("Source folder not found: " + folderName); return; }
-                    svc.copyDirectoryContents(pocSource, svc.getSelectedGameDest());
+                    svc.copyDirectoryContents(pocSource, svc.getSelectedGameItemFolder());
                     SwingUtilities.invokeLater(() -> { log.append("Patch completed: " + folderName + " copied.\n"); refreshView.run(); });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));

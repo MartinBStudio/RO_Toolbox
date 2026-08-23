@@ -15,7 +15,7 @@ import java.util.zip.ZipInputStream;
 public class LootManagerService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
     private static final Path RESOURCES_DIR = Paths.get("resources");
-    private static volatile Path selectedGameDest = null;
+    private static volatile Path selectedGameBase = null; // base installation folder (no suffix)
     private static final Path GAME_SUFFIX = Paths.get("3ddata", "item");
 
     private static final Path CONFIG_DIR = Paths.get(System.getProperty("user.home"), ".ro_lootmanager");
@@ -57,7 +57,8 @@ public class LootManagerService {
     public void guiMessage(String s) { log(s); }
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
-    public Path getSelectedGameDest() { return selectedGameDest; }
+    public Path getSelectedGameBase() { return selectedGameBase; }
+    public Path getSelectedGameItemFolder() { return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX); }
 
     // --- config ---
     private void loadConfig() {
@@ -68,20 +69,21 @@ public class LootManagerService {
             String sel = p.getProperty("selectedGame");
             if (sel != null && !sel.isEmpty()) {
                 Path pth = Paths.get(sel);
-                if (Files.exists(pth)) selectedGameDest = pth;
+                if (Files.exists(pth)) selectedGameBase = pth;
             }
         } catch (Exception ignored) {
         }
     }
 
-    public void saveSelectedGame(Path p) {
+    /** Save the installation base folder (no 3ddata/item suffix). */
+    public void saveSelectedGame(Path base) {
         try {
             Files.createDirectories(CONFIG_DIR);
             Properties prop = new Properties();
-            prop.setProperty("selectedGame", p.toAbsolutePath().toString());
+            prop.setProperty("selectedGame", base.toAbsolutePath().toString());
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
-            selectedGameDest = p;
-            log("Selected game saved: " + p.toAbsolutePath());
+            selectedGameBase = base;
+            log("Selected game base saved: " + base.toAbsolutePath());
         } catch (Exception ignored) {
         }
     }
@@ -97,7 +99,7 @@ public class LootManagerService {
     }
 
     public Path getCurrentResourcesRoot() {
-        return (selectedGameDest != null) ? selectedGameDest : RESOURCES_DIR;
+        return (getSelectedGameItemFolder() != null) ? getSelectedGameItemFolder() : RESOURCES_DIR;
     }
 
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
@@ -214,12 +216,12 @@ public class LootManagerService {
 
     // Helpers for GUI-level workflows
     public void clearResources() throws IOException { deleteDirectoryContents(RESOURCES_DIR); }
-    public void clearSelectedItemFolder() throws IOException { if (selectedGameDest != null) deleteDirectoryContents(selectedGameDest); }
+    public void clearSelectedItemFolder() throws IOException { Path itemFolder = getSelectedGameItemFolder(); if (itemFolder != null) deleteDirectoryContents(itemFolder); }
 
     public Path findPocSource(String folderName) {
         Path pocSource = RESOURCES_DIR.resolve(folderName);
         if (!Files.exists(pocSource) || !Files.isDirectory(pocSource)) {
-            Path alt = (selectedGameDest != null) ? selectedGameDest.resolveSibling(RESOURCES_DIR.getFileName()).resolve(folderName) : null;
+            Path alt = (selectedGameBase != null) ? selectedGameBase.resolve(RESOURCES_DIR.getFileName()).resolve(folderName) : null;
             if (alt != null && Files.exists(alt) && Files.isDirectory(alt)) pocSource = alt;
         }
         return (Files.exists(pocSource) && Files.isDirectory(pocSource)) ? pocSource : null;
