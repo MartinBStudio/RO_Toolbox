@@ -36,16 +36,27 @@ public final class UiTheme {
         UIManager.put("nimbusFocus", ACCENT_2);
         UIManager.put("text", TEXT);
         UIManager.put("TextField.background", PANEL_ALT);
+        UIManager.put("TextField.foreground", TEXT);
         UIManager.put("TextArea.background", PANEL_ALT);
         UIManager.put("TextArea.foreground", TEXT);
         UIManager.put("ComboBox.background", PANEL_ALT);
         UIManager.put("ComboBox.foreground", TEXT);
+        UIManager.put("ComboBox.selectionBackground", ACCENT_2);
+        UIManager.put("ComboBox.selectionForeground", BG);
+        UIManager.put("List.background", PANEL_ALT);
+        UIManager.put("List.foreground", TEXT);
+        UIManager.put("List.selectionBackground", ACCENT_2);
+        UIManager.put("List.selectionForeground", BG);
         UIManager.put("Button.background", BUTTON_BG);
         UIManager.put("Button.foreground", TEXT);
         UIManager.put("Button.disabledText", new Color(132, 144, 156));
+        UIManager.put("OptionPane.background", BG);
         UIManager.put("Panel.background", BG);
+        UIManager.put("OptionPane.messageForeground", TEXT);
         UIManager.put("ScrollBar.background", BG);
         UIManager.put("ScrollPane.background", BG);
+        UIManager.put("PopupMenu.background", PANEL_ALT);
+        UIManager.put("PopupMenu.foreground", TEXT);
     }
 
     public static void styleButton(AbstractButton button) {

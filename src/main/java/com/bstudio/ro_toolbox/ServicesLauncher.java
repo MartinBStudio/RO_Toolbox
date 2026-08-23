@@ -31,7 +31,7 @@ public class ServicesLauncher {
 
         // Settings (cog) button
         JButton settings = new JButton("⚙");
-        settings.setToolTipText("Settings");
+        settings.setToolTipText("Settings: choose the game installation folder used by Loot Manager.");
         UiTheme.styleButton(settings);
         top.add(settings, BorderLayout.EAST);
 
@@ -49,6 +49,7 @@ public class ServicesLauncher {
         JButton lootBtn = new JButton("Loot Manager");
         UiTheme.styleButton(lootBtn);
         lootBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
+        lootBtn.setToolTipText("Adjusts dropped item models and increases their size for easier looting.");
         lootBtn.addActionListener((ActionEvent e) -> {
             try {
                 // hide launcher and open detailed GUI with shared service

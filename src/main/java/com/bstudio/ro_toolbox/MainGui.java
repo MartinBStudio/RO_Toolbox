@@ -97,7 +97,7 @@ public class MainGui {
         gamePanel.setForeground(UiTheme.TEXT);
         JButton browseItemBtn = new JButton("Browse item folder");
         JButton clearItemBtn = new JButton("Clear item folder");
-        JButton patchBtn = new JButton("Patch poc data");
+        JButton patchBtn = new JButton("Patch loot models");
         UiTheme.styleButton(browseItemBtn);
         UiTheme.styleButton(clearItemBtn);
         UiTheme.styleButton(patchBtn);
@@ -254,6 +254,7 @@ public class MainGui {
         });
 
         // Patch (choose existing resource subfolder with manifest.json)
+        patchBtn.setToolTipText("Applies a loot profile to dropped item models and enlarges them for easier looting.");
         patchBtn.addActionListener((ActionEvent e) -> {
             List<PatchChoice> choices = collectPatchChoices(svc);
             if (choices.isEmpty()) {
@@ -264,7 +265,28 @@ public class MainGui {
             DefaultComboBoxModel<String> model = new DefaultComboBoxModel<>();
             for (PatchChoice c : choices) model.addElement(c.label);
             JComboBox<String> combo = new JComboBox<>(model);
-            int choice = JOptionPane.showConfirmDialog(frame, combo, "Select resource subfolder to patch from", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
+            combo.setBackground(UiTheme.PANEL_ALT);
+            combo.setForeground(UiTheme.TEXT);
+            combo.setRenderer(new DefaultListCellRenderer() {
+                @Override
+                public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
+                    super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                    setBackground(isSelected ? UiTheme.ACCENT_2 : UiTheme.PANEL_ALT);
+                    setForeground(isSelected ? UiTheme.BG : UiTheme.TEXT);
+                    setOpaque(true);
+                    return this;
+                }
+            });
+
+            JPanel dialogPanel = new JPanel(new BorderLayout(8, 8));
+            dialogPanel.setBackground(UiTheme.BG);
+            JLabel info = new JLabel("Choose a loot profile. This adapts dropped item models and enlarges them for easier looting.");
+            info.setForeground(UiTheme.TEXT);
+            info.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+            dialogPanel.add(info, BorderLayout.NORTH);
+            dialogPanel.add(combo, BorderLayout.CENTER);
+
+            int choice = JOptionPane.showConfirmDialog(frame, dialogPanel, "Select loot profile", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
             if (choice != JOptionPane.OK_OPTION) return;
 
             String selectedLabel = (String) combo.getSelectedItem();
