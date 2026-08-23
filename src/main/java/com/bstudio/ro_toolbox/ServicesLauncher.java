@@ -5,6 +5,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ServicesLauncher {
@@ -55,18 +56,39 @@ public class ServicesLauncher {
 
         frame.add(buttons, BorderLayout.CENTER);
 
-        // Settings action: open dialog to select installation folder
+        // Settings action: show current folder and allow change with validation
         settings.addActionListener((ActionEvent e) -> {
             try {
+                Path current = svc.getSelectedGameDest();
+                String currentText = (current == null) ? "Not set" : current.toAbsolutePath().toString();
+                int opt = JOptionPane.showOptionDialog(frame,
+                        "Current installation folder:\n" + currentText,
+                        "Settings",
+                        JOptionPane.DEFAULT_OPTION,
+                        JOptionPane.INFORMATION_MESSAGE,
+                        null,
+                        new Object[]{"Change folder", "Close"},
+                        "Change folder");
+                if (opt != 0) return; // user chose Close or closed dialog
+
                 JFileChooser chooser = new JFileChooser();
                 chooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                 chooser.setDialogTitle("Select game installation folder (base)");
                 int res = chooser.showOpenDialog(frame);
                 if (res == JFileChooser.APPROVE_OPTION) {
                     Path picked = chooser.getSelectedFile().toPath();
-                    Path selected;
-                    if (picked.endsWith(Path.of("3ddata", "item"))) selected = picked;
-                    else selected = picked.resolve(Path.of("3ddata", "item"));
+                    Path selected = picked.endsWith(Path.of("3ddata", "item")) ? picked : picked.resolve(Path.of("3ddata", "item"));
+
+                    boolean valid = Files.exists(selected) && Files.isDirectory(selected);
+                    if (!valid) {
+                        int confirm = JOptionPane.showConfirmDialog(frame,
+                                "The chosen folder does not contain '3ddata/item'. Save anyway?",
+                                "Validate installation folder",
+                                JOptionPane.YES_NO_OPTION,
+                                JOptionPane.WARNING_MESSAGE);
+                        if (confirm != JOptionPane.YES_OPTION) return;
+                    }
+
                     Files.createDirectories(selected);
                     svc.saveSelectedGame(selected);
                     JOptionPane.showMessageDialog(frame, "Saved installation folder: " + selected.toAbsolutePath());
