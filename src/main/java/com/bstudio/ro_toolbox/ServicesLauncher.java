@@ -16,7 +16,13 @@ public class ServicesLauncher {
 
     private static void createAndShow() {
         JFrame frame = new JFrame("RO Toolbox - Services");
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        frame.addWindowListener(new java.awt.event.WindowAdapter() {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                shutdownApp();
+            }
+        });
         frame.setSize(360, 210);
         frame.setLayout(new BorderLayout(8, 8));
         frame.getContentPane().setBackground(UiTheme.BG);
@@ -45,6 +51,13 @@ public class ServicesLauncher {
         // instantiate singleton service
         LootManagerService svc = LootManagerService.getInstance();
 
+        JLabel warningLabel = new JLabel("Select a game installation folder in Settings before using Loot Manager.");
+        warningLabel.setForeground(new Color(255, 196, 96));
+        warningLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        warningLabel.setVisible(svc.getSelectedGameBase() == null);
+        warningLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+        warningLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
+
         // Loot Manager service button
         JButton lootBtn = new JButton("Loot Manager");
         UiTheme.styleButton(lootBtn);
@@ -64,7 +77,11 @@ public class ServicesLauncher {
 
         // disable if no installation base selected
         lootBtn.setEnabled(svc.getSelectedGameBase() != null);
+        if (svc.getSelectedGameBase() == null) {
+            lootBtn.setToolTipText("Select a game installation folder in Settings before using Loot Manager.");
+        }
 
+        buttons.add(warningLabel);
         buttons.add(lootBtn);
 
         frame.add(buttons, BorderLayout.CENTER);
@@ -75,7 +92,14 @@ public class ServicesLauncher {
         frame.add(footer, BorderLayout.SOUTH);
 
         // listen for changes so we can enable the loot button when user saves settings
-        svc.addChangeListener(() -> SwingUtilities.invokeLater(() -> lootBtn.setEnabled(svc.getSelectedGameBase() != null)));
+        svc.addChangeListener(() -> SwingUtilities.invokeLater(() -> {
+            boolean enabled = svc.getSelectedGameBase() != null;
+            lootBtn.setEnabled(enabled);
+            warningLabel.setVisible(!enabled);
+            lootBtn.setToolTipText(enabled
+                    ? "Adjusts dropped item models and increases their size for easier looting."
+                    : "Select a game installation folder in Settings before using Loot Manager.");
+        }));
 
         // Settings action: show current folder and allow change with validation
         settings.addActionListener((ActionEvent e) -> {
@@ -83,10 +107,10 @@ public class ServicesLauncher {
                 Path current = svc.getSelectedGameBase();
                 String currentText = (current == null) ? "Not set" : current.toAbsolutePath().toString();
                 int opt = JOptionPane.showOptionDialog(frame,
-                        "Current installation folder:\n" + currentText,
+                        "Current installation folder:\n" + currentText + "\n\nSelect the game install base folder to enable Loot Manager.",
                         "Settings",
                         JOptionPane.DEFAULT_OPTION,
-                        JOptionPane.INFORMATION_MESSAGE,
+                        JOptionPane.WARNING_MESSAGE,
                         null,
                         new Object[]{"Change folder", "Close"},
                         "Change folder");
@@ -131,5 +155,11 @@ public class ServicesLauncher {
 
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
+    }
+
+    private static void shutdownApp() {
+        SwingUtilities.invokeLater(() -> {
+            System.exit(0);
+        });
     }
 }

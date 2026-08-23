@@ -14,12 +14,22 @@ import java.util.zip.ZipInputStream;
 
 public class LootManagerService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
-    private static final Path RESOURCES_DIR = Paths.get("resources/lootManager");
+    private static final Path APP_DATA_ROOT = resolveAppDataRoot();
+    private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("lootManager");
     private static volatile Path selectedGameBase = null; // base installation folder (no suffix)
+    private static volatile String currentLootProfile = null;
     private static final Path GAME_SUFFIX = Paths.get("3ddata", "item");
 
-    private static final Path CONFIG_DIR = Paths.get(System.getProperty("user.home"), ".ro_lootmanager");
+    private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
+
+    private static Path resolveAppDataRoot() {
+        String appData = System.getenv("APPDATA");
+        if (appData != null && !appData.isBlank()) {
+            return Paths.get(appData, "RO_Toolbox");
+        }
+        return Paths.get(System.getProperty("user.home"), ".ro_toolbox");
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
 
@@ -33,7 +43,17 @@ public class LootManagerService {
 
     private LootManagerService(Consumer<String> logger) {
         this.logger = logger;
+        ensureRuntimeDirs();
         loadConfig();
+    }
+
+    private void ensureRuntimeDirs() {
+        try {
+            Files.createDirectories(APP_DATA_ROOT);
+            Files.createDirectories(CONFIG_DIR);
+            Files.createDirectories(RESOURCES_DIR);
+        } catch (IOException ignored) {
+        }
     }
 
     public static LootManagerService getInstance(Consumer<String> logger) {
@@ -65,6 +85,11 @@ public class LootManagerService {
     public Path getResourcesDir() { return RESOURCES_DIR; }
     public Path getSelectedGameBase() { return selectedGameBase; }
     public Path getSelectedGameItemFolder() { return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX); }
+    public String getCurrentLootProfile() { return currentLootProfile; }
+    public void setCurrentLootProfile(String profile) {
+        currentLootProfile = (profile == null || profile.isBlank()) ? null : profile;
+        notifyChangeListeners();
+    }
 
     // --- config ---
     private void loadConfig() {

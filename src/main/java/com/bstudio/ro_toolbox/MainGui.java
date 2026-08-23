@@ -29,29 +29,39 @@ public class MainGui {
 
         JFrame frame = new JFrame("RO LootManager - Resources Puller");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setSize(700, 420);
+        frame.setSize(700, 290);
         frame.getContentPane().setBackground(UiTheme.BG);
 
         JPanel panel = new JPanel(new BorderLayout(8, 8));
         panel.setBackground(UiTheme.BG);
 
         // Top bar with back button
-        JPanel topBar = new JPanel(new BorderLayout());
+        JPanel topBar = new JPanel(new BorderLayout(8, 8));
         topBar.setBackground(UiTheme.BG);
-        JButton backBtn = new JButton("← Back");
+        topBar.setBorder(BorderFactory.createEmptyBorder(8, 8, 4, 8));
+
+        JButton backBtn = new JButton("← Services");
+        backBtn.setPreferredSize(new Dimension(120, 32));
         UiTheme.styleButton(backBtn);
         backBtn.addActionListener((ActionEvent e) -> {
             frame.dispose();
             if (parent != null) parent.setVisible(true);
         });
-        topBar.add(backBtn, BorderLayout.WEST);
 
-        panel.add(topBar, BorderLayout.NORTH);
+        JButton logBtn = new JButton("Log");
+        logBtn.setPreferredSize(new Dimension(90, 32));
+        UiTheme.styleSecondaryButton(logBtn);
 
-        JPanel center = new JPanel(new BorderLayout(8,8));
-        center.setBackground(UiTheme.BG);
-        JButton pullBtn = new JButton("Pull resources");
-        UiTheme.styleButton(pullBtn);
+        JPanel leftActions = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        leftActions.setOpaque(false);
+        leftActions.add(backBtn);
+
+        JPanel rightActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        rightActions.setOpaque(false);
+        rightActions.add(logBtn);
+
+        topBar.add(leftActions, BorderLayout.WEST);
+        topBar.add(rightActions, BorderLayout.EAST);
 
         JTextArea log = new JTextArea();
         log.setEditable(false);
@@ -59,66 +69,112 @@ public class MainGui {
         log.setForeground(UiTheme.TEXT);
         log.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
         log.setCaretColor(UiTheme.ACCENT_2);
-        JScrollPane logScroll = new JScrollPane(log);
-        logScroll.setPreferredSize(new Dimension(680, 140));
-        logScroll.setBackground(UiTheme.BG);
 
-        DefaultListModel<String> listModel = new DefaultListModel<>();
-        JList<String> folderList = new JList<>(listModel);
-        folderList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        folderList.setBackground(UiTheme.PANEL_ALT);
-        folderList.setForeground(UiTheme.TEXT);
-        folderList.setSelectionBackground(UiTheme.ACCENT_2);
-        folderList.setSelectionForeground(UiTheme.BG);
-        JScrollPane folderScroll = new JScrollPane(folderList);
-        folderScroll.setPreferredSize(new Dimension(680, 160));
-        folderScroll.setBackground(UiTheme.BG);
+        final JFrame[] logFrameHolder = new JFrame[1];
+        logBtn.addActionListener((ActionEvent e) -> {
+            JFrame logFrame = logFrameHolder[0];
+            if (logFrame == null || !logFrame.isDisplayable()) {
+                logFrame = new JFrame("RO LootManager Log");
+                logFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+                logFrame.setSize(680, 260);
+                JTextArea logWindowArea = new JTextArea();
+                logWindowArea.setEditable(false);
+                logWindowArea.setBackground(UiTheme.PANEL_ALT);
+                logWindowArea.setForeground(UiTheme.TEXT);
+                logWindowArea.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 12));
+                logWindowArea.setCaretColor(UiTheme.ACCENT_2);
+                logWindowArea.setDocument(log.getDocument());
+                logWindowArea.setCaretPosition(log.getDocument().getLength());
+                logFrame.add(new JScrollPane(logWindowArea));
+                logFrame.setLocationRelativeTo(frame);
+                logFrame.setVisible(true);
+                logFrameHolder[0] = logFrame;
+            } else {
+                logFrame.toFront();
+                logFrame.setVisible(true);
+            }
+        });
+        JLabel installWarning = new JLabel("Select a game installation folder in Settings before using Loot Manager.");
+        installWarning.setForeground(new Color(255, 196, 96));
+        installWarning.setHorizontalAlignment(SwingConstants.CENTER);
+        installWarning.setBorder(BorderFactory.createEmptyBorder(4, 8, 0, 8));
+        installWarning.setVisible(svc.getSelectedGameBase() == null);
+
+        JPanel topSection = new JPanel(new BorderLayout(0, 4));
+        topSection.setOpaque(false);
+        topSection.add(topBar, BorderLayout.NORTH);
+        topSection.add(installWarning, BorderLayout.SOUTH);
+
+        panel.add(topSection, BorderLayout.NORTH);
+
+        JPanel center = new JPanel(new BorderLayout(8,8));
+        center.setBackground(UiTheme.BG);
+        JButton pullBtn = new JButton("Pull resources");
+        UiTheme.stylePrimaryButton(pullBtn);
 
         JPanel resourcesPanel = new JPanel();
         resourcesPanel.setLayout(new BoxLayout(resourcesPanel, BoxLayout.Y_AXIS));
         resourcesPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "Resources"));
         resourcesPanel.setBackground(UiTheme.PANEL);
         resourcesPanel.setForeground(UiTheme.TEXT);
-        JButton browseBtn = new JButton("Browse resources");
-        JButton clearResourcesBtn = new JButton("Clear resources");
-        UiTheme.styleButton(browseBtn);
-        UiTheme.styleButton(clearResourcesBtn);
+        JButton browseBtn = new JButton("Browse");
+        JButton clearResourcesBtn = new JButton("Clear");
+        UiTheme.styleSecondaryButton(browseBtn);
+        UiTheme.styleSecondaryButton(clearResourcesBtn);
 
-        resourcesPanel.add(pullBtn);
-        resourcesPanel.add(Box.createVerticalStrut(6));
-        resourcesPanel.add(browseBtn);
-        resourcesPanel.add(Box.createVerticalStrut(6));
-        resourcesPanel.add(clearResourcesBtn);
+        JPanel pullRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        pullRow.setOpaque(false);
+        pullRow.add(pullBtn);
+
+        JPanel resourcesActions = new JPanel(new GridLayout(1, 2, 6, 0));
+        resourcesActions.setOpaque(false);
+        resourcesActions.add(browseBtn);
+        resourcesActions.add(clearResourcesBtn);
+
+        resourcesPanel.add(pullRow);
+        resourcesPanel.add(Box.createVerticalStrut(8));
+        resourcesPanel.add(resourcesActions);
 
         JPanel gamePanel = new JPanel();
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.Y_AXIS));
         gamePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "Game Files"));
         gamePanel.setBackground(UiTheme.PANEL);
         gamePanel.setForeground(UiTheme.TEXT);
-        JButton browseItemBtn = new JButton("Browse item folder");
-        JButton clearItemBtn = new JButton("Clear item folder");
+        JButton browseItemBtn = new JButton("Browse");
+        JButton clearItemBtn = new JButton("Clear");
         JButton patchBtn = new JButton("Patch loot models");
-        UiTheme.styleButton(browseItemBtn);
-        UiTheme.styleButton(clearItemBtn);
-        UiTheme.styleButton(patchBtn);
-        JLabel destLabel = new JLabel("Destination: " + (svc.getSelectedGameItemFolder() != null ? svc.getSelectedGameItemFolder().toAbsolutePath() : "resources"));
-        UiTheme.styleLabel(destLabel);
+        UiTheme.styleSecondaryButton(browseItemBtn);
+        UiTheme.styleSecondaryButton(clearItemBtn);
+        UiTheme.stylePrimaryButton(patchBtn);
+        JPanel patchRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        patchRow.setOpaque(false);
+        patchRow.add(patchBtn);
 
-        gamePanel.add(browseItemBtn);
-        gamePanel.add(Box.createVerticalStrut(6));
-        gamePanel.add(clearItemBtn);
-        gamePanel.add(Box.createVerticalStrut(6));
-        gamePanel.add(patchBtn);
-        gamePanel.add(Box.createVerticalStrut(10));
-        gamePanel.add(destLabel);
+        JPanel itemActions = new JPanel(new GridLayout(1, 2, 6, 0));
+        itemActions.setOpaque(false);
+        itemActions.add(browseItemBtn);
+        itemActions.add(clearItemBtn);
+
+        gamePanel.add(patchRow);
+        gamePanel.add(Box.createVerticalStrut(8));
+        gamePanel.add(itemActions);
 
         JPanel topWrapper = new JPanel(new GridLayout(1, 2, 8, 8));
         topWrapper.add(resourcesPanel);
         topWrapper.add(gamePanel);
 
-        center.add(topWrapper, BorderLayout.NORTH);
-        center.add(folderScroll, BorderLayout.CENTER);
-        center.add(logScroll, BorderLayout.SOUTH);
+        JLabel loadedProfileLabel = new JLabel("Loaded profile: none");
+        UiTheme.styleLabel(loadedProfileLabel);
+        loadedProfileLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        loadedProfileLabel.setBorder(BorderFactory.createEmptyBorder(10, 8, 4, 8));
+        loadedProfileLabel.setVisible(false);
+
+        JPanel profilePanel = new JPanel(new BorderLayout());
+        profilePanel.setOpaque(false);
+        profilePanel.add(topWrapper, BorderLayout.NORTH);
+        profilePanel.add(loadedProfileLabel, BorderLayout.SOUTH);
+
+        center.add(profilePanel, BorderLayout.NORTH);
 
         panel.add(center, BorderLayout.CENTER);
 
@@ -135,9 +191,19 @@ public class MainGui {
         // enable/disable UI depending on whether item folder is configured
         Runnable updateEnabled = () -> SwingUtilities.invokeLater(() -> {
             boolean itemConfigured = svc.getSelectedGameItemFolder() != null;
+            Path itemFolder = svc.getSelectedGameItemFolder();
+            boolean itemHasContent = itemConfigured && itemFolder != null && svc.isDirectoryNonEmpty(itemFolder);
             browseItemBtn.setEnabled(itemConfigured);
-            clearItemBtn.setEnabled(itemConfigured && svc.isDirectoryNonEmpty(svc.getSelectedGameItemFolder()));
+            clearItemBtn.setEnabled(itemHasContent);
             patchBtn.setEnabled(itemConfigured);
+            installWarning.setVisible(svc.getSelectedGameBase() == null);
+            String currentProfile = resolveLoadedProfile(svc.getSelectedGameItemFolder());
+            if (currentProfile != null && !currentProfile.isBlank()) {
+                loadedProfileLabel.setText("Loaded profile: " + currentProfile);
+                loadedProfileLabel.setVisible(true);
+            } else {
+                loadedProfileLabel.setVisible(false);
+            }
             // resources operations remain available
         });
         // initial state
@@ -149,23 +215,6 @@ public class MainGui {
             log.append("Loaded saved installation folder: " + svc.getSelectedGameBase().toAbsolutePath() + "\n");
         }
 
-        Runnable refreshView = () -> {
-            Path root = svc.getCurrentResourcesRoot();
-            SwingUtilities.invokeLater(() -> {
-                listModel.clear();
-                try {
-                    if (root != null && Files.exists(root) && Files.isDirectory(root)) {
-                        try (var ds = Files.newDirectoryStream(root)) {
-                            for (Path p : ds) {
-                                String name = p.getFileName().toString() + (Files.isDirectory(p) ? java.io.File.separator : "");
-                                listModel.addElement(name);
-                            }
-                        }
-                    }
-                } catch (Exception ignored) { }
-            });
-        };
-
         // Browse resources
         browseBtn.addActionListener((ActionEvent e) -> {
             try {
@@ -175,7 +224,7 @@ public class MainGui {
                 svc.guiMessage("Opened resources folder: " + toOpen.toAbsolutePath());
             } catch (Exception ex) {
                 StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                SwingUtilities.invokeLater(() -> log.append("Error opening resources folder: " + ex.getMessage() + "\n" + sw.toString()));
+                SwingUtilities.invokeLater(() -> log.append("Error opening resources folder: " + ex.getMessage() + "\n" + sw));
             }
         });
 
@@ -189,7 +238,7 @@ public class MainGui {
                 svc.guiMessage("Opened item folder: " + toOpen.toAbsolutePath());
             } catch (Exception ex) {
                 StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                SwingUtilities.invokeLater(() -> log.append("Error opening item folder: " + ex.getMessage() + "\n" + sw.toString()));
+                SwingUtilities.invokeLater(() -> log.append("Error opening item folder: " + ex.getMessage() + "\n" + sw));
             }
         });
 
@@ -201,13 +250,16 @@ public class MainGui {
                     svc.clearResources();
                     SwingUtilities.invokeLater(() -> {
                         log.append("Resources cleared.\n");
-                        refreshView.run();
+                    updateEnabled.run();
                     });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                    SwingUtilities.invokeLater(() -> log.append("Error clearing resources: " + ex.getMessage() + "\n" + sw.toString()));
+                    SwingUtilities.invokeLater(() -> log.append("Error clearing resources: " + ex.getMessage() + "\n" + sw));
                 } finally {
-                    SwingUtilities.invokeLater(() -> clearResourcesBtn.setEnabled(true));
+                    SwingUtilities.invokeLater(() -> {
+                        clearResourcesBtn.setEnabled(true);
+                        updateEnabled.run();
+                    });
                 }
             }).start();
         });
@@ -218,15 +270,19 @@ public class MainGui {
             new Thread(() -> {
                 try {
                     svc.clearSelectedItemFolder();
+                    svc.setCurrentLootProfile(null);
                     SwingUtilities.invokeLater(() -> {
                         log.append("Item folder cleared.\n");
-                        refreshView.run();
+                        updateEnabled.run();
                     });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                    SwingUtilities.invokeLater(() -> log.append("Error clearing item folder: " + ex.getMessage() + "\n" + sw.toString()));
+                    SwingUtilities.invokeLater(() -> log.append("Error clearing item folder: " + ex.getMessage() + "\n" + sw));
                 } finally {
-                    SwingUtilities.invokeLater(() -> clearItemBtn.setEnabled(true));
+                    SwingUtilities.invokeLater(() -> {
+                        clearItemBtn.setEnabled(true);
+                        updateEnabled.run();
+                    });
                 }
             }).start();
         });
@@ -242,11 +298,10 @@ public class MainGui {
                     svc.downloadAndExtract(null, dest);
                     SwingUtilities.invokeLater(() -> {
                         log.append("Done. Resources saved to: " + dest.toAbsolutePath() + "\n");
-                        refreshView.run();
                     });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                    SwingUtilities.invokeLater(() -> log.append("Error: " + ex.getMessage() + "\n" + sw.toString()));
+                    SwingUtilities.invokeLater(() -> log.append("Error: " + ex.getMessage() + "\n" + sw));
                 } finally {
                     SwingUtilities.invokeLater(() -> pullBtn.setEnabled(true));
                 }
@@ -267,6 +322,7 @@ public class MainGui {
             JComboBox<String> combo = new JComboBox<>(model);
             combo.setBackground(UiTheme.PANEL_ALT);
             combo.setForeground(UiTheme.TEXT);
+            combo.setSelectedIndex(0);
             combo.setRenderer(new DefaultListCellRenderer() {
                 @Override
                 public java.awt.Component getListCellRendererComponent(JList<?> list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
@@ -301,36 +357,36 @@ public class MainGui {
                     // Clear destination before copy to ensure a clean patch.
                     svc.clearSelectedItemFolder();
                     svc.copyDirectoryContents(selected.source, svc.getSelectedGameItemFolder());
-                    SwingUtilities.invokeLater(() -> { log.append("Patch completed: " + selected.source.getFileName() + " copied.\n"); refreshView.run(); });
+                    svc.setCurrentLootProfile(selected.label);
+                    SwingUtilities.invokeLater(() -> {
+                        log.append("Patch completed: " + selected.source.getFileName() + " copied.\n");
+                        updateEnabled.run();
+                    });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                    SwingUtilities.invokeLater(() -> log.append("Error patching destination: " + ex.getMessage() + "\n" + sw.toString()));
+                    SwingUtilities.invokeLater(() -> log.append("Error patching destination: " + ex.getMessage() + "\n" + sw));
                 } finally {
-                    SwingUtilities.invokeLater(() -> patchBtn.setEnabled(true));
+                    SwingUtilities.invokeLater(() -> {
+                        patchBtn.setEnabled(true);
+                        updateEnabled.run();
+                    });
                 }
             }).start();
         });
 
-        folderList.addListSelectionListener(evt -> {
-            if (!evt.getValueIsAdjusting()) {
-                String val = folderList.getSelectedValue(); if (val != null) SwingUtilities.invokeLater(() -> log.append("Selected: " + val + "\n"));
-            }
-        });
-
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-
-        // initial view
-        refreshView.run();
     }
 
     private static final class PatchChoice {
         private final String label;
         private final Path source;
+        private final long versionValue;
 
-        private PatchChoice(String label, Path source) {
+        private PatchChoice(String label, Path source, long versionValue) {
             this.label = label;
             this.source = source;
+            this.versionValue = versionValue;
         }
     }
 
@@ -354,17 +410,52 @@ public class MainGui {
                     Path manifest = p.resolve("manifest.json");
                     if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
                     String desc = readManifestDescription(manifest);
+                    String version = readManifestVersion(manifest);
                     String label = (desc == null || desc.isBlank()) ? name : name + " - " + desc;
                     if (seen.add(label)) {
-                        results.add(new PatchChoice(label, p));
+                        results.add(new PatchChoice(label, p, normalizeVersion(version)));
                     }
                 }
             } catch (IOException ignored) {
             }
         }
 
-        results.sort((a, b) -> a.label.compareToIgnoreCase(b.label));
+        results.sort((a, b) -> {
+            int versionDiff = Long.compare(b.versionValue, a.versionValue);
+            if (versionDiff != 0) return versionDiff;
+            return a.label.compareToIgnoreCase(b.label);
+        });
         return results;
+    }
+
+    private static String resolveLoadedProfile(Path itemFolder) {
+        if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return null;
+        try (var stream = Files.walk(itemFolder)) {
+            for (Path p : (Iterable<Path>) stream::iterator) {
+                if (!Files.isRegularFile(p)) continue;
+                if (!p.getFileName().toString().equals("manifest.json")) continue;
+                String name = readManifestName(p);
+                String desc = readManifestDescription(p);
+                if (name != null && !name.isBlank()) {
+                    return (desc != null && !desc.isBlank()) ? name + " - " + desc : name;
+                }
+                return desc;
+            }
+        } catch (IOException ignored) {
+        }
+        return null;
+    }
+
+    private static String readManifestName(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"name\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     private static String readManifestDescription(Path manifestFile) {
@@ -377,5 +468,32 @@ public class MainGui {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private static String readManifestVersion(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return "0.0.0";
+            return matcher.group(1).trim();
+        } catch (Exception e) {
+            return "0.0.0";
+        }
+    }
+
+    private static long normalizeVersion(String version) {
+        if (version == null || version.isBlank()) return 0L;
+        String cleaned = version.trim().replaceFirst("(?i)^v", "");
+        String[] parts = cleaned.split("[.-]");
+        long value = 0L;
+        long multiplier = 1_000_000_000L;
+        for (String part : parts) {
+            if (part == null || part.isBlank()) continue;
+            String digits = part.replaceAll("[^0-9]", "");
+            if (digits.isEmpty()) continue;
+            value += Long.parseLong(digits) * multiplier;
+            multiplier /= 1000L;
+        }
+        return value;
     }
 }

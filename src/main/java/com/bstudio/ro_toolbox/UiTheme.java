@@ -1,7 +1,6 @@
 package com.bstudio.ro_toolbox;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 
 public final class UiTheme {
@@ -69,6 +68,22 @@ public final class UiTheme {
                 BorderFactory.createEmptyBorder(6, 12, 6, 12)
         ));
         button.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+    }
+
+    public static void stylePrimaryButton(AbstractButton button) {
+        styleButton(button);
+        button.setBackground(new Color(12, 83, 68));
+        button.setForeground(new Color(232, 252, 247));
+        button.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(ACCENT, 1),
+                BorderFactory.createEmptyBorder(7, 14, 7, 14)
+        ));
+    }
+
+    public static void styleSecondaryButton(AbstractButton button) {
+        styleButton(button);
+        button.setBackground(new Color(28, 35, 45));
+        button.setForeground(MUTED);
     }
 
     public static void stylePanel(JComponent panel) {
