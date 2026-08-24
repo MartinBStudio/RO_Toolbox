@@ -36,6 +36,7 @@ public class LootModelsGui {
     private void createAndShowGui(JFrame parent) {
 
         JFrame frame = new JFrame("RO LootModels");
+        frame.setIconImage(UiTheme.TOOLBOX_ICON);
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         frame.setSize(700, 520);
         frame.getContentPane().setBackground(UiTheme.BG);
@@ -83,6 +84,7 @@ public class LootModelsGui {
             JFrame logFrame = logFrameHolder[0];
             if (logFrame == null || !logFrame.isDisplayable()) {
                 logFrame = new JFrame("RO LootManager Log");
+                logFrame.setIconImage(UiTheme.TOOLBOX_ICON);
                 logFrame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
                 logFrame.setSize(680, 260);
                 JTextArea logWindowArea = new JTextArea();
