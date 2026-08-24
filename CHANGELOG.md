@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.3] - 2026-08-24
+
+### Added
+- **Main Window Dashboard**: New dashboard showing all available model types with installed profiles
+- **Models Replacer Table**: Clean table view displaying:
+  - Load button for each model type
+  - Currently installed profile information (name, author, description)
+  - Direct link to visit profile author's page
+- **Profile Information Display**: Automatically reads and displays installed profile details from game folder
+
+### Changed
+- **Main Window Layout**: Redesigned to show installed models at a glance without opening Loot Manager
+- **Application Startup**: Optimized startup process for better performance
+- **Dependency Management**: Streamlined how components are initialized
+
+### Improved
+- **User Experience**: Quickly see what models are installed and who created them
+- **Application Performance**: Lighter startup and faster component loading
+- **Future Scalability**: New table-based layout makes it easy to add more model types (weapons, NPCs, etc.) later
+
 ## [0.0.2] - 2026-08-24
 
 ### Added

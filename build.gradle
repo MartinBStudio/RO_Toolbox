@@ -5,8 +5,21 @@ plugins {
 }
 
 group = 'com.bstudio'
-version = '0.0.2-SNAPSHOT'
+version = readVersionFromProperties()
 description = 'RO_Toolbox'
+
+def readVersionFromProperties() {
+    def propsFile = file('src/main/resources/application.properties')
+    def version = 'dev'
+    if (propsFile.exists()) {
+        propsFile.eachLine { line ->
+            if (line.startsWith('app.version=')) {
+                version = line.substring('app.version='.length()).trim()
+            }
+        }
+    }
+    return version
+}
 
 java {
     toolchain {
@@ -33,12 +46,6 @@ dependencies {
     testAnnotationProcessor 'org.projectlombok:lombok'
 }
 
-tasks.named('processResources') {
-    filesMatching('application.properties') {
-        expand(projectVersion: project.version)
-    }
-}
-
 tasks.named('jar') {
     archiveBaseName = 'RO_Toolbox'
     archiveVersion = project.version.toString()
@@ -47,6 +54,7 @@ tasks.named('jar') {
 tasks.named('bootJar') {
     archiveBaseName = 'RO_Toolbox'
     archiveVersion = project.version.toString()
+    mainClass = 'com.bstudio.ro_toolbox.RoToolboxApplication'
 }
 
 tasks.named('test') {

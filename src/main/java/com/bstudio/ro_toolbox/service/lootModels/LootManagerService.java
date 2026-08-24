@@ -1,7 +1,9 @@
-package com.bstudio.ro_toolbox;
+package com.bstudio.ro_toolbox.service.lootModels;
 
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -12,12 +14,11 @@ import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+@Service
 public class LootManagerService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
     private static final Path APP_DATA_ROOT = resolveAppDataRoot();
     private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("lootManager");
-    private static volatile Path selectedGameBase = null; // base installation folder (no suffix)
-    private static volatile String currentLootProfile = null;
     private static final Path GAME_SUFFIX = Paths.get("3ddata", "item");
 
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
@@ -33,16 +34,19 @@ public class LootManagerService {
 
     private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
 
+    @Getter
+    private volatile Path selectedGameBase = null; // base installation folder (no suffix)
+    @Getter
+    private volatile String currentLootProfile = null;
+
     // logger can be updated by the GUI to forward messages
     private Consumer<String> logger;
-
-    private static volatile LootManagerService INSTANCE;
 
     // listeners notified when configuration changes (e.g., selected game base changed)
     private final java.util.List<Runnable> changeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
-    private LootManagerService(Consumer<String> logger) {
-        this.logger = logger;
+    public LootManagerService() {
+        this.logger = null;
         ensureRuntimeDirs();
         loadConfig();
     }
@@ -55,19 +59,6 @@ public class LootManagerService {
         } catch (IOException ignored) {
         }
     }
-
-    public static LootManagerService getInstance(Consumer<String> logger) {
-        if (INSTANCE == null) {
-            synchronized (LootManagerService.class) {
-                if (INSTANCE == null) INSTANCE = new LootManagerService(logger);
-            }
-        } else {
-            if (logger != null) INSTANCE.setLogger(logger);
-        }
-        return INSTANCE;
-    }
-
-    public static LootManagerService getInstance() { return getInstance(null); }
 
     public void setLogger(Consumer<String> logger) { this.logger = logger; }
 
@@ -83,9 +74,13 @@ public class LootManagerService {
     public void guiMessage(String s) { log(s); }
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
+
     public Path getSelectedGameBase() { return selectedGameBase; }
+
     public Path getSelectedGameItemFolder() { return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX); }
+
     public String getCurrentLootProfile() { return currentLootProfile; }
+
     public void setCurrentLootProfile(String profile) {
         currentLootProfile = (profile == null || profile.isBlank()) ? null : profile;
         notifyChangeListeners();
@@ -111,6 +106,7 @@ public class LootManagerService {
         try {
             Files.createDirectories(CONFIG_DIR);
             Properties prop = new Properties();
+            try (InputStream in = Files.newInputStream(CONFIG_FILE)) { prop.load(in); }
             prop.setProperty("selectedGame", base.toAbsolutePath().toString());
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
             selectedGameBase = base;
@@ -257,6 +253,102 @@ public class LootManagerService {
             if (alt != null && Files.exists(alt) && Files.isDirectory(alt)) pocSource = alt;
         }
         return (Files.exists(pocSource) && Files.isDirectory(pocSource)) ? pocSource : null;
+    }
+
+    public static final class ProfileInfo {
+        public final String name;
+        public final String author;
+        public final String description;
+        public final String url;
+        public final String createdAt;
+
+        public ProfileInfo(String name, String author, String description, String url, String createdAt) {
+            this.name = name;
+            this.author = author;
+            this.description = description;
+            this.url = url;
+            this.createdAt = createdAt;
+        }
+    }
+
+    public ProfileInfo getInstalledProfileInfo() {
+        Path itemFolder = getSelectedGameItemFolder();
+        if (itemFolder == null || !Files.exists(itemFolder)) {
+            return null;
+        }
+        
+        Path manifest = itemFolder.resolve("manifest.json");
+        if (!Files.exists(manifest)) {
+            return null;
+        }
+        
+        return new ProfileInfo(
+            readManifestName(manifest),
+            readManifestAuthor(manifest),
+            readManifestDescription(manifest),
+            readManifestUrl(manifest),
+            readManifestCreatedAt(manifest)
+        );
+    }
+
+    private String readManifestName(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"name\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String readManifestDescription(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"description\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String readManifestUrl(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"url\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String readManifestAuthor(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"author\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private String readManifestCreatedAt(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"createdAt\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
     }
 
 }

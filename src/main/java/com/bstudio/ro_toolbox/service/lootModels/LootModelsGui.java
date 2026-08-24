@@ -1,4 +1,9 @@
-package com.bstudio.ro_toolbox;
+package com.bstudio.ro_toolbox.service.lootModels;
+
+import com.bstudio.ro_toolbox.RoToolboxApplication;
+import com.bstudio.ro_toolbox.utils.UiTheme;
+import org.springframework.stereotype.Component;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,23 +18,26 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-public class MainGui {
-    // Open the Loot Manager GUI using the provided service. Parent frame (services launcher) may be passed
-    public static void open(LootManagerService svc, JFrame parent) {
-        SwingUtilities.invokeLater(() -> createAndShowGui(svc, parent));
+@Component
+public class LootModelsGui {
+    private final LootManagerService lootManagerService;
+    private final RoToolboxApplication app;
+
+    @Autowired
+    public LootModelsGui(LootManagerService lootManagerService, RoToolboxApplication app) {
+        this.lootManagerService = lootManagerService;
+        this.app = app;
     }
 
-    public static void main(String[] args) {
-        UiTheme.install();
-        // For backward compatibility: use singleton service without GUI logger
-        open(LootManagerService.getInstance(), null);
+    public void open(JFrame parent) {
+        SwingUtilities.invokeLater(() -> createAndShowGui(parent));
     }
 
-    private static void createAndShowGui(LootManagerService svc, JFrame parent) {
+    private void createAndShowGui(JFrame parent) {
 
         JFrame frame = new JFrame("RO LootModels");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setSize(700, 340);
+        frame.setSize(700, 520);
         frame.getContentPane().setBackground(UiTheme.BG);
 
         JPanel panel = new JPanel(new BorderLayout(8, 8));
@@ -98,7 +106,7 @@ public class MainGui {
         installWarning.setForeground(new Color(255, 196, 96));
         installWarning.setHorizontalAlignment(SwingConstants.CENTER);
         installWarning.setBorder(BorderFactory.createEmptyBorder(4, 8, 0, 8));
-        installWarning.setVisible(svc.getSelectedGameBase() == null);
+        installWarning.setVisible(lootManagerService.getSelectedGameBase() == null);
 
         JPanel topSection = new JPanel(new BorderLayout(0, 4));
         topSection.setOpaque(false);
@@ -135,7 +143,7 @@ public class MainGui {
         Runnable refreshProfilesList = () -> {
             SwingUtilities.invokeLater(() -> {
                 profilesModel.clear();
-                List<String> profiles = collectDownloadedProfiles(svc);
+                List<String> profiles = collectDownloadedProfiles();
                 for (String profile : profiles) {
                     profilesModel.addElement(profile);
                 }
@@ -184,7 +192,7 @@ public class MainGui {
         Runnable refreshInstalledProfile = () -> {
             SwingUtilities.invokeLater(() -> {
                 installedModel.clear();
-                String profile = resolveLoadedProfile(svc.getSelectedGameItemFolder());
+                String profile = resolveLoadedProfile(lootManagerService.getSelectedGameItemFolder());
                 if (profile != null && !profile.isBlank()) {
                     installedModel.addElement(profile);
                 }
@@ -214,7 +222,7 @@ public class MainGui {
 
         panel.add(center, BorderLayout.CENTER);
 
-        JLabel footer = new JLabel("Created by BStudio • v" + AppInfo.getVersion(), SwingConstants.CENTER);
+        JLabel footer = new JLabel("Created by BStudio • v" + app.getVersion(), SwingConstants.CENTER);
         UiTheme.styleFooter(footer);
         footer.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
         panel.add(footer, BorderLayout.SOUTH);
@@ -222,36 +230,36 @@ public class MainGui {
         frame.setContentPane(panel);
 
         // Wire service logger to UI log area
-        svc.setLogger(msg -> SwingUtilities.invokeLater(() -> log.append(msg)));
+        lootManagerService.setLogger(msg -> SwingUtilities.invokeLater(() -> log.append(msg)));
 
         // enable/disable UI depending on whether item folder is configured
         Runnable updateEnabled = () -> SwingUtilities.invokeLater(() -> {
-            boolean itemConfigured = svc.getSelectedGameItemFolder() != null;
-            Path itemFolder = svc.getSelectedGameItemFolder();
-            boolean itemHasContent = itemConfigured && itemFolder != null && svc.isDirectoryNonEmpty(itemFolder);
+            boolean itemConfigured = lootManagerService.getSelectedGameItemFolder() != null;
+            Path itemFolder = lootManagerService.getSelectedGameItemFolder();
+            boolean itemHasContent = itemConfigured && itemFolder != null && lootManagerService.isDirectoryNonEmpty(itemFolder);
             browseItemBtn.setEnabled(itemConfigured);
             clearItemBtn.setEnabled(itemHasContent);
             patchBtn.setEnabled(itemConfigured);
-            installWarning.setVisible(svc.getSelectedGameBase() == null);
+            installWarning.setVisible(lootManagerService.getSelectedGameBase() == null);
             refreshInstalledProfile.run();
             // resources operations remain available
         });
         // initial state
         updateEnabled.run();
         // listen for changes
-        svc.addChangeListener(updateEnabled);
+        lootManagerService.addChangeListener(updateEnabled);
 
-        if (svc.getSelectedGameBase() != null) {
-            log.append("Loaded saved installation folder: " + svc.getSelectedGameBase().toAbsolutePath() + "\n");
+        if (lootManagerService.getSelectedGameBase() != null) {
+            log.append("Loaded saved installation folder: " + lootManagerService.getSelectedGameBase().toAbsolutePath() + "\n");
         }
 
         // Browse resources
         browseBtn.addActionListener((ActionEvent e) -> {
             try {
-                Path toOpen = svc.getResourcesDir();
+                Path toOpen = lootManagerService.getResourcesDir();
                 if (!Files.exists(toOpen)) Files.createDirectories(toOpen);
                 if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(toOpen.toFile());
-                svc.guiMessage("Opened resources folder: " + toOpen.toAbsolutePath());
+                lootManagerService.guiMessage("Opened resources folder: " + toOpen.toAbsolutePath());
             } catch (Exception ex) {
                 StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
                 SwingUtilities.invokeLater(() -> log.append("Error opening resources folder: " + ex.getMessage() + "\n" + sw));
@@ -261,11 +269,11 @@ public class MainGui {
         // Browse item folder
         browseItemBtn.addActionListener((ActionEvent e) -> {
             try {
-                Path toOpen = svc.getSelectedGameItemFolder();
-                if (toOpen == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
+                Path toOpen = lootManagerService.getSelectedGameItemFolder();
+                if (toOpen == null) { lootManagerService.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
                 if (!Files.exists(toOpen)) Files.createDirectories(toOpen);
                 if (Desktop.isDesktopSupported()) Desktop.getDesktop().open(toOpen.toFile());
-                svc.guiMessage("Opened item folder: " + toOpen.toAbsolutePath());
+                lootManagerService.guiMessage("Opened item folder: " + toOpen.toAbsolutePath());
             } catch (Exception ex) {
                 StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
                 SwingUtilities.invokeLater(() -> log.append("Error opening item folder: " + ex.getMessage() + "\n" + sw));
@@ -277,7 +285,7 @@ public class MainGui {
             clearResourcesBtn.setEnabled(false);
             new Thread(() -> {
                 try {
-                    svc.clearResources();
+                    lootManagerService.clearResources();
                     SwingUtilities.invokeLater(() -> {
                         log.append("Resources cleared.\n");
                     updateEnabled.run();
@@ -300,8 +308,8 @@ public class MainGui {
             clearItemBtn.setEnabled(false);
             new Thread(() -> {
                 try {
-                    svc.clearSelectedItemFolder();
-                    svc.setCurrentLootProfile(null);
+                    lootManagerService.clearSelectedItemFolder();
+                    lootManagerService.setCurrentLootProfile(null);
                     SwingUtilities.invokeLater(() -> {
                         log.append("Item folder cleared.\n");
                         updateEnabled.run();
@@ -324,9 +332,9 @@ public class MainGui {
             log.append("⬇ Downloading loot profiles from repository...\n");
             new Thread(() -> {
                 try {
-                    Path dest = svc.getResourcesDir();
+                    Path dest = lootManagerService.getResourcesDir();
                     Files.createDirectories(dest);
-                    svc.downloadAndExtract(null, dest);
+                    lootManagerService.downloadAndExtract(null, dest);
                     SwingUtilities.invokeLater(() -> {
                         log.append("✓ Download complete! Profiles saved to: " + dest.toAbsolutePath() + "\n");
                         refreshProfilesList.run();
@@ -343,7 +351,7 @@ public class MainGui {
         // Patch (choose existing resource subfolder with manifest.json)
         patchBtn.setToolTipText("Applies a loot profile to dropped item models and enlarges them for easier looting.");
         patchBtn.addActionListener((ActionEvent e) -> {
-            List<PatchChoice> choices = collectPatchChoices(svc);
+            List<PatchChoice> choices = collectPatchChoices();
             if (choices.isEmpty()) {
                 JOptionPane.showMessageDialog(frame, "No resource folders with manifest.json were found under 'resources' or the alternate resources folder.", "No sources", JOptionPane.WARNING_MESSAGE);
                 return;
@@ -451,12 +459,12 @@ public class MainGui {
             patchBtn.setEnabled(false);
             new Thread(() -> {
                 try {
-                    if (svc.getSelectedGameItemFolder() == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
+                    if (lootManagerService.getSelectedGameItemFolder() == null) { lootManagerService.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
                     log.append("📦 Installing loot profile: " + selected.source.getFileName() + "...\n");
                     // Clear destination before copy to ensure a clean patch.
-                    svc.clearSelectedItemFolder();
-                    svc.copyDirectoryContents(selected.source, svc.getSelectedGameItemFolder());
-                    svc.setCurrentLootProfile(selected.label);
+                    lootManagerService.clearSelectedItemFolder();
+                    lootManagerService.copyDirectoryContents(selected.source, lootManagerService.getSelectedGameItemFolder());
+                    lootManagerService.setCurrentLootProfile(selected.label);
                     SwingUtilities.invokeLater(() -> {
                         log.append("✓ Installation complete! Profile: " + selected.source.getFileName() + "\n");
                         updateEnabled.run();
@@ -497,14 +505,14 @@ public class MainGui {
         }
     }
 
-    private static List<PatchChoice> collectPatchChoices(LootManagerService svc) {
+    private List<PatchChoice> collectPatchChoices() {
         List<PatchChoice> results = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
 
         List<Path> roots = new ArrayList<>();
-        roots.add(svc.getResourcesDir());
-        if (svc.getSelectedGameBase() != null) {
-            roots.add(svc.getSelectedGameBase().resolveSibling(svc.getResourcesDir().getFileName()));
+        roots.add(lootManagerService.getResourcesDir());
+        if (lootManagerService.getSelectedGameBase() != null) {
+            roots.add(lootManagerService.getSelectedGameBase().resolveSibling(lootManagerService.getResourcesDir().getFileName()));
         }
 
         for (Path root : roots) {
@@ -537,7 +545,7 @@ public class MainGui {
         return results;
     }
 
-    private static String resolveLoadedProfile(Path itemFolder) {
+    private String resolveLoadedProfile(Path itemFolder) {
         if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return null;
         try (var stream = Files.walk(itemFolder)) {
             for (Path p : (Iterable<Path>) stream::iterator) {
@@ -555,7 +563,7 @@ public class MainGui {
         return null;
     }
 
-    private static String readManifestName(Path manifestFile) {
+    private String readManifestName(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
             java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"name\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
@@ -567,7 +575,7 @@ public class MainGui {
         }
     }
 
-    private static String readManifestDescription(Path manifestFile) {
+    private String readManifestDescription(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
             java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"description\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
@@ -579,7 +587,7 @@ public class MainGui {
         }
     }
 
-    private static String readManifestVersion(Path manifestFile) {
+    private String readManifestVersion(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
             java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
@@ -590,7 +598,7 @@ public class MainGui {
         }
     }
 
-    private static String readManifestUrl(Path manifestFile) {
+    private String readManifestUrl(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
             java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"url\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
@@ -602,7 +610,7 @@ public class MainGui {
         }
     }
 
-    private static String readManifestAuthor(Path manifestFile) {
+    private String readManifestAuthor(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
             java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"author\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
@@ -614,7 +622,7 @@ public class MainGui {
         }
     }
 
-    private static String readManifestCreatedAt(Path manifestFile) {
+    private String readManifestCreatedAt(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
             java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"createdAt\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
@@ -626,7 +634,7 @@ public class MainGui {
         }
     }
 
-    private static long normalizeVersion(String version) {
+    private long normalizeVersion(String version) {
         if (version == null || version.isBlank()) return 0L;
         String cleaned = version.trim().replaceFirst("(?i)^v", "");
         String[] parts = cleaned.split("[.-]");
@@ -642,9 +650,9 @@ public class MainGui {
         return value;
     }
 
-    private static List<String> collectDownloadedProfiles(LootManagerService svc) {
+    private List<String> collectDownloadedProfiles() {
         List<String> profiles = new ArrayList<>();
-        Path resourcesDir = svc.getResourcesDir();
+        Path resourcesDir = lootManagerService.getResourcesDir();
         if (resourcesDir == null || !Files.exists(resourcesDir) || !Files.isDirectory(resourcesDir)) {
             return profiles;
         }

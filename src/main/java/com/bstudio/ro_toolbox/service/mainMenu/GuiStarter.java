@@ -1,11 +1,10 @@
-package com.bstudio.ro_toolbox;
+package com.bstudio.ro_toolbox.service.mainMenu;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import javax.swing.SwingUtilities;
-import java.awt.GraphicsEnvironment;
 
 @Component
 public class GuiStarter {
@@ -17,7 +16,7 @@ public class GuiStarter {
             SwingUtilities.invokeLater(() -> {
                 try {
                     // Launch a small services launcher window; it will open specific service GUIs when buttons are pressed
-                    ServicesLauncher.main(new String[0]);
+                    MainMenu.main(new String[0]);
                 } catch (Throwable t) {
                     t.printStackTrace();
                 }
