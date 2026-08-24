@@ -59,7 +59,7 @@ public class ServicesLauncher {
         warningLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
 
         // Loot Manager service button
-        JButton lootBtn = new JButton("Loot Manager");
+        JButton lootBtn = new JButton("Loot Models");
         UiTheme.styleButton(lootBtn);
         lootBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
         lootBtn.setToolTipText("Adjusts dropped item models and increases their size for easier looting.");
