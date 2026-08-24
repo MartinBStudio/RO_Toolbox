@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.0.3] - 2026-08-24
+
+### Changed
+- **Architecture**: Eliminated `AppInfo` class, merged version management into `RoToolboxApplication`
+- **Version Management**: Simplified to single source of truth in `application.properties` with `app.version` property
+- **Build Configuration**: Gradle now reads version from `application.properties` for JAR naming
+- **Spring Configuration**: Removed XML-based configuration file (`application-context.xml`)
+  - Converted to annotation-based `@Configuration` with `@ComponentScan` and `@PropertySource`
+  - Uses `AnnotationConfigApplicationContext` for lightweight context initialization
+- **Dependency Injection**: All components use constructor injection with `@Autowired`
+
+### Removed
+- Deleted `AppInfo.java` class
+- Removed `application-context.xml` XML configuration file
+- Removed Spring Boot's `@SpringBootApplication` in favor of pure Spring `@Configuration`
+
+### Improved
+- **Code Cleanliness**: Reduced boilerplate by consolidating version management
+- **Build Process**: Single source of truth eliminates version sync issues
+- **Application Startup**: Pure Spring context is more lightweight and suitable for Swing desktop app
+- **Test Configuration**: Updated to use `@SpringJUnitConfig` instead of `@SpringBootTest`
+
 ## [0.0.2] - 2026-08-24
 
 ### Added

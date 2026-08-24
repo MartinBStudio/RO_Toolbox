@@ -1,9 +1,12 @@
-package com.bstudio.ro_toolbox.gui;
+package com.bstudio.ro_toolbox.service.mainMenu;
 
 import com.bstudio.ro_toolbox.RoToolboxApplication;
-import com.bstudio.ro_toolbox.service.LootManagerService;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import com.bstudio.ro_toolbox.utils.UiTheme;
+import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
+import com.bstudio.ro_toolbox.service.lootModels.LootModelsGui;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.stereotype.Service;
 
 import javax.swing.*;
 import java.awt.*;
@@ -13,26 +16,22 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class ServicesLauncher {
+@Service
+@RequiredArgsConstructor
+public class MainMenu {
     private final LootManagerService lootManagerService;
-    private final MainGui mainGui;
+    private final LootModelsGui mainGui;
     private final RoToolboxApplication app;
-
-    public ServicesLauncher(ApplicationContext context) {
-        this.lootManagerService = context.getBean(LootManagerService.class);
-        this.mainGui = context.getBean(MainGui.class);
-        this.app = context.getBean(RoToolboxApplication.class);
-    }
 
     public static void main(String[] args) {
         UiTheme.install();
-        ApplicationContext context = new ClassPathXmlApplicationContext("application-context.xml");
-        ServicesLauncher launcher = new ServicesLauncher(context);
+        AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(RoToolboxApplication.class);
+        MainMenu launcher = context.getBean(MainMenu.class);
         SwingUtilities.invokeLater(launcher::createAndShow);
     }
 
-    private void createAndShow() {
-        JFrame frame = new JFrame("RO Toolbox - Services");
+    public void createAndShow() {
+        JFrame frame = new JFrame("RO Toolbox");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
@@ -46,7 +45,7 @@ public class ServicesLauncher {
 
         JPanel top = new JPanel(new BorderLayout());
         top.setBackground(UiTheme.BG);
-        JLabel title = new JLabel("Services");
+        JLabel title = new JLabel("Menu");
         UiTheme.styleLabel(title);
         title.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 18));
         title.setBorder(BorderFactory.createEmptyBorder(8,8,8,8));
@@ -65,7 +64,7 @@ public class ServicesLauncher {
         buttons.setBackground(UiTheme.BG);
         buttons.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        JLabel warningLabel = new JLabel("Select a game installation folder in Settings before using Loot Manager.");
+        JLabel warningLabel = new JLabel("Select a game installation folder in Settings.");
         warningLabel.setForeground(new Color(255, 196, 96));
         warningLabel.setHorizontalAlignment(SwingConstants.CENTER);
         warningLabel.setVisible(lootManagerService.getSelectedGameBase() == null);
@@ -76,7 +75,7 @@ public class ServicesLauncher {
         JButton lootBtn = new JButton("Loot Models");
         UiTheme.styleButton(lootBtn);
         lootBtn.setFont(new Font(Font.SANS_SERIF, Font.BOLD, 14));
-        lootBtn.setToolTipText("Adjusts dropped item models and increases their size for easier looting.");
+        lootBtn.setToolTipText("Adjusts dropped item models.");
         lootBtn.addActionListener((ActionEvent e) -> {
             try {
                 // hide launcher and open detailed GUI with shared service
@@ -84,7 +83,7 @@ public class ServicesLauncher {
                 mainGui.open(frame);
             } catch (Throwable t) {
                 t.printStackTrace();
-                JOptionPane.showMessageDialog(frame, "Failed to open Loot Manager: " + t.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(frame, "Failed to open Loot Models: " + t.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
                 frame.setVisible(true);
             }
         });
@@ -92,7 +91,7 @@ public class ServicesLauncher {
         // disable if no installation base selected
         lootBtn.setEnabled(lootManagerService.getSelectedGameBase() != null);
         if (lootManagerService.getSelectedGameBase() == null) {
-            lootBtn.setToolTipText("Select a game installation folder in Settings before using Loot Manager.");
+            lootBtn.setToolTipText("Select a game installation folder in Settings.");
         }
 
         buttons.add(warningLabel);
@@ -111,8 +110,8 @@ public class ServicesLauncher {
             lootBtn.setEnabled(enabled);
             warningLabel.setVisible(!enabled);
             lootBtn.setToolTipText(enabled
-                    ? "Adjusts dropped item models and increases their size for easier looting."
-                    : "Select a game installation folder in Settings before using Loot Manager.");
+                    ? "Adjusts dropped item models."
+                    : "Select a game installation folder in Settings.");
         }));
 
         // Settings action: show current folder and allow change with validation

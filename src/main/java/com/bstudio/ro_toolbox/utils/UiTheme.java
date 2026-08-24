@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.gui;
+package com.bstudio.ro_toolbox.utils;
 
 import javax.swing.*;
 import java.awt.*;

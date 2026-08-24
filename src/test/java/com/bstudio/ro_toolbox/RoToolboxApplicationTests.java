@@ -1,9 +1,9 @@
 package com.bstudio.ro_toolbox;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
-@SpringBootTest
+@SpringJUnitConfig(RoToolboxApplication.class)
 class RoToolboxApplicationTests {
 
     @Test

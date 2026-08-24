@@ -1,9 +1,8 @@
-package com.bstudio.ro_toolbox.service;
+package com.bstudio.ro_toolbox.service.lootModels;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -43,7 +42,6 @@ public class LootManagerService {
     // listeners notified when configuration changes (e.g., selected game base changed)
     private final java.util.List<Runnable> changeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
-    @Autowired
     public LootManagerService() {
         this.logger = null;
         ensureRuntimeDirs();

@@ -1,7 +1,7 @@
-package com.bstudio.ro_toolbox.gui;
+package com.bstudio.ro_toolbox.service.lootModels;
 
 import com.bstudio.ro_toolbox.RoToolboxApplication;
-import com.bstudio.ro_toolbox.service.LootManagerService;
+import com.bstudio.ro_toolbox.utils.UiTheme;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -19,12 +19,12 @@ import java.util.List;
 import java.util.Set;
 
 @Component
-public class MainGui {
+public class LootModelsGui {
     private final LootManagerService lootManagerService;
     private final RoToolboxApplication app;
 
     @Autowired
-    public MainGui(LootManagerService lootManagerService, RoToolboxApplication app) {
+    public LootModelsGui(LootManagerService lootManagerService, RoToolboxApplication app) {
         this.lootManagerService = lootManagerService;
         this.app = app;
     }
