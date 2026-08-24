@@ -27,9 +27,9 @@ public class MainGui {
 
     private static void createAndShowGui(LootManagerService svc, JFrame parent) {
 
-        JFrame frame = new JFrame("RO LootManager - Resources Puller");
+        JFrame frame = new JFrame("RO LootModels");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        frame.setSize(700, 290);
+        frame.setSize(700, 340);
         frame.getContentPane().setBackground(UiTheme.BG);
 
         JPanel panel = new JPanel(new BorderLayout(8, 8));
@@ -109,18 +109,38 @@ public class MainGui {
 
         JPanel center = new JPanel(new BorderLayout(8,8));
         center.setBackground(UiTheme.BG);
-        JButton pullBtn = new JButton("Pull resources");
+        JButton pullBtn = new JButton("Download");
         UiTheme.stylePrimaryButton(pullBtn);
+        pullBtn.setToolTipText("Download models from the online repository");
 
         JPanel resourcesPanel = new JPanel();
         resourcesPanel.setLayout(new BoxLayout(resourcesPanel, BoxLayout.Y_AXIS));
-        resourcesPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "Resources"));
+        resourcesPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "📥 Downloaded Models"));
         resourcesPanel.setBackground(UiTheme.PANEL);
         resourcesPanel.setForeground(UiTheme.TEXT);
         JButton browseBtn = new JButton("Browse");
         JButton clearResourcesBtn = new JButton("Clear");
         UiTheme.styleSecondaryButton(browseBtn);
         UiTheme.styleSecondaryButton(clearResourcesBtn);
+
+        DefaultListModel<String> profilesModel = new DefaultListModel<>();
+        JList<String> profilesList = new JList<>(profilesModel);
+        profilesList.setBackground(UiTheme.PANEL_ALT);
+        profilesList.setForeground(UiTheme.TEXT);
+        profilesList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane profilesScroll = new JScrollPane(profilesList);
+        profilesScroll.setBackground(UiTheme.PANEL_ALT);
+        profilesScroll.setPreferredSize(new Dimension(0, 100));
+
+        Runnable refreshProfilesList = () -> {
+            SwingUtilities.invokeLater(() -> {
+                profilesModel.clear();
+                List<String> profiles = collectDownloadedProfiles(svc);
+                for (String profile : profiles) {
+                    profilesModel.addElement(profile);
+                }
+            });
+        };
 
         JPanel pullRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         pullRow.setOpaque(false);
@@ -134,18 +154,43 @@ public class MainGui {
         resourcesPanel.add(pullRow);
         resourcesPanel.add(Box.createVerticalStrut(8));
         resourcesPanel.add(resourcesActions);
+        resourcesPanel.add(Box.createVerticalStrut(8));
+        resourcesPanel.add(profilesScroll);
+        
+        refreshProfilesList.run();
 
         JPanel gamePanel = new JPanel();
         gamePanel.setLayout(new BoxLayout(gamePanel, BoxLayout.Y_AXIS));
-        gamePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "Game Files"));
+        gamePanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "📦 Installed Models"));
         gamePanel.setBackground(UiTheme.PANEL);
         gamePanel.setForeground(UiTheme.TEXT);
         JButton browseItemBtn = new JButton("Browse");
         JButton clearItemBtn = new JButton("Clear");
-        JButton patchBtn = new JButton("Patch loot models");
+        JButton patchBtn = new JButton("Install");
         UiTheme.styleSecondaryButton(browseItemBtn);
         UiTheme.styleSecondaryButton(clearItemBtn);
         UiTheme.stylePrimaryButton(patchBtn);
+        patchBtn.setToolTipText("Install the downloaded models to your game files");
+
+        DefaultListModel<String> installedModel = new DefaultListModel<>();
+        JList<String> installedList = new JList<>(installedModel);
+        installedList.setBackground(UiTheme.PANEL_ALT);
+        installedList.setForeground(UiTheme.TEXT);
+        installedList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        JScrollPane installedScroll = new JScrollPane(installedList);
+        installedScroll.setBackground(UiTheme.PANEL_ALT);
+        installedScroll.setPreferredSize(new Dimension(0, 100));
+
+        Runnable refreshInstalledProfile = () -> {
+            SwingUtilities.invokeLater(() -> {
+                installedModel.clear();
+                String profile = resolveLoadedProfile(svc.getSelectedGameItemFolder());
+                if (profile != null && !profile.isBlank()) {
+                    installedModel.addElement(profile);
+                }
+            });
+        };
+
         JPanel patchRow = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
         patchRow.setOpaque(false);
         patchRow.add(patchBtn);
@@ -158,23 +203,14 @@ public class MainGui {
         gamePanel.add(patchRow);
         gamePanel.add(Box.createVerticalStrut(8));
         gamePanel.add(itemActions);
+        gamePanel.add(Box.createVerticalStrut(8));
+        gamePanel.add(installedScroll);
 
         JPanel topWrapper = new JPanel(new GridLayout(1, 2, 8, 8));
         topWrapper.add(resourcesPanel);
         topWrapper.add(gamePanel);
 
-        JLabel loadedProfileLabel = new JLabel("Loaded profile: none");
-        UiTheme.styleLabel(loadedProfileLabel);
-        loadedProfileLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        loadedProfileLabel.setBorder(BorderFactory.createEmptyBorder(10, 8, 4, 8));
-        loadedProfileLabel.setVisible(false);
-
-        JPanel profilePanel = new JPanel(new BorderLayout());
-        profilePanel.setOpaque(false);
-        profilePanel.add(topWrapper, BorderLayout.NORTH);
-        profilePanel.add(loadedProfileLabel, BorderLayout.SOUTH);
-
-        center.add(profilePanel, BorderLayout.NORTH);
+        center.add(topWrapper, BorderLayout.NORTH);
 
         panel.add(center, BorderLayout.CENTER);
 
@@ -197,13 +233,7 @@ public class MainGui {
             clearItemBtn.setEnabled(itemHasContent);
             patchBtn.setEnabled(itemConfigured);
             installWarning.setVisible(svc.getSelectedGameBase() == null);
-            String currentProfile = resolveLoadedProfile(svc.getSelectedGameItemFolder());
-            if (currentProfile != null && !currentProfile.isBlank()) {
-                loadedProfileLabel.setText("Loaded profile: " + currentProfile);
-                loadedProfileLabel.setVisible(true);
-            } else {
-                loadedProfileLabel.setVisible(false);
-            }
+            refreshInstalledProfile.run();
             // resources operations remain available
         });
         // initial state
@@ -251,6 +281,7 @@ public class MainGui {
                     SwingUtilities.invokeLater(() -> {
                         log.append("Resources cleared.\n");
                     updateEnabled.run();
+                    refreshProfilesList.run();
                     });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
@@ -290,18 +321,19 @@ public class MainGui {
         // Pull resources
         pullBtn.addActionListener((ActionEvent e) -> {
             pullBtn.setEnabled(false);
-            log.append("Starting pull from default repo\n");
+            log.append("⬇ Downloading loot profiles from repository...\n");
             new Thread(() -> {
                 try {
                     Path dest = svc.getResourcesDir();
                     Files.createDirectories(dest);
                     svc.downloadAndExtract(null, dest);
                     SwingUtilities.invokeLater(() -> {
-                        log.append("Done. Resources saved to: " + dest.toAbsolutePath() + "\n");
+                        log.append("✓ Download complete! Profiles saved to: " + dest.toAbsolutePath() + "\n");
+                        refreshProfilesList.run();
                     });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                    SwingUtilities.invokeLater(() -> log.append("Error: " + ex.getMessage() + "\n" + sw));
+                    SwingUtilities.invokeLater(() -> log.append("✗ Error: " + ex.getMessage() + "\n" + sw));
                 } finally {
                     SwingUtilities.invokeLater(() -> pullBtn.setEnabled(true));
                 }
@@ -334,6 +366,71 @@ public class MainGui {
                 }
             });
 
+            JTextArea detailsArea = new JTextArea();
+            detailsArea.setEditable(false);
+            detailsArea.setBackground(UiTheme.PANEL_ALT);
+            detailsArea.setForeground(UiTheme.TEXT);
+            detailsArea.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
+            detailsArea.setLineWrap(true);
+            detailsArea.setWrapStyleWord(true);
+            detailsArea.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+            JButton visitUrlBtn = new JButton("Visit");
+            visitUrlBtn.setPreferredSize(new Dimension(70, 24));
+            UiTheme.styleSecondaryButton(visitUrlBtn);
+            visitUrlBtn.setVisible(false);
+
+            Runnable updateDetails = () -> {
+                String selectedLabel = (String) combo.getSelectedItem();
+                if (selectedLabel == null || selectedLabel.trim().isEmpty()) {
+                    detailsArea.setText("");
+                    visitUrlBtn.setVisible(false);
+                    return;
+                }
+                PatchChoice selected = choices.stream().filter(c -> c.label.equals(selectedLabel)).findFirst().orElse(null);
+                if (selected == null) {
+                    detailsArea.setText("");
+                    visitUrlBtn.setVisible(false);
+                    return;
+                }
+                StringBuilder sb = new StringBuilder();
+                if (selected.author != null && !selected.author.isBlank()) {
+                    sb.append("Author: ").append(selected.author).append("\n");
+                }
+                if (selected.description != null && !selected.description.isBlank()) {
+                    sb.append("Description: ").append(selected.description).append("\n");
+                }
+                if (selected.createdAt != null && !selected.createdAt.isBlank()) {
+                    sb.append("Created: ").append(selected.createdAt);
+                }
+                visitUrlBtn.setVisible(selected.url != null && !selected.url.isBlank());
+                if (visitUrlBtn.isVisible()) {
+                    for (java.awt.event.ActionListener al : visitUrlBtn.getActionListeners()) {
+                        visitUrlBtn.removeActionListener(al);
+                    }
+                    visitUrlBtn.addActionListener(evt -> {
+                        try {
+                            if (Desktop.isDesktopSupported()) Desktop.getDesktop().browse(new java.net.URI(selected.url));
+                        } catch (Exception ex) {
+                            ex.printStackTrace();
+                        }
+                    });
+                }
+                detailsArea.setText(sb.toString().trim());
+            };
+
+            combo.addActionListener(e2 -> updateDetails.run());
+            updateDetails.run();
+
+            JPanel detailsPanel = new JPanel(new BorderLayout(8, 0));
+            detailsPanel.setBackground(UiTheme.PANEL_ALT);
+            detailsPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(UiTheme.BORDER), "Details"));
+            JScrollPane detailsScroll = new JScrollPane(detailsArea);
+            detailsScroll.setBackground(UiTheme.PANEL_ALT);
+            detailsPanel.add(detailsScroll, BorderLayout.CENTER);
+            detailsPanel.add(visitUrlBtn, BorderLayout.EAST);
+            visitUrlBtn.setBorder(BorderFactory.createEmptyBorder(8, 0, 8, 8));
+
             JPanel dialogPanel = new JPanel(new BorderLayout(8, 8));
             dialogPanel.setBackground(UiTheme.BG);
             JLabel info = new JLabel("Choose a loot profile. This adapts dropped item models and enlarges them for easier looting.");
@@ -341,6 +438,7 @@ public class MainGui {
             info.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
             dialogPanel.add(info, BorderLayout.NORTH);
             dialogPanel.add(combo, BorderLayout.CENTER);
+            dialogPanel.add(detailsPanel, BorderLayout.SOUTH);
 
             int choice = JOptionPane.showConfirmDialog(frame, dialogPanel, "Select loot profile", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
             if (choice != JOptionPane.OK_OPTION) return;
@@ -354,17 +452,18 @@ public class MainGui {
             new Thread(() -> {
                 try {
                     if (svc.getSelectedGameItemFolder() == null) { svc.guiMessage("No game destination selected. Set it in Services -> Settings."); return; }
+                    log.append("📦 Installing loot profile: " + selected.source.getFileName() + "...\n");
                     // Clear destination before copy to ensure a clean patch.
                     svc.clearSelectedItemFolder();
                     svc.copyDirectoryContents(selected.source, svc.getSelectedGameItemFolder());
                     svc.setCurrentLootProfile(selected.label);
                     SwingUtilities.invokeLater(() -> {
-                        log.append("Patch completed: " + selected.source.getFileName() + " copied.\n");
+                        log.append("✓ Installation complete! Profile: " + selected.source.getFileName() + "\n");
                         updateEnabled.run();
                     });
                 } catch (Exception ex) {
                     StringWriter sw = new StringWriter(); ex.printStackTrace(new PrintWriter(sw));
-                    SwingUtilities.invokeLater(() -> log.append("Error patching destination: " + ex.getMessage() + "\n" + sw));
+                    SwingUtilities.invokeLater(() -> log.append("✗ Error installing profile: " + ex.getMessage() + "\n" + sw));
                 } finally {
                     SwingUtilities.invokeLater(() -> {
                         patchBtn.setEnabled(true);
@@ -382,11 +481,19 @@ public class MainGui {
         private final String label;
         private final Path source;
         private final long versionValue;
+        private final String url;
+        private final String author;
+        private final String description;
+        private final String createdAt;
 
-        private PatchChoice(String label, Path source, long versionValue) {
+        private PatchChoice(String label, Path source, long versionValue, String url, String author, String description, String createdAt) {
             this.label = label;
             this.source = source;
             this.versionValue = versionValue;
+            this.url = url;
+            this.author = author;
+            this.description = description;
+            this.createdAt = createdAt;
         }
     }
 
@@ -409,11 +516,13 @@ public class MainGui {
                     if (name.startsWith(".")) continue;
                     Path manifest = p.resolve("manifest.json");
                     if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
-                    String desc = readManifestDescription(manifest);
                     String version = readManifestVersion(manifest);
-                    String label = (desc == null || desc.isBlank()) ? name : name + " - " + desc;
-                    if (seen.add(label)) {
-                        results.add(new PatchChoice(label, p, normalizeVersion(version)));
+                    String url = readManifestUrl(manifest);
+                    String author = readManifestAuthor(manifest);
+                    String description = readManifestDescription(manifest);
+                    String createdAt = readManifestCreatedAt(manifest);
+                    if (seen.add(name)) {
+                        results.add(new PatchChoice(name, p, normalizeVersion(version), url, author, description, createdAt));
                     }
                 }
             } catch (IOException ignored) {
@@ -481,6 +590,42 @@ public class MainGui {
         }
     }
 
+    private static String readManifestUrl(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"url\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String readManifestAuthor(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"author\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private static String readManifestCreatedAt(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"createdAt\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return null;
+            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            return value.trim();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     private static long normalizeVersion(String version) {
         if (version == null || version.isBlank()) return 0L;
         String cleaned = version.trim().replaceFirst("(?i)^v", "");
@@ -495,5 +640,26 @@ public class MainGui {
             multiplier /= 1000L;
         }
         return value;
+    }
+
+    private static List<String> collectDownloadedProfiles(LootManagerService svc) {
+        List<String> profiles = new ArrayList<>();
+        Path resourcesDir = svc.getResourcesDir();
+        if (resourcesDir == null || !Files.exists(resourcesDir) || !Files.isDirectory(resourcesDir)) {
+            return profiles;
+        }
+        try (var stream = Files.list(resourcesDir)) {
+            stream.filter(Files::isDirectory)
+                  .filter(p -> !p.getFileName().toString().startsWith("."))
+                  .forEach(p -> {
+                      Path manifest = p.resolve("manifest.json");
+                      if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
+                          profiles.add(p.getFileName().toString());
+                      }
+                  });
+        } catch (IOException ignored) {
+        }
+        profiles.sort(String::compareTo);
+        return profiles;
     }
 }
