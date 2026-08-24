@@ -100,14 +100,18 @@ public class UpdaterService {
             downloadFile(result.assetUrl(), downloadedJar);
 
             boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
-            String javaBin = Path.of(System.getProperty("java.home"), "bin", isWindows ? "javaw.exe" : "java").toString();
+
+            // Prefer the jpackage native launcher (RO_Toolbox.exe) when the app is running
+            // from a jpackage app-image (jar lives in <root>/app/RO_Toolbox.jar,
+            // launcher lives in <root>/RO_Toolbox.exe).
+            String restartCommand = resolveRestartCommand(currentJar, isWindows);
 
             if (isWindows) {
                 Path scriptPath = updateDir.resolve("update.bat");
                 String script = "@echo off\r\n"
                         + "timeout /t 3 /nobreak >NUL\r\n"
                         + "move /Y \"" + downloadedJar.toAbsolutePath() + "\" \"" + currentJar.toAbsolutePath() + "\"\r\n"
-                        + "start \"\" \"" + javaBin + "\" -jar \"" + currentJar.toAbsolutePath() + "\"\r\n"
+                        + restartCommand + "\r\n"
                         + "del \"%~f0\"\r\n";
                 Files.writeString(scriptPath, script);
                 new ProcessBuilder("cmd.exe", "/c", "start", "/min", "", scriptPath.toString()).start();
@@ -116,7 +120,7 @@ public class UpdaterService {
                 String script = "#!/bin/sh\n"
                         + "sleep 3\n"
                         + "mv -f \"" + downloadedJar.toAbsolutePath() + "\" \"" + currentJar.toAbsolutePath() + "\"\n"
-                        + "\"" + javaBin + "\" -jar \"" + currentJar.toAbsolutePath() + "\" &\n"
+                        + restartCommand + " &\n"
                         + "rm -- \"$0\"\n";
                 Files.writeString(scriptPath, script);
                 scriptPath.toFile().setExecutable(true);
@@ -128,6 +132,26 @@ public class UpdaterService {
             return new UpdateInstallResult(false, "Failed to download and install the update: " + ex.getMessage());
         }
     }
+
+    /** Returns the shell command used to relaunch the app after the update. */
+    private String resolveRestartCommand(Path currentJar, boolean isWindows) {
+        // jpackage layout: <root>/app/RO_Toolbox.jar  →  <root>/RO_Toolbox.exe
+        Path appDir = currentJar.getParent();
+        if (appDir != null) {
+            Path appRoot = appDir.getParent();
+            if (appRoot != null) {
+                String exeName = isWindows ? "RO_Toolbox.exe" : "RO_Toolbox";
+                Path nativeLauncher = appRoot.resolve(exeName);
+                if (Files.exists(nativeLauncher)) {
+                    return "start \"\" \"" + nativeLauncher.toAbsolutePath() + "\"";
+                }
+            }
+        }
+        // Fallback: plain java -jar (used when running the JAR directly)
+        String javaBin = Path.of(System.getProperty("java.home"), "bin", isWindows ? "javaw.exe" : "java").toString();
+        return "start \"\" \"" + javaBin + "\" -jar \"" + currentJar.toAbsolutePath() + "\"";
+    }
+
 
     private Path resolveCurrentJarPath() {
         try {

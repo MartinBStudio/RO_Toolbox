@@ -60,3 +60,95 @@ tasks.named('bootJar') {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// ---------------------------------------------------------------------------
+// jpackage — creates a self-contained distributable with a bundled JRE.
+// Users do NOT need Java installed to run the output.
+//
+// Usage:
+//   Windows:  .\gradlew packageWin      → build/distributions/RO_Toolbox-win.zip
+//   Linux:    ./gradlew packageLinux    → build/distributions/RO_Toolbox-linux.zip
+//   macOS:    ./gradlew packageMac      → build/distributions/RO_Toolbox-mac.zip
+//
+// Requires JDK 14+ (jpackage) to be on PATH — JDK 21 already satisfies this.
+// ---------------------------------------------------------------------------
+
+def jpackageExe = 'jpackage'
+
+def jpackageImageTask = tasks.register('jpackageImage') {
+    group = 'distribution'
+    description = 'Creates a self-contained app-image with bundled JRE via jpackage'
+    dependsOn bootJar
+
+    doLast {
+        def buildDir = layout.buildDirectory.get().asFile
+        def outputDir = new File(buildDir, 'jpackage')
+        def appImageDir = new File(outputDir, 'RO_Toolbox')
+
+        // JRE binaries inside the previous jpackage output are read-only on Windows,
+        // so use Java NIO with setWritable to force-delete them.
+        if (appImageDir.exists()) {
+            java.nio.file.Files.walk(appImageDir.toPath())
+                .sorted(java.util.Comparator.reverseOrder())
+                .each { p ->
+                    p.toFile().setWritable(true, false)
+                    java.nio.file.Files.deleteIfExists(p)
+                }
+        }
+        outputDir.mkdirs()
+
+        def command = [jpackageExe,
+            '--input',      new File(buildDir, 'libs').absolutePath,
+            '--name',       'RO_Toolbox',
+            '--main-jar',   'RO_Toolbox.jar',
+            '--type',       'app-image',
+            '--dest',       outputDir.absolutePath,
+            '--app-version', project.version.toString()]
+
+        def process = new ProcessBuilder(command).inheritIO().start()
+        def exitCode = process.waitFor()
+        if (exitCode != 0) {
+            throw new GradleException("jpackage failed with exit code $exitCode")
+        }
+    }
+}
+
+['Win', 'Linux', 'Mac'].each { platform ->
+    tasks.register("package${platform}", Zip) {
+        group = 'distribution'
+        description = "Packages the app-image as a zip for ${platform} distribution"
+        dependsOn jpackageImageTask
+
+        from "${layout.buildDirectory.get()}/jpackage"
+        archiveBaseName = 'RO_Toolbox'
+        archiveVersion = ''
+        archiveClassifier = platform.toLowerCase()
+        destinationDirectory = file("${layout.buildDirectory.get()}/distributions")
+    }
+}
+
+// ---------------------------------------------------------------------------
+// buildRelease — one-command release build.
+// Produces everything needed for a GitHub release in build/distributions/:
+//   RO_Toolbox-win.zip   → installer for users without Java (jpackage bundle)
+//   RO_Toolbox.jar       → standalone JAR downloaded by the auto-updater
+//
+// Usage: .\gradlew buildRelease
+// Then upload both files from build/distributions/ to the GitHub release.
+// ---------------------------------------------------------------------------
+tasks.register('buildRelease') {
+    group = 'distribution'
+    description = 'Builds the full release: jpackage zip + updater JAR → build/distributions/'
+    dependsOn 'packageWin'
+
+    doLast {
+        def distDir = layout.buildDirectory.dir('distributions').get().asFile
+        def jarSrc  = layout.buildDirectory.file('libs/RO_Toolbox.jar').get().asFile
+        def jarDest = new File(distDir, 'RO_Toolbox.jar')
+        distDir.mkdirs()
+        java.nio.file.Files.copy(jarSrc.toPath(), jarDest.toPath(),
+                java.nio.file.StandardCopyOption.REPLACE_EXISTING)
+        println "Release artifacts in ${distDir.absolutePath}:"
+        distDir.listFiles().each { println "  ${it.name} (${(it.length() / 1_048_576).round(1)} MB)" }
+    }
+}
