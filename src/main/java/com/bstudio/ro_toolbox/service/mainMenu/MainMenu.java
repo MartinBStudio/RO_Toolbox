@@ -4,6 +4,7 @@ import com.bstudio.ro_toolbox.RoToolboxApplication;
 import com.bstudio.ro_toolbox.utils.UiTheme;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootModelsGui;
+import com.bstudio.ro_toolbox.service.updater.UpdaterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.stereotype.Service;
@@ -22,6 +23,7 @@ import java.awt.Desktop;
 public class MainMenu {
     private final LootManagerService lootManagerService;
     private final LootModelsGui mainGui;
+    private final UpdaterService updaterService;
     private final RoToolboxApplication app;
 
     public static void main(String[] args) {
@@ -33,7 +35,8 @@ public class MainMenu {
 
     public void createAndShow() {
         JFrame frame = new JFrame("RO Toolbox");
-        
+        frame.setIconImage(UiTheme.TOOLBOX_ICON);
+
         // Use array to allow forward reference
         final Runnable[] updateProfileDisplayHolder = new Runnable[1];
         
@@ -213,9 +216,90 @@ public class MainMenu {
         updateProfileDisplay.run();
         lootManagerService.addChangeListener(updateProfileDisplay);
 
-        JLabel footer = new JLabel("Created by BStudio • v" + app.getVersion(), SwingConstants.CENTER);
-        UiTheme.styleFooter(footer);
+        JPanel footer = new JPanel(new BorderLayout(8, 0));
+        footer.setOpaque(false);
         footer.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
+
+        JLabel footerText = new JLabel("Created by BStudio • v" + app.getVersion(), SwingConstants.CENTER);
+        UiTheme.styleFooter(footerText);
+        footer.add(footerText, BorderLayout.CENTER);
+
+        final UpdaterService.UpdateCheckResult[] latestUpdateCheck = {null};
+        JButton checkForUpdatesBtn = new JButton("Current version");
+        checkForUpdatesBtn.setToolTipText("Checking for updates...");
+        UiTheme.styleSecondaryButton(checkForUpdatesBtn);
+        checkForUpdatesBtn.setPreferredSize(new Dimension(130, 24));
+        checkForUpdatesBtn.setEnabled(false);
+
+        Runnable updateFooterButtonState = () -> {
+            UpdaterService.UpdateCheckResult result = latestUpdateCheck[0];
+            if (result == null) {
+                checkForUpdatesBtn.setText("Checking...");
+                checkForUpdatesBtn.setEnabled(false);
+                checkForUpdatesBtn.setToolTipText("Checking for updates...");
+                return;
+            }
+
+            if (result.success() && result.updateAvailable()) {
+                checkForUpdatesBtn.setText("Update available");
+                checkForUpdatesBtn.setEnabled(true);
+                checkForUpdatesBtn.setToolTipText("Update to " + result.releaseVersion() + ": " + result.releaseUrl());
+            } else if (result.success()) {
+                checkForUpdatesBtn.setText("Current version");
+                checkForUpdatesBtn.setEnabled(false);
+                checkForUpdatesBtn.setToolTipText("Current version " + result.currentVersion() + " matches the checked release " + result.releaseVersion() + ".");
+            } else {
+                checkForUpdatesBtn.setText("Check updates");
+                checkForUpdatesBtn.setEnabled(true);
+                checkForUpdatesBtn.setToolTipText(result.message());
+            }
+        };
+
+        checkForUpdatesBtn.addActionListener((ActionEvent e) -> {
+            UpdaterService.UpdateCheckResult result = updaterService.checkForUpdate();
+            latestUpdateCheck[0] = result;
+            updateFooterButtonState.run();
+
+            if (result.success() && result.updateAvailable()) {
+                UpdaterService.UpdateInstallResult installResult = updaterService.installUpdate(result);
+                if (installResult.success()) {
+                    JOptionPane.showMessageDialog(frame,
+                            installResult.message(),
+                            "Updating",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    System.exit(0);
+                }
+                JOptionPane.showMessageDialog(frame,
+                        installResult.message(),
+                        "Update failed",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
+            if (result.success()) {
+                JOptionPane.showMessageDialog(frame,
+                        "Current version: " + result.currentVersion() + "\nRelease tag: " + result.releaseVersion() + "\n\n" + result.message(),
+                        "Current version",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+
+            JOptionPane.showMessageDialog(frame,
+                    result.message() + "\n\nCurrent version: " + result.currentVersion() + "\nRelease tag: " + result.releaseVersion() + "\nRelease URL: " + result.releaseUrl(),
+                    "Update check failed",
+                    JOptionPane.WARNING_MESSAGE);
+        });
+
+        footer.add(checkForUpdatesBtn, BorderLayout.EAST);
+
+        Thread autoUpdateCheck = new Thread(() -> {
+            UpdaterService.UpdateCheckResult result = updaterService.checkForUpdate();
+            latestUpdateCheck[0] = result;
+            SwingUtilities.invokeLater(updateFooterButtonState);
+        }, "ro-toolbox-update-check");
+        autoUpdateCheck.setDaemon(true);
+        autoUpdateCheck.start();
+
         frame.add(footer, BorderLayout.SOUTH);
 
         // listen for changes so we can enable the loot button when user saves settings
@@ -233,14 +317,24 @@ public class MainMenu {
             try {
                 Path current = lootManagerService.getSelectedGameBase();
                 String currentText = (current == null) ? "Not set" : current.toAbsolutePath().toString();
+                Object[] options = current == null
+                        ? new Object[]{"Change folder", "Close"}
+                        : new Object[]{"Change folder", "Clear folder", "Close"};
+
                 int opt = JOptionPane.showOptionDialog(frame,
                         "Current installation folder:\n" + currentText + "\n\nSelect the game install base folder to enable Loot Manager.",
                         "Settings",
                         JOptionPane.DEFAULT_OPTION,
                         JOptionPane.WARNING_MESSAGE,
                         null,
-                        new Object[]{"Change folder", "Close"},
+                        options,
                         "Change folder");
+
+                if (opt == 1 && current != null) {
+                    lootManagerService.clearSelectedGame();
+                    JOptionPane.showMessageDialog(frame, "Cleared the selected game installation folder.");
+                    return;
+                }
                 if (opt != 0) return; // user chose Close or closed dialog
 
                 JFileChooser chooser = new JFileChooser();
@@ -263,10 +357,10 @@ public class MainMenu {
                     boolean valid = Files.exists(itemFolder) && Files.isDirectory(itemFolder);
                     if (!valid) {
                         int confirm = JOptionPane.showConfirmDialog(frame,
-                                "The chosen base folder does not contain '3ddata/item'. Save base anyway?",
-                                "Validate installation folder",
-                                JOptionPane.YES_NO_OPTION,
-                                JOptionPane.WARNING_MESSAGE);
+                               "The chosen base folder does not contain '3ddata/item'. Save base anyway?",
+                               "Validate installation folder",
+                               JOptionPane.YES_NO_OPTION,
+                               JOptionPane.WARNING_MESSAGE);
                         if (confirm != JOptionPane.YES_OPTION) return;
                     }
 

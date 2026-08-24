@@ -104,15 +104,42 @@ public class LootManagerService {
     /** Save the installation base folder (no 3ddata/item suffix). */
     public void saveSelectedGame(Path base) {
         try {
+            if (base == null) {
+                clearSelectedGame();
+                return;
+            }
+
             Files.createDirectories(CONFIG_DIR);
             Properties prop = new Properties();
-            try (InputStream in = Files.newInputStream(CONFIG_FILE)) { prop.load(in); }
+            if (Files.exists(CONFIG_FILE)) {
+                try (InputStream in = Files.newInputStream(CONFIG_FILE)) { prop.load(in); }
+            }
             prop.setProperty("selectedGame", base.toAbsolutePath().toString());
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
-            selectedGameBase = base;
-            log("Selected game base saved: " + base.toAbsolutePath());
+            selectedGameBase = base.toAbsolutePath().normalize();
+            log("Selected game base saved: " + selectedGameBase);
             notifyChangeListeners();
-        } catch (Exception ignored) {
+        } catch (Exception ex) {
+            log("Failed to save selected game base: " + ex.getMessage());
+            throw new IllegalStateException("Unable to save selected game base to config.", ex);
+        }
+    }
+
+    public void clearSelectedGame() {
+        try {
+            Files.createDirectories(CONFIG_DIR);
+            Properties prop = new Properties();
+            if (Files.exists(CONFIG_FILE)) {
+                try (InputStream in = Files.newInputStream(CONFIG_FILE)) { prop.load(in); }
+            }
+            prop.remove("selectedGame");
+            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
+            selectedGameBase = null;
+            log("Selected game base cleared.");
+            notifyChangeListeners();
+        } catch (Exception ex) {
+            log("Failed to clear selected game base: " + ex.getMessage());
+            throw new IllegalStateException("Unable to clear selected game base from config.", ex);
         }
     }
 
