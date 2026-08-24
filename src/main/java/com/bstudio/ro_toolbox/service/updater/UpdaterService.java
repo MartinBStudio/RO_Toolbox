@@ -20,15 +20,15 @@ import java.util.regex.Pattern;
 public class UpdaterService {
     private static final String GITHUB_OWNER = "MartinBStudio";
     private static final String GITHUB_REPO = "RO_Toolbox";
-    private static final String RELEASE_TAG = "MVP003";
-    private static final String RELEASE_URL = "https://github.com/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases/tag/" + RELEASE_TAG;
+    private static final String RELEASES_URL = "https://github.com/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases";
 
     private final RoToolboxApplication app;
 
     public UpdateCheckResult checkForUpdate() {
         String currentVersion = app.getVersion();
+        String fallbackUrl = RELEASES_URL;
         try {
-            String apiUrl = "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases/tags/" + RELEASE_TAG;
+            String apiUrl = "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases/latest";
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(apiUrl))
@@ -38,7 +38,7 @@ public class UpdaterService {
 
             HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
-                return new UpdateCheckResult(currentVersion, RELEASE_TAG, parseVersionNumber(currentVersion), parseVersionNumber(RELEASE_TAG), false, RELEASE_URL,
+                return new UpdateCheckResult(currentVersion, "unknown", parseVersionNumber(currentVersion), 0, false, fallbackUrl,
                         "GitHub release check failed with status " + response.statusCode() + ".", false, null);
             }
 
@@ -47,8 +47,8 @@ public class UpdaterService {
             Matcher urlMatcher = Pattern.compile("\"html_url\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
             Matcher assetsMatcher = Pattern.compile("\"browser_download_url\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
 
-            String releaseTag = tagMatcher.find() ? tagMatcher.group(1) : RELEASE_TAG;
-            String releaseUrl = urlMatcher.find() ? urlMatcher.group(1) : RELEASE_URL;
+            String releaseTag = tagMatcher.find() ? tagMatcher.group(1) : "unknown";
+            String releaseUrl = urlMatcher.find() ? urlMatcher.group(1) : fallbackUrl;
             String assetUrl = null;
             while (assetsMatcher.find()) {
                 String candidate = assetsMatcher.group(1);
@@ -73,7 +73,7 @@ public class UpdaterService {
 
             return new UpdateCheckResult(currentVersion, releaseTag, currentNumeric, releaseNumeric, updateAvailable, releaseUrl, message, true, assetUrl);
         } catch (Exception ex) {
-            return new UpdateCheckResult(currentVersion, RELEASE_TAG, parseVersionNumber(currentVersion), parseVersionNumber(RELEASE_TAG), false, RELEASE_URL,
+            return new UpdateCheckResult(currentVersion, "unknown", parseVersionNumber(currentVersion), 0, false, fallbackUrl,
                     "Unable to check GitHub release: " + ex.getMessage(), false, null);
         }
     }
