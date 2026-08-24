@@ -4,25 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [0.0.3] - 2026-08-24
 
-### Changed
-- **Architecture**: Eliminated `AppInfo` class, merged version management into `RoToolboxApplication`
-- **Version Management**: Simplified to single source of truth in `application.properties` with `app.version` property
-- **Build Configuration**: Gradle now reads version from `application.properties` for JAR naming
-- **Spring Configuration**: Removed XML-based configuration file (`application-context.xml`)
-  - Converted to annotation-based `@Configuration` with `@ComponentScan` and `@PropertySource`
-  - Uses `AnnotationConfigApplicationContext` for lightweight context initialization
-- **Dependency Injection**: All components use constructor injection with `@Autowired`
+### Added
+- **Main Window Dashboard**: New dashboard showing all available model types with installed profiles
+- **Models Replacer Table**: Clean table view displaying:
+  - Load button for each model type
+  - Currently installed profile information (name, author, description)
+  - Direct link to visit profile author's page
+- **Profile Information Display**: Automatically reads and displays installed profile details from game folder
 
-### Removed
-- Deleted `AppInfo.java` class
-- Removed `application-context.xml` XML configuration file
-- Removed Spring Boot's `@SpringBootApplication` in favor of pure Spring `@Configuration`
+### Changed
+- **Main Window Layout**: Redesigned to show installed models at a glance without opening Loot Manager
+- **Application Startup**: Optimized startup process for better performance
+- **Dependency Management**: Streamlined how components are initialized
 
 ### Improved
-- **Code Cleanliness**: Reduced boilerplate by consolidating version management
-- **Build Process**: Single source of truth eliminates version sync issues
-- **Application Startup**: Pure Spring context is more lightweight and suitable for Swing desktop app
-- **Test Configuration**: Updated to use `@SpringJUnitConfig` instead of `@SpringBootTest`
+- **User Experience**: Quickly see what models are installed and who created them
+- **Application Performance**: Lighter startup and faster component loading
+- **Future Scalability**: New table-based layout makes it easy to add more model types (weapons, NPCs, etc.) later
 
 ## [0.0.2] - 2026-08-24
 
