@@ -1,7 +1,9 @@
-package com.bstudio.ro_toolbox;
+package com.bstudio.ro_toolbox.service;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -12,12 +14,11 @@ import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
+@Service
 public class LootManagerService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
     private static final Path APP_DATA_ROOT = resolveAppDataRoot();
     private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("lootManager");
-    private static volatile Path selectedGameBase = null; // base installation folder (no suffix)
-    private static volatile String currentLootProfile = null;
     private static final Path GAME_SUFFIX = Paths.get("3ddata", "item");
 
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
@@ -33,16 +34,18 @@ public class LootManagerService {
 
     private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
 
+    private volatile Path selectedGameBase = null; // base installation folder (no suffix)
+    private volatile String currentLootProfile = null;
+
     // logger can be updated by the GUI to forward messages
     private Consumer<String> logger;
-
-    private static volatile LootManagerService INSTANCE;
 
     // listeners notified when configuration changes (e.g., selected game base changed)
     private final java.util.List<Runnable> changeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
 
-    private LootManagerService(Consumer<String> logger) {
-        this.logger = logger;
+    @Autowired
+    public LootManagerService() {
+        this.logger = null;
         ensureRuntimeDirs();
         loadConfig();
     }
@@ -55,19 +58,6 @@ public class LootManagerService {
         } catch (IOException ignored) {
         }
     }
-
-    public static LootManagerService getInstance(Consumer<String> logger) {
-        if (INSTANCE == null) {
-            synchronized (LootManagerService.class) {
-                if (INSTANCE == null) INSTANCE = new LootManagerService(logger);
-            }
-        } else {
-            if (logger != null) INSTANCE.setLogger(logger);
-        }
-        return INSTANCE;
-    }
-
-    public static LootManagerService getInstance() { return getInstance(null); }
 
     public void setLogger(Consumer<String> logger) { this.logger = logger; }
 

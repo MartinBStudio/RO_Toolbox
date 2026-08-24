@@ -1,4 +1,9 @@
-package com.bstudio.ro_toolbox;
+package com.bstudio.ro_toolbox.gui;
+
+import com.bstudio.ro_toolbox.RoToolboxApplication;
+import com.bstudio.ro_toolbox.service.LootManagerService;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import javax.swing.*;
 import java.awt.*;
@@ -9,12 +14,24 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class ServicesLauncher {
-    public static void main(String[] args) {
-        UiTheme.install();
-        SwingUtilities.invokeLater(ServicesLauncher::createAndShow);
+    private final LootManagerService lootManagerService;
+    private final MainGui mainGui;
+    private final RoToolboxApplication app;
+
+    public ServicesLauncher(ApplicationContext context) {
+        this.lootManagerService = context.getBean(LootManagerService.class);
+        this.mainGui = context.getBean(MainGui.class);
+        this.app = context.getBean(RoToolboxApplication.class);
     }
 
-    private static void createAndShow() {
+    public static void main(String[] args) {
+        UiTheme.install();
+        ApplicationContext context = new ClassPathXmlApplicationContext("application-context.xml");
+        ServicesLauncher launcher = new ServicesLauncher(context);
+        SwingUtilities.invokeLater(launcher::createAndShow);
+    }
+
+    private void createAndShow() {
         JFrame frame = new JFrame("RO Toolbox - Services");
         frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         frame.addWindowListener(new java.awt.event.WindowAdapter() {
@@ -48,13 +65,10 @@ public class ServicesLauncher {
         buttons.setBackground(UiTheme.BG);
         buttons.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        // instantiate singleton service
-        LootManagerService svc = LootManagerService.getInstance();
-
         JLabel warningLabel = new JLabel("Select a game installation folder in Settings before using Loot Manager.");
         warningLabel.setForeground(new Color(255, 196, 96));
         warningLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        warningLabel.setVisible(svc.getSelectedGameBase() == null);
+        warningLabel.setVisible(lootManagerService.getSelectedGameBase() == null);
         warningLabel.setFont(new Font(Font.SANS_SERIF, Font.PLAIN, 11));
         warningLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
 
@@ -67,7 +81,7 @@ public class ServicesLauncher {
             try {
                 // hide launcher and open detailed GUI with shared service
                 frame.setVisible(false);
-                MainGui.open(svc, frame);
+                mainGui.open(frame);
             } catch (Throwable t) {
                 t.printStackTrace();
                 JOptionPane.showMessageDialog(frame, "Failed to open Loot Manager: " + t.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
@@ -76,8 +90,8 @@ public class ServicesLauncher {
         });
 
         // disable if no installation base selected
-        lootBtn.setEnabled(svc.getSelectedGameBase() != null);
-        if (svc.getSelectedGameBase() == null) {
+        lootBtn.setEnabled(lootManagerService.getSelectedGameBase() != null);
+        if (lootManagerService.getSelectedGameBase() == null) {
             lootBtn.setToolTipText("Select a game installation folder in Settings before using Loot Manager.");
         }
 
@@ -86,14 +100,14 @@ public class ServicesLauncher {
 
         frame.add(buttons, BorderLayout.CENTER);
 
-        JLabel footer = new JLabel("Created by BStudio • v" + AppInfo.getVersion(), SwingConstants.CENTER);
+        JLabel footer = new JLabel("Created by BStudio • v" + app.getVersion(), SwingConstants.CENTER);
         UiTheme.styleFooter(footer);
         footer.setBorder(BorderFactory.createEmptyBorder(4, 8, 6, 8));
         frame.add(footer, BorderLayout.SOUTH);
 
         // listen for changes so we can enable the loot button when user saves settings
-        svc.addChangeListener(() -> SwingUtilities.invokeLater(() -> {
-            boolean enabled = svc.getSelectedGameBase() != null;
+        lootManagerService.addChangeListener(() -> SwingUtilities.invokeLater(() -> {
+            boolean enabled = lootManagerService.getSelectedGameBase() != null;
             lootBtn.setEnabled(enabled);
             warningLabel.setVisible(!enabled);
             lootBtn.setToolTipText(enabled
@@ -104,7 +118,7 @@ public class ServicesLauncher {
         // Settings action: show current folder and allow change with validation
         settings.addActionListener((ActionEvent e) -> {
             try {
-                Path current = svc.getSelectedGameBase();
+                Path current = lootManagerService.getSelectedGameBase();
                 String currentText = (current == null) ? "Not set" : current.toAbsolutePath().toString();
                 int opt = JOptionPane.showOptionDialog(frame,
                         "Current installation folder:\n" + currentText + "\n\nSelect the game install base folder to enable Loot Manager.",
@@ -144,7 +158,7 @@ public class ServicesLauncher {
                     }
 
                     Files.createDirectories(base);
-                    svc.saveSelectedGame(base);
+                    lootManagerService.saveSelectedGame(base);
                     JOptionPane.showMessageDialog(frame, "Saved installation folder (base): " + base.toAbsolutePath());
                 }
             } catch (Exception ex) {

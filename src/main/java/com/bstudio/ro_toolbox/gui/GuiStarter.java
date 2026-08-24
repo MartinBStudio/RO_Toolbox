@@ -1,11 +1,10 @@
-package com.bstudio.ro_toolbox;
+package com.bstudio.ro_toolbox.gui;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import javax.swing.SwingUtilities;
-import java.awt.GraphicsEnvironment;
 
 @Component
 public class GuiStarter {
