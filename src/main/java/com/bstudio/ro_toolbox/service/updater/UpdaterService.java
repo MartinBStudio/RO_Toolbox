@@ -92,23 +92,38 @@ public class UpdaterService {
         }
 
         try {
-            Path updateDir = currentJar.getParent() != null ? currentJar.getParent().resolve(".ro_toolbox_update") : Path.of(System.getProperty("user.home"), ".ro_toolbox_update");
+            Path updateDir = currentJar.getParent() != null
+                    ? currentJar.getParent().resolve(".ro_toolbox_update")
+                    : Path.of(System.getProperty("user.home"), ".ro_toolbox_update");
             Files.createDirectories(updateDir);
-            Path downloadedJar = updateDir.resolve("RO_Toolbox-update-" + System.currentTimeMillis() + ".jar");
+            Path downloadedJar = updateDir.resolve("RO_Toolbox-update.jar");
             downloadFile(result.assetUrl(), downloadedJar);
 
-            String javaBin = Path.of(System.getProperty("java.home"), "bin", System.getProperty("os.name").toLowerCase().contains("win") ? "java.exe" : "java").toString();
-            ProcessBuilder pb = new ProcessBuilder(
-                    javaBin,
-                    "-cp",
-                    System.getProperty("java.class.path"),
-                    "com.bstudio.ro_toolbox.service.updater.UpdaterBootstrap",
-                    currentJar.toString(),
-                    downloadedJar.toString()
-            );
-            pb.redirectErrorStream(true);
-            pb.start();
-            return new UpdateInstallResult(true, "Update started. The application will restart automatically.");
+            boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+            String javaBin = Path.of(System.getProperty("java.home"), "bin", isWindows ? "javaw.exe" : "java").toString();
+
+            if (isWindows) {
+                Path scriptPath = updateDir.resolve("update.bat");
+                String script = "@echo off\r\n"
+                        + "timeout /t 3 /nobreak >NUL\r\n"
+                        + "move /Y \"" + downloadedJar.toAbsolutePath() + "\" \"" + currentJar.toAbsolutePath() + "\"\r\n"
+                        + "start \"\" \"" + javaBin + "\" -jar \"" + currentJar.toAbsolutePath() + "\"\r\n"
+                        + "del \"%~f0\"\r\n";
+                Files.writeString(scriptPath, script);
+                new ProcessBuilder("cmd.exe", "/c", "start", "/min", "", scriptPath.toString()).start();
+            } else {
+                Path scriptPath = updateDir.resolve("update.sh");
+                String script = "#!/bin/sh\n"
+                        + "sleep 3\n"
+                        + "mv -f \"" + downloadedJar.toAbsolutePath() + "\" \"" + currentJar.toAbsolutePath() + "\"\n"
+                        + "\"" + javaBin + "\" -jar \"" + currentJar.toAbsolutePath() + "\" &\n"
+                        + "rm -- \"$0\"\n";
+                Files.writeString(scriptPath, script);
+                scriptPath.toFile().setExecutable(true);
+                new ProcessBuilder("sh", scriptPath.toString()).start();
+            }
+
+            return new UpdateInstallResult(true, "Update downloaded. The app will restart automatically.");
         } catch (Exception ex) {
             return new UpdateInstallResult(false, "Failed to download and install the update: " + ex.getMessage());
         }
@@ -130,21 +145,38 @@ public class UpdaterService {
         }
     }
 
-    private void downloadFile(String url, Path target) throws IOException, InterruptedException {
-        HttpClient client = HttpClient.newHttpClient();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .header("User-Agent", "RO-Toolbox-Updater")
-                .GET()
-                .build();
+    private void downloadFile(String url, Path target) throws IOException {
+        String currentUrl = url;
+        int maxRedirects = 10;
+        while (maxRedirects-- > 0) {
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(currentUrl).openConnection();
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 RO-Toolbox-Updater");
+            conn.setRequestProperty("Accept", "application/octet-stream");
+            conn.setInstanceFollowRedirects(false);
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(120000);
+            conn.connect();
 
-        HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-        if (response.statusCode() != 200) {
-            throw new IOException("Download failed with status " + response.statusCode() + ".");
+            int status = conn.getResponseCode();
+            if (status >= 200 && status < 300) {
+                try (java.io.InputStream in = conn.getInputStream()) {
+                    Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
+                }
+                conn.disconnect();
+                return;
+            } else if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {
+                String location = conn.getHeaderField("Location");
+                conn.disconnect();
+                if (location == null || location.isBlank()) {
+                    throw new IOException("Redirect with no Location header from: " + currentUrl);
+                }
+                currentUrl = location;
+            } else {
+                conn.disconnect();
+                throw new IOException("Download failed with status " + status + " from: " + currentUrl);
+            }
         }
-        try (var input = new java.io.ByteArrayInputStream(response.body())) {
-            Files.copy(input, target, StandardCopyOption.REPLACE_EXISTING);
-        }
+        throw new IOException("Too many redirects while downloading update.");
     }
 
     public static int parseVersionNumber(String version) {

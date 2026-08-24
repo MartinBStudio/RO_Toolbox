@@ -48,12 +48,12 @@ dependencies {
 
 tasks.named('jar') {
     archiveBaseName = 'RO_Toolbox'
-    archiveVersion = project.version.toString()
+    archiveVersion = ''
 }
 
 tasks.named('bootJar') {
     archiveBaseName = 'RO_Toolbox'
-    archiveVersion = project.version.toString()
+    archiveVersion = ''
     mainClass = 'com.bstudio.ro_toolbox.RoToolboxApplication'
 }
 
