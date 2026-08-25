@@ -53,31 +53,6 @@ A desktop application for managing Rose Online game modifications and custom mod
 - Click on profile info to visit the author's page
 - Download new profiles to try different configurations
 
-## System Requirements
-
-- **Java**: Version 21 or higher
-- **OS**: Windows, macOS, Linux
-- **RAM**: 256 MB minimum
-- **Disk Space**: 50 MB for installation, additional space for profiles
-
-## File Structure
-
-```
-RO_Toolbox/
-├── src/
-│   ├── main/
-│   │   ├── java/
-│   │   │   └── com/bstudio/ro_toolbox/
-│   │   │       ├── RoToolboxApplication.java       # Main entry point
-│   │   │       ├── service/
-│   │   │       │   ├── mainMenu/                   # Main GUI window
-│   │   │       │   └── lootModels/                 # Loot Manager service
-│   │   │       └── utils/                          # Utilities (UI theme, etc.)
-│   │   └── resources/
-│   │       └── application.properties              # Configuration
-│   └── test/
-├── build.gradle                                     # Build configuration
-└── CHANGELOG.md                                     # Version history
 ```
 
 ## Configuration
@@ -104,9 +79,6 @@ Application settings are stored in `~/.ro_toolbox/config.properties`:
 - Verify the repository server is online
 - Check the Log viewer for connection errors
 
-## Version History
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history and changes.
 
 ## Support
 
