@@ -3,7 +3,8 @@ type AppHeaderProps = {
   onCheckUpdates?: () => void;
   loading?: boolean;
   updateAvailable?: boolean;
-  currentVersion?: string;
+  backendVersion?: string;
+  appVersion?: string;
 };
 
 export function AppHeader({
@@ -11,14 +12,15 @@ export function AppHeader({
   onCheckUpdates,
   loading = false,
   updateAvailable = false,
-  currentVersion
+  backendVersion,
+  appVersion
 }: AppHeaderProps) {
   return (
     <header className="card">
       <div className="headerRow">
         <h1>RO Toolbox</h1>
         <div className="headerActions">
-          <span className="versionMeta">v{currentVersion ?? "..."}</span>
+          <span className="versionMeta">App v{appVersion ?? "..."} | Backend v{backendVersion ?? "..."}</span>
           <button
             type="button"
             className={`settingsCog updateCog${updateAvailable ? " updateAvailable" : ""}`}

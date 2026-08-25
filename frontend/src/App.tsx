@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { getVersion as getAppVersion } from "@tauri-apps/api/app";
+import { LogicalSize, getCurrentWindow } from "@tauri-apps/api/window";
 import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -46,6 +48,7 @@ function toErrorMessage(err: unknown, fallback: string) {
 
 function App() {
   const [status, setStatus] = useState<AppStatus | null>(null);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [backendReady, setBackendReady] = useState(false);
   const [message, setMessage] = useState("");
@@ -76,6 +79,20 @@ function App() {
   }
 
   useEffect(() => {
+    getAppVersion()
+      .then((version) => setAppVersion(version))
+      .catch(() => setAppVersion(null));
+  }, []);
+
+  useEffect(() => {
+    if (!message) {
+      return;
+    }
+    const timer = window.setTimeout(() => setMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
+  useEffect(() => {
     let cancelled = false;
     async function waitForBackend() {
       for (let i = 0; i < 30; i++) {
@@ -96,6 +113,46 @@ function App() {
     waitForBackend();
     return () => { cancelled = true; };
   }, []);
+
+  useEffect(() => {
+    if (!backendReady) {
+      return;
+    }
+
+    const appWindow = getCurrentWindow();
+    let frameId = 0;
+    const minHeight = 420;
+    const maxHeight = 920;
+    const verticalPadding = 26;
+
+    const syncHeight = async () => {
+      const contentHeight = Math.ceil(document.documentElement.scrollHeight + verticalPadding);
+      const targetHeight = Math.max(minHeight, Math.min(maxHeight, contentHeight));
+      const currentSize = await appWindow.innerSize();
+      if (Math.abs(currentSize.height - targetHeight) > 2) {
+        await appWindow.setSize(new LogicalSize(currentSize.width, targetHeight));
+      }
+    };
+
+    const observer = new ResizeObserver(() => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+      frameId = window.requestAnimationFrame(() => {
+        syncHeight().catch(() => undefined);
+      });
+    });
+
+    observer.observe(document.documentElement);
+    syncHeight().catch(() => undefined);
+
+    return () => {
+      observer.disconnect();
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
+  }, [backendReady]);
 
   useEffect(() => {
     if (availableProfiles.length === 0) {
@@ -261,7 +318,8 @@ function App() {
         onCheckUpdates={onCheckUpdates}
         loading={loading}
         updateAvailable={Boolean(updateStatus?.available)}
-        currentVersion={status?.version}
+        appVersion={appVersion ?? undefined}
+        backendVersion={status?.version}
       />
 
       <ServiceContainer
@@ -321,7 +379,6 @@ function App() {
         onClose={() => setSettingsOpen(false)}
         onBrowseFolder={onBrowseFolder}
         onClearGameFolder={() => runAction(clearGameFolder, "Game folder cleared.")}
-        onOpenItemFolder={() => runAction(openItemFolder, "Opened item folder.")}
       />
       <LoadingOverlay visible={loading} />
       </>)}

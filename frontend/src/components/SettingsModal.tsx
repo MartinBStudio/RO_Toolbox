@@ -7,7 +7,6 @@ type SettingsModalProps = {
   onClose: () => void;
   onBrowseFolder: () => void;
   onClearGameFolder: () => void;
-  onOpenItemFolder: () => void;
 };
 
 export function SettingsModal({
@@ -16,8 +15,7 @@ export function SettingsModal({
   loading,
   onClose,
   onBrowseFolder,
-  onClearGameFolder,
-  onOpenItemFolder
+  onClearGameFolder
 }: SettingsModalProps) {
   if (!open) {
     return null;
@@ -34,15 +32,12 @@ export function SettingsModal({
         </div>
         <p>Game folder: {status?.selectedGameBase ?? "Not set"}</p>
         <p>Item folder: {status?.selectedGameItemFolder ?? "Not set"}</p>
-        <div className="row">
+        <div className="row modalActions">
           <button className="buttonStrong" disabled={loading} onClick={onBrowseFolder}>
-            📂 Browse folder
+            📂 Set folder
           </button>
-          <button className="buttonStrong buttonDanger" disabled={loading} onClick={onClearGameFolder}>
+          <button className="buttonSubtle" disabled={loading} onClick={onClearGameFolder}>
             🗑 Clear
-          </button>
-          <button disabled={loading} onClick={onOpenItemFolder}>
-            📁 Open item folder
           </button>
         </div>
       </section>
