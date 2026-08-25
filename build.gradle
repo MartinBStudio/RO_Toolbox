@@ -35,6 +35,9 @@ dependencies {
     implementation('org.springframework.boot:spring-boot-starter') {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }
+    implementation('org.springframework.boot:spring-boot-starter-web') {
+        exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
+    }
     implementation 'org.springframework.boot:spring-boot-starter-log4j2'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -59,6 +62,21 @@ tasks.named('bootJar') {
 
 tasks.named('test') {
     useJUnitPlatform()
+}
+
+tasks.register('frontendBuild', Exec) {
+    group = 'build'
+    description = 'Builds the React TypeScript frontend with Vite'
+    workingDir = file('frontend')
+    commandLine = System.getProperty('os.name').toLowerCase().contains('win')
+            ? ['cmd', '/c', 'npm run build']
+            : ['sh', '-c', 'npm run build']
+}
+
+tasks.named('processResources') {
+    from('frontend/dist') {
+        into 'static'
+    }
 }
 
 // ---------------------------------------------------------------------------

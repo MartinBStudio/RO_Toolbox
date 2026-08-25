@@ -9,7 +9,11 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -282,6 +286,96 @@ public class LootManagerService {
         return (Files.exists(pocSource) && Files.isDirectory(pocSource)) ? pocSource : null;
     }
 
+    public record AvailableProfile(
+            String id,
+            String name,
+            String author,
+            String description,
+            String url,
+            String createdAt,
+            long normalizedVersion,
+            Path source
+    ) {
+    }
+
+    public List<String> listDownloadedProfiles() {
+        List<String> profiles = new ArrayList<>();
+        if (RESOURCES_DIR == null || !Files.exists(RESOURCES_DIR) || !Files.isDirectory(RESOURCES_DIR)) {
+            return profiles;
+        }
+        try (var stream = Files.list(RESOURCES_DIR)) {
+            stream.filter(Files::isDirectory)
+                    .filter(p -> !p.getFileName().toString().startsWith("."))
+                    .forEach(p -> {
+                        Path manifest = p.resolve("manifest.json");
+                        if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
+                            profiles.add(p.getFileName().toString());
+                        }
+                    });
+        } catch (IOException ignored) {
+        }
+        profiles.sort(String::compareToIgnoreCase);
+        return profiles;
+    }
+
+    public List<AvailableProfile> listAvailableProfiles() {
+        List<AvailableProfile> results = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        List<Path> roots = new ArrayList<>();
+        roots.add(RESOURCES_DIR);
+        if (selectedGameBase != null) {
+            roots.add(selectedGameBase.resolveSibling(RESOURCES_DIR.getFileName()));
+        }
+
+        for (Path root : roots) {
+            if (root == null || !Files.exists(root) || !Files.isDirectory(root)) continue;
+            try (var stream = Files.walk(root)) {
+                for (Path p : (Iterable<Path>) stream::iterator) {
+                    if (!Files.isDirectory(p)) continue;
+                    String name = p.getFileName().toString();
+                    if (name.startsWith(".")) continue;
+                    Path manifest = p.resolve("manifest.json");
+                    if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
+                    if (seen.add(name)) {
+                        results.add(new AvailableProfile(
+                                name,
+                                readManifestName(manifest),
+                                readManifestAuthor(manifest),
+                                readManifestDescription(manifest),
+                                readManifestUrl(manifest),
+                                readManifestCreatedAt(manifest),
+                                normalizeVersion(readManifestVersion(manifest)),
+                                p
+                        ));
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+        }
+
+        results.sort((a, b) -> {
+            int versionDiff = Long.compare(b.normalizedVersion(), a.normalizedVersion());
+            if (versionDiff != 0) return versionDiff;
+            return a.id().compareToIgnoreCase(b.id());
+        });
+        return results;
+    }
+
+    public void installProfile(String profileId) throws IOException {
+        Path destination = getSelectedGameItemFolder();
+        if (destination == null) {
+            throw new IllegalStateException("No game installation folder is selected.");
+        }
+        AvailableProfile selected = listAvailableProfiles().stream()
+                .filter(profile -> profile.id().equals(profileId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + profileId));
+
+        clearSelectedItemFolder();
+        copyDirectoryContents(selected.source(), destination);
+        setCurrentLootProfile(selected.id());
+    }
+
     public static final class ProfileInfo {
         public final String name;
         public final String author;
@@ -376,6 +470,33 @@ public class LootManagerService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String readManifestVersion(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return "0.0.0";
+            return matcher.group(1).trim();
+        } catch (Exception e) {
+            return "0.0.0";
+        }
+    }
+
+    private long normalizeVersion(String version) {
+        if (version == null || version.isBlank()) return 0L;
+        String cleaned = version.trim().replaceFirst("(?i)^v", "");
+        String[] parts = cleaned.split("[.-]");
+        long value = 0L;
+        long multiplier = 1_000_000_000L;
+        for (String part : parts) {
+            if (part == null || part.isBlank()) continue;
+            String digits = part.replaceAll("[^0-9]", "");
+            if (digits.isEmpty()) continue;
+            value += Long.parseLong(digits) * multiplier;
+            multiplier /= 1000L;
+        }
+        return value;
     }
 
 }
