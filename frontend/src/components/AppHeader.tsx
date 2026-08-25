@@ -1,20 +1,30 @@
 type AppHeaderProps = {
   onOpenSettings: () => void;
-  onCheckUpdates?: () => void;
+  onUpdateAction?: () => void;
   loading?: boolean;
   updateAvailable?: boolean;
+  updateInstallable?: boolean;
+  updateVersion?: string;
   backendVersion?: string;
   appVersion?: string;
 };
 
 export function AppHeader({
   onOpenSettings,
-  onCheckUpdates,
+  onUpdateAction,
   loading = false,
   updateAvailable = false,
+  updateInstallable = false,
+  updateVersion,
   backendVersion,
   appVersion
 }: AppHeaderProps) {
+  const updateTitle = updateAvailable
+    ? (updateInstallable
+      ? `Install update${updateVersion ? ` v${updateVersion}` : ""}`
+      : "Update available. Open release page.")
+    : "You are up to date.";
+
   return (
     <header className="card">
       <div className="headerRow">
@@ -24,12 +34,12 @@ export function AppHeader({
           <button
             type="button"
             className={`settingsCog updateCog${updateAvailable ? " updateAvailable" : ""}`}
-            aria-label="Check for updates"
-            title={updateAvailable ? "Update available. Click to check again." : "Check for updates"}
-            disabled={loading || !onCheckUpdates}
-            onClick={onCheckUpdates}
+            aria-label={updateTitle}
+            title={updateTitle}
+            disabled={loading || !onUpdateAction}
+            onClick={onUpdateAction}
           >
-            ⟳
+            {updateAvailable ? "↓" : "⟳"}
           </button>
           <button
             type="button"

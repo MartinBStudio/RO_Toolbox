@@ -50,6 +50,7 @@ function App() {
   const [status, setStatus] = useState<AppStatus | null>(null);
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [updateChecking, setUpdateChecking] = useState(false);
   const [backendReady, setBackendReady] = useState(false);
   const [message, setMessage] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -155,6 +156,15 @@ function App() {
   }, [backendReady]);
 
   useEffect(() => {
+    if (!backendReady) {
+      return;
+    }
+    checkForUpdates().catch((err) => {
+      setMessage(toErrorMessage(err, "Update check failed."));
+    });
+  }, [backendReady]);
+
+  useEffect(() => {
     if (availableProfiles.length === 0) {
       if (selectedProfile) {
         setSelectedProfile("");
@@ -233,16 +243,17 @@ function App() {
     await runAction(clearInstalled, "Installed models cleared.");
   }
 
-  async function onCheckUpdates() {
-    setLoading(true);
+  async function checkForUpdates(showUpToDateMessage = false) {
+    setUpdateChecking(true);
     try {
       const update = await checkTauriUpdate();
       if (update?.available) {
         setUpdateStatus({ available: true, version: update.version, installable: true });
-        setMessage(`Update available: v${update.version}`);
       } else {
         setUpdateStatus({ available: false, installable: false });
-        setMessage("You are on the latest version.");
+        if (showUpToDateMessage) {
+          setMessage("You are up to date.");
+        }
       }
     } catch (err) {
       try {
@@ -254,10 +265,11 @@ function App() {
             releaseUrl: backendResult.releaseUrl,
             installable: false
           });
-          setMessage(`Update available on release channel: ${backendResult.releaseVersion}`);
         } else if (backendResult.success) {
           setUpdateStatus({ available: false, installable: false });
-          setMessage("You are on the latest version.");
+          if (showUpToDateMessage) {
+            setMessage("You are up to date.");
+          }
         } else {
           setMessage(backendResult.message || toErrorMessage(err, "Update check failed."));
         }
@@ -267,7 +279,21 @@ function App() {
         );
       }
     } finally {
-      setLoading(false);
+      setUpdateChecking(false);
+    }
+  }
+
+  async function onUpdateAction() {
+    if (!updateStatus?.available) {
+      await checkForUpdates(true);
+      return;
+    }
+    if (updateStatus.installable) {
+      await onInstallUpdate();
+      return;
+    }
+    if (updateStatus.releaseUrl) {
+      await onOpenReleaseUrl(updateStatus.releaseUrl);
     }
   }
 
@@ -282,7 +308,13 @@ function App() {
       setMessage("Downloading update...");
       await update.downloadAndInstall();
       setMessage("Update installed. Restarting...");
-      await relaunch();
+      await new Promise((resolve) => window.setTimeout(resolve, 1200));
+      try {
+        await relaunch();
+      } catch (restartErr) {
+        setMessage(`Update installed. Please reopen the app manually. ${toErrorMessage(restartErr, "")}`.trim());
+        await getCurrentWindow().close().catch(() => undefined);
+      }
     } catch (err) {
       setMessage(toErrorMessage(err, "Update failed."));
     } finally {
@@ -315,9 +347,11 @@ function App() {
       ) : (<>
       <AppHeader
         onOpenSettings={() => setSettingsOpen(true)}
-        onCheckUpdates={onCheckUpdates}
-        loading={loading}
+        onUpdateAction={onUpdateAction}
+        loading={loading || updateChecking}
         updateAvailable={Boolean(updateStatus?.available)}
+        updateInstallable={Boolean(updateStatus?.installable)}
+        updateVersion={updateStatus?.version}
         appVersion={appVersion ?? undefined}
         backendVersion={status?.version}
       />
@@ -346,27 +380,6 @@ function App() {
           }
         ]}
       />
-
-      {updateStatus?.available ? (
-        <section className="card">
-          <h2>Update available</h2>
-          <p>Version: {updateStatus.version ?? "Unknown"}</p>
-          <div className="row">
-            {updateStatus.installable ? (
-              <button disabled={loading} onClick={onInstallUpdate}>
-                Install update
-              </button>
-            ) : (
-              <button
-                disabled={loading || !updateStatus.releaseUrl}
-                onClick={() => updateStatus.releaseUrl && onOpenReleaseUrl(updateStatus.releaseUrl)}
-              >
-                View release
-              </button>
-            )}
-          </div>
-        </section>
-      ) : null}
 
       <StatusMessage message={message} />
 
