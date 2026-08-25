@@ -197,6 +197,11 @@ p {
   background: #131a26;
 }
 
+.serviceGroupContent {
+  display: grid;
+  gap: 0.55rem;
+}
+
 .appFooter {
   text-align: center;
   padding-top: 0.5rem;

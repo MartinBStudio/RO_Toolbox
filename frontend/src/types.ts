@@ -17,6 +17,7 @@ export type AvailableProfile = {
 
 export type AppStatus = {
   version: string;
+  lootServiceEndpoint: string;
   selectedGameBase: string | null;
   selectedGameItemFolder: string | null;
   installedProfile: ProfileInfo | null;
