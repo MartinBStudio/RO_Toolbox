@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { getVersion as getAppVersion } from "@tauri-apps/api/app";
+import { LogicalSize, getCurrentWindow } from "@tauri-apps/api/window";
 import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { open } from "@tauri-apps/plugin-dialog";
@@ -46,7 +48,10 @@ function toErrorMessage(err: unknown, fallback: string) {
 
 function App() {
   const [status, setStatus] = useState<AppStatus | null>(null);
+  const [appVersion, setAppVersion] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [updateChecking, setUpdateChecking] = useState(false);
+  const [backendReady, setBackendReady] = useState(false);
   const [message, setMessage] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState("");
@@ -75,10 +80,89 @@ function App() {
   }
 
   useEffect(() => {
-    refresh().catch((err) => {
-      setMessage(toErrorMessage(err, "Failed to load app status."));
-    });
+    getAppVersion()
+      .then((version) => setAppVersion(version))
+      .catch(() => setAppVersion(null));
   }, []);
+
+  useEffect(() => {
+    if (!message) {
+      return;
+    }
+    const timer = window.setTimeout(() => setMessage(""), 5000);
+    return () => window.clearTimeout(timer);
+  }, [message]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function waitForBackend() {
+      for (let i = 0; i < 30; i++) {
+        if (cancelled) return;
+        try {
+          await refresh();
+          setBackendReady(true);
+          return;
+        } catch {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      if (!cancelled) {
+        setMessage("Backend failed to start. Please restart the app.");
+        setBackendReady(true);
+      }
+    }
+    waitForBackend();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!backendReady) {
+      return;
+    }
+
+    const appWindow = getCurrentWindow();
+    let frameId = 0;
+    const minHeight = 420;
+    const maxHeight = 920;
+    const verticalPadding = 26;
+
+    const syncHeight = async () => {
+      const contentHeight = Math.ceil(document.documentElement.scrollHeight + verticalPadding);
+      const targetHeight = Math.max(minHeight, Math.min(maxHeight, contentHeight));
+      const currentSize = await appWindow.innerSize();
+      if (Math.abs(currentSize.height - targetHeight) > 2) {
+        await appWindow.setSize(new LogicalSize(currentSize.width, targetHeight));
+      }
+    };
+
+    const observer = new ResizeObserver(() => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+      frameId = window.requestAnimationFrame(() => {
+        syncHeight().catch(() => undefined);
+      });
+    });
+
+    observer.observe(document.documentElement);
+    syncHeight().catch(() => undefined);
+
+    return () => {
+      observer.disconnect();
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
+  }, [backendReady]);
+
+  useEffect(() => {
+    if (!backendReady) {
+      return;
+    }
+    checkForUpdates().catch((err) => {
+      setMessage(toErrorMessage(err, "Update check failed."));
+    });
+  }, [backendReady]);
 
   useEffect(() => {
     if (availableProfiles.length === 0) {
@@ -159,16 +243,17 @@ function App() {
     await runAction(clearInstalled, "Installed models cleared.");
   }
 
-  async function onCheckUpdates() {
-    setLoading(true);
+  async function checkForUpdates(showUpToDateMessage = false) {
+    setUpdateChecking(true);
     try {
       const update = await checkTauriUpdate();
       if (update?.available) {
         setUpdateStatus({ available: true, version: update.version, installable: true });
-        setMessage(`Update available: v${update.version}`);
       } else {
         setUpdateStatus({ available: false, installable: false });
-        setMessage("You are on the latest version.");
+        if (showUpToDateMessage) {
+          setMessage("You are up to date.");
+        }
       }
     } catch (err) {
       try {
@@ -180,10 +265,11 @@ function App() {
             releaseUrl: backendResult.releaseUrl,
             installable: false
           });
-          setMessage(`Update available on release channel: ${backendResult.releaseVersion}`);
         } else if (backendResult.success) {
           setUpdateStatus({ available: false, installable: false });
-          setMessage("You are on the latest version.");
+          if (showUpToDateMessage) {
+            setMessage("You are up to date.");
+          }
         } else {
           setMessage(backendResult.message || toErrorMessage(err, "Update check failed."));
         }
@@ -193,7 +279,21 @@ function App() {
         );
       }
     } finally {
-      setLoading(false);
+      setUpdateChecking(false);
+    }
+  }
+
+  async function onUpdateAction() {
+    if (!updateStatus?.available) {
+      await checkForUpdates(true);
+      return;
+    }
+    if (updateStatus.installable) {
+      await onInstallUpdate();
+      return;
+    }
+    if (updateStatus.releaseUrl) {
+      await onOpenReleaseUrl(updateStatus.releaseUrl);
     }
   }
 
@@ -208,7 +308,13 @@ function App() {
       setMessage("Downloading update...");
       await update.downloadAndInstall();
       setMessage("Update installed. Restarting...");
-      await relaunch();
+      await new Promise((resolve) => window.setTimeout(resolve, 1200));
+      try {
+        await relaunch();
+      } catch (restartErr) {
+        setMessage(`Update installed. Please reopen the app manually. ${toErrorMessage(restartErr, "")}`.trim());
+        await getCurrentWindow().close().catch(() => undefined);
+      }
     } catch (err) {
       setMessage(toErrorMessage(err, "Update failed."));
     } finally {
@@ -234,12 +340,20 @@ function App() {
 
   return (
     <main className={`layout${loading ? " layoutLoading" : ""}`}>
+      {!backendReady ? (
+        <div className="startingScreen">
+          <p>Starting RO Toolbox...</p>
+        </div>
+      ) : (<>
       <AppHeader
         onOpenSettings={() => setSettingsOpen(true)}
-        onCheckUpdates={onCheckUpdates}
-        loading={loading}
+        onUpdateAction={onUpdateAction}
+        loading={loading || updateChecking}
         updateAvailable={Boolean(updateStatus?.available)}
-        currentVersion={status?.version}
+        updateInstallable={Boolean(updateStatus?.installable)}
+        updateVersion={updateStatus?.version}
+        appVersion={appVersion ?? undefined}
+        backendVersion={status?.version}
       />
 
       <ServiceContainer
@@ -267,27 +381,6 @@ function App() {
         ]}
       />
 
-      {updateStatus?.available ? (
-        <section className="card">
-          <h2>Update available</h2>
-          <p>Version: {updateStatus.version ?? "Unknown"}</p>
-          <div className="row">
-            {updateStatus.installable ? (
-              <button disabled={loading} onClick={onInstallUpdate}>
-                Install update
-              </button>
-            ) : (
-              <button
-                disabled={loading || !updateStatus.releaseUrl}
-                onClick={() => updateStatus.releaseUrl && onOpenReleaseUrl(updateStatus.releaseUrl)}
-              >
-                View release
-              </button>
-            )}
-          </div>
-        </section>
-      ) : null}
-
       <StatusMessage message={message} />
 
       <AppFooter />
@@ -299,9 +392,9 @@ function App() {
         onClose={() => setSettingsOpen(false)}
         onBrowseFolder={onBrowseFolder}
         onClearGameFolder={() => runAction(clearGameFolder, "Game folder cleared.")}
-        onOpenItemFolder={() => runAction(openItemFolder, "Opened item folder.")}
       />
       <LoadingOverlay visible={loading} />
+      </>)}
     </main>
   );
 }

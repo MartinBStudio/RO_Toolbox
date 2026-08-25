@@ -3,6 +3,8 @@
 use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::Mutex;
+use std::thread;
+use std::time::Duration;
 use tauri::{AppHandle, Manager, RunEvent};
 
 #[cfg(windows)]
@@ -24,14 +26,7 @@ fn main() {
                 return Ok(());
             }
             let jar_path = find_backend_jar(app.handle())?;
-            #[allow(unused_mut)]
-            let mut cmd = Command::new("java");
-            cmd.arg("-jar").arg(&jar_path);
-            #[cfg(windows)]
-            cmd.creation_flags(CREATE_NO_WINDOW);
-            let child = cmd
-                .spawn()
-                .map_err(|e| format!("Failed to start backend with {:?}: {}", jar_path, e))?;
+            let child = spawn_backend_with_retry(&jar_path, 5, Duration::from_secs(2))?;
             let state = app.state::<BackendState>();
             *state.0.lock().expect("backend lock poisoned") = Some(child);
             Ok(())
@@ -48,6 +43,27 @@ fn main() {
             }
         }
     });
+}
+
+fn spawn_backend_with_retry(jar_path: &PathBuf, retries: u32, delay: Duration) -> Result<Child, String> {
+    let mut last_err = String::new();
+    for attempt in 0..=retries {
+        if attempt > 0 {
+            thread::sleep(delay);
+        }
+        #[allow(unused_mut)]
+        let mut cmd = Command::new("java");
+        cmd.arg("-jar").arg(jar_path);
+        #[cfg(windows)]
+        cmd.creation_flags(CREATE_NO_WINDOW);
+        match cmd.spawn() {
+            Ok(child) => return Ok(child),
+            Err(e) => {
+                last_err = format!("Failed to start backend (attempt {}/{}): {}", attempt + 1, retries + 1, e);
+            }
+        }
+    }
+    Err(last_err)
 }
 
 fn use_external_backend() -> bool {

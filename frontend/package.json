@@ -11,7 +11,7 @@
     "backend:copy": "node scripts/copy-backend.mjs",
     "tauri:dev": "npm run backend:jar && npm run backend:copy && npx tauri dev",
     "tauri:dev:external": "set RO_TOOLBOX_EXTERNAL_BACKEND=1&&npx tauri dev",
-    "tauri:build": "npm run build && npm run backend:jar && npm run backend:copy && npx tauri build"
+    "tauri:build": "npm run build && npm run backend:jar && npm run backend:copy && npx tauri build && node scripts/generate-latest-json.mjs"
   },
   "dependencies": {
     "@tauri-apps/plugin-dialog": "^2.7.2",

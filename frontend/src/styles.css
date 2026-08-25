@@ -10,6 +10,16 @@ body {
   color: #dce4ef;
 }
 
+.startingScreen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  color: #7a8fa8;
+  font-size: 0.9rem;
+  letter-spacing: 0.03em;
+}
+
 .layout {
   position: relative;
   max-width: 820px;
@@ -260,6 +270,17 @@ button:disabled {
   box-shadow: 0 0 0 1px rgba(179, 53, 53, 0.35), 0 4px 12px rgba(179, 53, 53, 0.2);
 }
 
+.buttonSubtle {
+  background: #1a2333;
+  border-color: #3a4a64;
+  color: #c7d4e8;
+}
+
+.buttonSubtle:hover:enabled {
+  background: #202c3f;
+  border-color: #4b607f;
+}
+
 .settingsCog {
   min-width: 1.95rem;
   min-height: 1.95rem;
@@ -364,6 +385,10 @@ a {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.5rem;
+}
+
+.modalActions {
+  margin-top: 0.5rem;
 }
 
 .loadingOverlay {
