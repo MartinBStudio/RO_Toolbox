@@ -47,6 +47,7 @@ function toErrorMessage(err: unknown, fallback: string) {
 function App() {
   const [status, setStatus] = useState<AppStatus | null>(null);
   const [loading, setLoading] = useState(false);
+  const [backendReady, setBackendReady] = useState(false);
   const [message, setMessage] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState("");
@@ -75,9 +76,25 @@ function App() {
   }
 
   useEffect(() => {
-    refresh().catch((err) => {
-      setMessage(toErrorMessage(err, "Failed to load app status."));
-    });
+    let cancelled = false;
+    async function waitForBackend() {
+      for (let i = 0; i < 30; i++) {
+        if (cancelled) return;
+        try {
+          await refresh();
+          setBackendReady(true);
+          return;
+        } catch {
+          await new Promise(r => setTimeout(r, 1000));
+        }
+      }
+      if (!cancelled) {
+        setMessage("Backend failed to start. Please restart the app.");
+        setBackendReady(true);
+      }
+    }
+    waitForBackend();
+    return () => { cancelled = true; };
   }, []);
 
   useEffect(() => {
@@ -234,6 +251,11 @@ function App() {
 
   return (
     <main className={`layout${loading ? " layoutLoading" : ""}`}>
+      {!backendReady ? (
+        <div className="startingScreen">
+          <p>Starting RO Toolbox...</p>
+        </div>
+      ) : (<>
       <AppHeader
         onOpenSettings={() => setSettingsOpen(true)}
         onCheckUpdates={onCheckUpdates}
@@ -302,6 +324,7 @@ function App() {
         onOpenItemFolder={() => runAction(openItemFolder, "Opened item folder.")}
       />
       <LoadingOverlay visible={loading} />
+      </>)}
     </main>
   );
 }
