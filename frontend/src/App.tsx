@@ -1,18 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
+import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
+import { relaunch } from "@tauri-apps/plugin-process";
 import {
-  checkUpdate,
   clearGameFolder,
   clearInstalled,
   clearResources,
   downloadProfiles,
   getStatus,
   installProfile,
-  installUpdate,
   openItemFolder,
   openResourcesFolder,
   saveGameFolder
 } from "./api";
-import type { AppStatus, UpdateCheckResult } from "./types";
+import type { AppStatus } from "./types";
 
 function App() {
   const [status, setStatus] = useState<AppStatus | null>(null);
@@ -20,7 +20,7 @@ function App() {
   const [message, setMessage] = useState("");
   const [folderInput, setFolderInput] = useState("");
   const [selectedProfile, setSelectedProfile] = useState("");
-  const [updateStatus, setUpdateStatus] = useState<UpdateCheckResult | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<{ available: boolean; version?: string } | null>(null);
 
   const availableProfiles = status?.availableProfiles ?? [];
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
@@ -119,9 +119,14 @@ function App() {
   async function onCheckUpdates() {
     setLoading(true);
     try {
-      const result = await checkUpdate();
-      setUpdateStatus(result);
-      setMessage(result.message);
+      const update = await checkTauriUpdate();
+      if (update?.available) {
+        setUpdateStatus({ available: true, version: update.version });
+        setMessage(`Update available: v${update.version}`);
+      } else {
+        setUpdateStatus({ available: false });
+        setMessage("You are on the latest version.");
+      }
     } catch (err) {
       setMessage(err instanceof Error ? err.message : "Update check failed.");
     } finally {
@@ -130,10 +135,22 @@ function App() {
   }
 
   async function onInstallUpdate() {
-    await runAction(async () => {
-      const result = await installUpdate();
-      setMessage(result.message);
-    });
+    setLoading(true);
+    try {
+      const update = await checkTauriUpdate();
+      if (!update?.available) {
+        setMessage("No update available.");
+        return;
+      }
+      setMessage("Downloading update...");
+      await update.downloadAndInstall();
+      setMessage("Update installed. Restarting...");
+      await relaunch();
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Update failed.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -239,23 +256,17 @@ function App() {
           <button disabled={loading} onClick={onCheckUpdates}>
             Check updates
           </button>
-          <button disabled={loading || !updateStatus?.success || !updateStatus.updateAvailable} onClick={onInstallUpdate}>
+          <button disabled={loading || !updateStatus?.available} onClick={onInstallUpdate}>
             Install update
           </button>
         </div>
         <p>
           {updateStatus
-            ? `Current: ${updateStatus.currentVersion} • Release: ${updateStatus.releaseVersion}`
+            ? updateStatus.available
+              ? `Update available: v${updateStatus.version}`
+              : "Up to date."
             : "No update check yet."}
         </p>
-        {updateStatus?.releaseUrl ? (
-          <p>
-            Release URL:{" "}
-            <a href={updateStatus.releaseUrl} target="_blank" rel="noreferrer">
-              {updateStatus.releaseUrl}
-            </a>
-          </p>
-        ) : null}
       </section>
 
       {message ? <section className="card status">{message}</section> : null}

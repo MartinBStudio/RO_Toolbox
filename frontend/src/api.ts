@@ -1,4 +1,4 @@
-import type { AppStatus, UpdateCheckResult, UpdateInstallResult } from "./types";
+import type { AppStatus } from "./types";
 
 const API_BASE = "http://localhost:8080/api";
 
@@ -65,12 +65,4 @@ export function openResourcesFolder() {
 
 export function openItemFolder() {
   return request<{ message: string }>("/folders/open/item", { method: "POST" });
-}
-
-export function checkUpdate() {
-  return request<UpdateCheckResult>("/update/check");
-}
-
-export function installUpdate() {
-  return request<UpdateInstallResult>("/update/install", { method: "POST" });
 }
