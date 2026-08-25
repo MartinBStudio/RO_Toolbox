@@ -24,6 +24,12 @@ body {
   padding: 1rem;
 }
 
+.headerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 h1, h2, p {
   margin: 0;
 }
@@ -41,6 +47,22 @@ p {
   display: flex;
   gap: 0.6rem;
   flex-wrap: wrap;
+}
+
+.subSection {
+  margin-top: 0.8rem;
+}
+
+.installedProfileSummary {
+  border: 1px solid #2b3344;
+  border-radius: 8px;
+  background: #111725;
+  padding: 0.75rem;
+}
+
+.installedProfileName {
+  color: #dce4ef;
+  font-weight: 700;
 }
 
 input,
@@ -73,6 +95,25 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.buttonStrong {
+  font-weight: 700;
+  box-shadow: 0 0 0 1px rgba(34, 108, 241, 0.35), 0 4px 12px rgba(34, 108, 241, 0.2);
+}
+
+.buttonDanger {
+  background: #b33535;
+  border-color: #b33535;
+  box-shadow: 0 0 0 1px rgba(179, 53, 53, 0.35), 0 4px 12px rgba(179, 53, 53, 0.2);
+}
+
+.settingsCog {
+  min-width: 2.2rem;
+  min-height: 2.2rem;
+  padding: 0.2rem 0.5rem;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
 .status {
   border-color: #4169e1;
 }
@@ -90,4 +131,26 @@ a {
   text-decoration: none;
   display: inline-flex;
   align-items: center;
+}
+
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.modalCard {
+  width: min(640px, 100%);
+}
+
+.modalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
 }

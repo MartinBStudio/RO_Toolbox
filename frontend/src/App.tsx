@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { open } from "@tauri-apps/plugin-dialog";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   clearGameFolder,
   clearInstalled,
@@ -18,12 +20,13 @@ function App() {
   const [status, setStatus] = useState<AppStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [folderInput, setFolderInput] = useState("");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [updateStatus, setUpdateStatus] = useState<{ available: boolean; version?: string } | null>(null);
 
   const availableProfiles = status?.availableProfiles ?? [];
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
+  const installedProfileUrl = status?.installedProfile?.url ?? null;
 
   const canInstall = useMemo(() => Boolean(selectedProfile), [selectedProfile]);
 
@@ -65,12 +68,12 @@ function App() {
     }
   }, [availableProfiles, selectedProfile]);
 
-  async function onSaveFolder() {
-    const path = folderInput.trim();
-    if (!path) return;
+  async function saveFolder(path: string) {
+    const trimmedPath = path.trim();
+    if (!trimmedPath) return;
     setLoading(true);
     try {
-      const initialResult = await saveGameFolder(path, false);
+      const initialResult = await saveGameFolder(trimmedPath, false);
       await refresh();
       setMessage(
         initialResult.containsExpectedItemFolder
@@ -86,7 +89,7 @@ function App() {
           setLoading(false);
           return;
         }
-        await saveGameFolder(path, true);
+        await saveGameFolder(trimmedPath, true);
         await refresh();
         setMessage("Game folder saved.");
       } else {
@@ -94,6 +97,21 @@ function App() {
       }
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function onBrowseFolder() {
+    try {
+      const selected = await open({
+        directory: true,
+        multiple: false
+      });
+      if (!selected || Array.isArray(selected)) {
+        return;
+      }
+      await saveFolder(selected);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Folder selection failed.");
     }
   }
 
@@ -153,53 +171,54 @@ function App() {
     }
   }
 
+  async function onOpenInstalledProfile(url: string) {
+    try {
+      await openUrl(url);
+    } catch (err) {
+      setMessage(err instanceof Error ? err.message : "Failed to open profile link.");
+    }
+  }
+
   return (
     <main className="layout">
       <header className="card">
-        <h1>RO Toolbox</h1>
-        <p>Version: {status?.version ?? "..."}</p>
-      </header>
-
-      <section className="card">
-        <h2>Settings</h2>
-        <p>Game folder: {status?.selectedGameBase ?? "Not set"}</p>
-        <p>Item folder: {status?.selectedGameItemFolder ?? "Not set"}</p>
-        <div className="row">
-          <input
-            value={folderInput}
-            onChange={(e) => setFolderInput(e.target.value)}
-            placeholder="C:\\Games\\Ragnarok"
-          />
-          <button disabled={loading || folderInput.trim().length === 0} onClick={onSaveFolder}>
-            Save folder
-          </button>
-          <button disabled={loading} onClick={() => runAction(clearGameFolder, "Game folder cleared.")}>
-            Clear
-          </button>
-          <button disabled={loading} onClick={() => runAction(openItemFolder, "Opened item folder.")}>
-            Open item folder
+        <div className="headerRow">
+          <h1>RO Toolbox</h1>
+          <button
+            type="button"
+            className="settingsCog"
+            aria-label="Open settings"
+            onClick={() => setSettingsOpen(true)}
+          >
+            ⚙
           </button>
         </div>
-      </section>
+      </header>
 
       <section className="card">
         <h2>Loot Profiles</h2>
         <p>Downloaded: {status?.downloadedProfiles.length ?? 0}</p>
-        <div className="row">
-          <button disabled={loading} onClick={() => runAction(downloadProfiles, "Profiles downloaded.")}>
-            Download profiles
-          </button>
-          <button disabled={loading} onClick={() => runAction(openResourcesFolder, "Opened resources folder.")}>
-            Open resources folder
-          </button>
-          <button disabled={loading} onClick={() => runAction(clearResources, "Downloaded resources cleared.")}>
-            Clear downloads
-          </button>
-          <button disabled={loading} onClick={onClearInstalled}>
-            Clear installed
-          </button>
+        <div className="subSection">
+          <p>Downloads</p>
+          <div className="row">
+            <button disabled={loading} onClick={() => runAction(downloadProfiles, "Profiles downloaded.")}>
+              Download profiles
+            </button>
+            <button disabled={loading} onClick={() => runAction(openResourcesFolder, "Opened resources folder.")}>
+              📂 Open downloaded
+            </button>
+            <button disabled={loading} onClick={() => runAction(clearResources, "Downloaded resources cleared.")}>
+              🗑 Clear downloads
+            </button>
+          </div>
         </div>
 
+
+
+        <div className="subSection">
+          <p>Profile to install</p>
+          <p>Select a downloaded profile and install it to the game item folder.</p>
+        </div>
         <div className="row">
           <select
             disabled={loading || availableProfiles.length === 0}
@@ -218,11 +237,6 @@ function App() {
           >
             Install selected
           </button>
-          {selectedProfileData?.url ? (
-            <a href={selectedProfileData.url} target="_blank" rel="noreferrer" className="linkBtn">
-              Visit profile
-            </a>
-          ) : null}
         </div>
 
         <p>Selected details:</p>
@@ -234,24 +248,45 @@ function App() {
             : "None"}
         </p>
         <p>{selectedProfileData?.description ?? "-"}</p>
-        <p>
-          Installed profile:{" "}
-          {status?.installedProfile?.name
-            ? `${status.installedProfile.name}${status.installedProfile.author ? ` by ${status.installedProfile.author}` : ""}`
-            : "None"}
-        </p>
-        {status?.installedProfile?.url ? (
-          <p>
-            Installed URL:{" "}
-            <a href={status.installedProfile.url} target="_blank" rel="noreferrer">
-              {status.installedProfile.url}
-            </a>
-          </p>
-        ) : null}
+
+        <div className="subSection installedProfileSummary">
+          <p>Installed profile</p>
+          {status?.installedProfile?.name ? (
+            <>
+              <p className="installedProfileName">
+                {status.installedProfile.name}
+                {status.installedProfile.author ? ` • by ${status.installedProfile.author}` : ""}
+              </p>
+              <p>{status.installedProfile.description ?? "No description available."}</p>
+              {installedProfileUrl ? (
+                <button
+                  type="button"
+                  className="linkBtn"
+                  onClick={() => onOpenInstalledProfile(installedProfileUrl)}
+                >
+                  Visit profile
+                </button>
+              ) : null}
+            </>
+          ) : (
+            <p>No profile installed.</p>
+          )}
+        </div>
+        <div className="subSection">
+          <div className="row">
+            <button disabled={loading} onClick={() => runAction(openItemFolder, "Opened installed folder.")}>
+              📁 Open installed
+            </button>
+            <button disabled={loading} onClick={onClearInstalled}>
+              🗑 Clear installed
+            </button>
+          </div>
+        </div>
       </section>
 
       <section className="card">
         <h2>Updater</h2>
+        <p>Current version: {status?.version ?? "..."}</p>
         <div className="row">
           <button disabled={loading} onClick={onCheckUpdates}>
             Check updates
@@ -270,6 +305,36 @@ function App() {
       </section>
 
       {message ? <section className="card status">{message}</section> : null}
+
+      {settingsOpen ? (
+        <div className="modalBackdrop" onClick={() => setSettingsOpen(false)}>
+          <section className="card modalCard" onClick={(event) => event.stopPropagation()}>
+            <div className="modalHeader">
+              <h2>Settings</h2>
+              <button type="button" onClick={() => setSettingsOpen(false)}>
+                Close
+              </button>
+            </div>
+            <p>Game folder: {status?.selectedGameBase ?? "Not set"}</p>
+            <p>Item folder: {status?.selectedGameItemFolder ?? "Not set"}</p>
+            <div className="row">
+              <button className="buttonStrong" disabled={loading} onClick={onBrowseFolder}>
+                📂 Browse folder
+              </button>
+              <button
+                className="buttonStrong buttonDanger"
+                disabled={loading}
+                onClick={() => runAction(clearGameFolder, "Game folder cleared.")}
+              >
+                🗑 Clear
+              </button>
+              <button disabled={loading} onClick={() => runAction(openItemFolder, "Opened item folder.")}>
+                📁 Open item folder
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
