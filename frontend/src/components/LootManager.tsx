@@ -1,43 +1,108 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import type { AppStatus } from "../types";
+import {
+  clearInstalled,
+  clearResources,
+  downloadProfiles,
+  installProfile,
+  openItemFolder,
+  openResourcesFolder
+} from "../backendConnector/api.ts";
 
 type LootManagerProps = {
   status: AppStatus | null;
   loading: boolean;
-  selectedProfile: string;
-  canInstall: boolean;
-  onSelectedProfileChange: (profileId: string) => void;
-  onDownloadProfiles: () => void;
-  onOpenResourcesFolder: () => void;
-  onClearResources: () => void;
-  onInstallProfile: () => void;
-  onOpenItemFolder: () => void;
-  onClearInstalled: () => void;
-  onOpenInstalledProfile: (url: string) => void;
+  onBusyChange: (busy: boolean) => void;
+  onStatusRefresh: () => Promise<void>;
+  onMessage: (message: string) => void;
 };
 
 export function LootManager({
   status,
   loading,
-  selectedProfile,
-  canInstall,
-  onSelectedProfileChange,
-  onDownloadProfiles,
-  onOpenResourcesFolder,
-  onClearResources,
-  onInstallProfile,
-  onOpenItemFolder,
-  onClearInstalled,
-  onOpenInstalledProfile
+  onBusyChange,
+  onStatusRefresh,
+  onMessage
 }: LootManagerProps) {
   const [collapsed, setCollapsed] = useState(true);
+  const [selectedProfile, setSelectedProfile] = useState("");
   const availableProfiles = status?.availableProfiles ?? [];
+  const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
   const installedProfileUrl = status?.installedProfile?.url ?? null;
   const activeProfileName = status?.installedProfile?.name ?? "No active profile";
   const activeProfileAuthor = status?.installedProfile?.author
     ? ` • by ${status.installedProfile.author}`
     : "";
+
+  useEffect(() => {
+    if (availableProfiles.length === 0) {
+      if (selectedProfile) {
+        setSelectedProfile("");
+      }
+      return;
+    }
+    const selectedStillExists = availableProfiles.some((profile) => profile.id === selectedProfile);
+    if (!selectedStillExists) {
+      setSelectedProfile(availableProfiles[0].id);
+    }
+  }, [availableProfiles, selectedProfile]);
+
+  function toErrorMessage(err: unknown, fallback: string) {
+    if (err instanceof Error && err.message) {
+      return err.message;
+    }
+    if (typeof err === "string" && err.trim()) {
+      return err;
+    }
+    if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
+      return err.message;
+    }
+    return fallback;
+  }
+
+  async function runAction(action: () => Promise<unknown>, successMessage?: string) {
+    onBusyChange(true);
+    try {
+      await action();
+      await onStatusRefresh();
+      if (successMessage) {
+        onMessage(successMessage);
+      }
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Request failed."));
+    } finally {
+      onBusyChange(false);
+    }
+  }
+
+  async function onInstallProfile() {
+    if (!selectedProfile) return;
+    if (!status?.selectedGameItemFolder) {
+      onMessage("Set game installation folder first (must point to a base containing 3ddata/item).");
+      return;
+    }
+    const confirmed = window.confirm(
+      `Install profile "${selectedProfile}"? This will clear current installed models first.`
+    );
+    if (!confirmed) return;
+    await runAction(() => installProfile(selectedProfile), `Installed profile: ${selectedProfile}.`);
+  }
+
+  async function onClearInstalled() {
+    const confirmed = window.confirm("Clear all installed models from 3ddata/item?");
+    if (!confirmed) return;
+    await runAction(clearInstalled, "Installed models cleared.");
+  }
+
+  async function onOpenInstalledProfile(url: string) {
+    try {
+      await openUrl(url);
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to open profile link."));
+    }
+  }
 
   return (
     <section className="lootManager">
@@ -66,7 +131,7 @@ export function LootManager({
               type="button"
               className="iconBtn iconBtnSubtle"
               disabled={loading}
-              onClick={onOpenItemFolder}
+              onClick={() => runAction(openItemFolder)}
               title="Open installed"
               aria-label="Open installed"
             >
@@ -104,7 +169,7 @@ export function LootManager({
                   type="button"
                   className="iconBtn iconBtnSubtle"
                   disabled={loading}
-                  onClick={onDownloadProfiles}
+                  onClick={() => runAction(downloadProfiles, "Profiles downloaded.")}
                   title="Download profiles"
                   aria-label="Download profiles"
                 >
@@ -114,7 +179,7 @@ export function LootManager({
                   type="button"
                   className="iconBtn iconBtnSubtle"
                   disabled={loading}
-                  onClick={onOpenResourcesFolder}
+                  onClick={() => runAction(openResourcesFolder)}
                   title="Open downloaded"
                   aria-label="Open downloaded"
                 >
@@ -124,7 +189,7 @@ export function LootManager({
                   type="button"
                   className="iconBtn iconBtnSubtle"
                   disabled={loading}
-                  onClick={onClearResources}
+                  onClick={() => runAction(clearResources, "Downloaded resources cleared.")}
                   title="Clear downloaded"
                   aria-label="Clear downloaded"
                 >
@@ -140,7 +205,7 @@ export function LootManager({
                 <select
                   disabled={loading || availableProfiles.length === 0}
                   value={selectedProfile}
-                  onChange={(event) => onSelectedProfileChange(event.target.value)}
+                  onChange={(event) => setSelectedProfile(event.target.value)}
                 >
                   {availableProfiles.map((profile) => (
                     <option key={profile.id} value={profile.id}>
