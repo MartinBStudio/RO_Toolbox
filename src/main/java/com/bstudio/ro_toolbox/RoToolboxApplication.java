@@ -14,7 +14,6 @@ public class RoToolboxApplication {
 
     public static void main(String[] args) {
         SpringApplication app = new SpringApplication(RoToolboxApplication.class);
-        app.setHeadless(false);
         app.run(args);
     }
 

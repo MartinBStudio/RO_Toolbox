@@ -1,6 +1,5 @@
 package com.bstudio.ro_toolbox.service.lootModels;
 
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -14,7 +13,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -38,19 +36,10 @@ public class LootManagerService {
 
     private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
 
-    @Getter
     private volatile Path selectedGameBase = null; // base installation folder (no suffix)
-    @Getter
     private volatile String currentLootProfile = null;
 
-    // logger can be updated by the GUI to forward messages
-    private Consumer<String> logger;
-
-    // listeners notified when configuration changes (e.g., selected game base changed)
-    private final java.util.List<Runnable> changeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
-
     public LootManagerService() {
-        this.logger = null;
         ensureRuntimeDirs();
         loadConfig();
     }
@@ -64,18 +53,9 @@ public class LootManagerService {
         }
     }
 
-    public void setLogger(Consumer<String> logger) { this.logger = logger; }
-
     private void log(String s) {
         LOG.info(s);
-        if (logger != null) logger.accept(s + "\n");
     }
-
-    public void addChangeListener(Runnable r) { if (r != null) changeListeners.add(r); }
-    private void notifyChangeListeners() { for (Runnable r : changeListeners) { try { r.run(); } catch (Throwable ignored) {} } }
-
-    // Allow GUI callers to publish messages to both GUI and underlying logger
-    public void guiMessage(String s) { log(s); }
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
 
@@ -87,7 +67,6 @@ public class LootManagerService {
 
     public void setCurrentLootProfile(String profile) {
         currentLootProfile = (profile == null || profile.isBlank()) ? null : profile;
-        notifyChangeListeners();
     }
 
     // --- config ---
@@ -122,7 +101,6 @@ public class LootManagerService {
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
             selectedGameBase = base.toAbsolutePath().normalize();
             log("Selected game base saved: " + selectedGameBase);
-            notifyChangeListeners();
         } catch (Exception ex) {
             log("Failed to save selected game base: " + ex.getMessage());
             throw new IllegalStateException("Unable to save selected game base to config.", ex);
@@ -140,25 +118,10 @@ public class LootManagerService {
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
             selectedGameBase = null;
             log("Selected game base cleared.");
-            notifyChangeListeners();
         } catch (Exception ex) {
             log("Failed to clear selected game base: " + ex.getMessage());
             throw new IllegalStateException("Unable to clear selected game base from config.", ex);
         }
-    }
-
-    public boolean isDirectoryNonEmpty(Path dir) {
-        if (dir == null) return false;
-        if (!Files.exists(dir) || !Files.isDirectory(dir)) return false;
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
-            return ds.iterator().hasNext();
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    public Path getCurrentResourcesRoot() {
-        return (getSelectedGameItemFolder() != null) ? getSelectedGameItemFolder() : RESOURCES_DIR;
     }
 
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
@@ -273,18 +236,8 @@ public class LootManagerService {
         }
     }
 
-    // Helpers for GUI-level workflows
     public void clearResources() throws IOException { deleteDirectoryContents(RESOURCES_DIR); }
     public void clearSelectedItemFolder() throws IOException { Path itemFolder = getSelectedGameItemFolder(); if (itemFolder != null) deleteDirectoryContents(itemFolder); }
-
-    public Path findPocSource(String folderName) {
-        Path pocSource = RESOURCES_DIR.resolve(folderName);
-        if (!Files.exists(pocSource) || !Files.isDirectory(pocSource)) {
-            Path alt = (selectedGameBase != null) ? selectedGameBase.resolve(RESOURCES_DIR.getFileName()).resolve(folderName) : null;
-            if (alt != null && Files.exists(alt) && Files.isDirectory(alt)) pocSource = alt;
-        }
-        return (Files.exists(pocSource) && Files.isDirectory(pocSource)) ? pocSource : null;
-    }
 
     public record AvailableProfile(
             String id,

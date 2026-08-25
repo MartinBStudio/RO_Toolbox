@@ -4,6 +4,7 @@ import { relaunch } from "@tauri-apps/plugin-process";
 import { open } from "@tauri-apps/plugin-dialog";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
+  checkBackendUpdate,
   clearGameFolder,
   clearInstalled,
   clearResources,
@@ -14,7 +15,34 @@ import {
   openResourcesFolder,
   saveGameFolder
 } from "./api";
+import { AppHeader } from "./components/AppHeader";
+import { AppFooter } from "./components/AppFooter";
+import { LoadingOverlay } from "./components/LoadingOverlay";
+import { LootManager } from "./components/LootManager";
+import { ServiceContainer } from "./components/ServiceContainer";
+import { SettingsModal } from "./components/SettingsModal";
+import { StatusMessage } from "./components/StatusMessage";
 import type { AppStatus } from "./types";
+
+type UpdateStatus = {
+  available: boolean;
+  version?: string;
+  releaseUrl?: string;
+  installable: boolean;
+};
+
+function toErrorMessage(err: unknown, fallback: string) {
+  if (err instanceof Error && err.message) {
+    return err.message;
+  }
+  if (typeof err === "string" && err.trim()) {
+    return err;
+  }
+  if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
+    return err.message;
+  }
+  return fallback;
+}
 
 function App() {
   const [status, setStatus] = useState<AppStatus | null>(null);
@@ -22,12 +50,9 @@ function App() {
   const [message, setMessage] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState("");
-  const [updateStatus, setUpdateStatus] = useState<{ available: boolean; version?: string } | null>(null);
+  const [updateStatus, setUpdateStatus] = useState<UpdateStatus | null>(null);
 
   const availableProfiles = status?.availableProfiles ?? [];
-  const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
-  const installedProfileUrl = status?.installedProfile?.url ?? null;
-
   const canInstall = useMemo(() => Boolean(selectedProfile), [selectedProfile]);
 
   async function refresh() {
@@ -43,7 +68,7 @@ function App() {
         setMessage(successMessage);
       }
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Request failed.");
+      setMessage(toErrorMessage(err, "Request failed."));
     } finally {
       setLoading(false);
     }
@@ -51,7 +76,7 @@ function App() {
 
   useEffect(() => {
     refresh().catch((err) => {
-      setMessage(err instanceof Error ? err.message : "Failed to load app status.");
+      setMessage(toErrorMessage(err, "Failed to load app status."));
     });
   }, []);
 
@@ -111,7 +136,7 @@ function App() {
       }
       await saveFolder(selected);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Folder selection failed.");
+      setMessage(toErrorMessage(err, "Folder selection failed."));
     }
   }
 
@@ -139,14 +164,34 @@ function App() {
     try {
       const update = await checkTauriUpdate();
       if (update?.available) {
-        setUpdateStatus({ available: true, version: update.version });
+        setUpdateStatus({ available: true, version: update.version, installable: true });
         setMessage(`Update available: v${update.version}`);
       } else {
-        setUpdateStatus({ available: false });
+        setUpdateStatus({ available: false, installable: false });
         setMessage("You are on the latest version.");
       }
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Update check failed.");
+      try {
+        const backendResult = await checkBackendUpdate();
+        if (backendResult.success && backendResult.updateAvailable) {
+          setUpdateStatus({
+            available: true,
+            version: backendResult.releaseVersion,
+            releaseUrl: backendResult.releaseUrl,
+            installable: false
+          });
+          setMessage(`Update available on release channel: ${backendResult.releaseVersion}`);
+        } else if (backendResult.success) {
+          setUpdateStatus({ available: false, installable: false });
+          setMessage("You are on the latest version.");
+        } else {
+          setMessage(backendResult.message || toErrorMessage(err, "Update check failed."));
+        }
+      } catch (backendErr) {
+        setMessage(
+          `Update check failed. ${toErrorMessage(err, "Tauri updater error.")} ${toErrorMessage(backendErr, "Backend updater error.")}`
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -165,7 +210,7 @@ function App() {
       setMessage("Update installed. Restarting...");
       await relaunch();
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Update failed.");
+      setMessage(toErrorMessage(err, "Update failed."));
     } finally {
       setLoading(false);
     }
@@ -175,166 +220,88 @@ function App() {
     try {
       await openUrl(url);
     } catch (err) {
-      setMessage(err instanceof Error ? err.message : "Failed to open profile link.");
+      setMessage(toErrorMessage(err, "Failed to open profile link."));
+    }
+  }
+
+  async function onOpenReleaseUrl(url: string) {
+    try {
+      await openUrl(url);
+    } catch (err) {
+      setMessage(toErrorMessage(err, "Failed to open release page."));
     }
   }
 
   return (
-    <main className="layout">
-      <header className="card">
-        <div className="headerRow">
-          <h1>RO Toolbox</h1>
-          <button
-            type="button"
-            className="settingsCog"
-            aria-label="Open settings"
-            onClick={() => setSettingsOpen(true)}
-          >
-            ⚙
-          </button>
-        </div>
-      </header>
+    <main className={`layout${loading ? " layoutLoading" : ""}`}>
+      <AppHeader
+        onOpenSettings={() => setSettingsOpen(true)}
+        onCheckUpdates={onCheckUpdates}
+        loading={loading}
+        updateAvailable={Boolean(updateStatus?.available)}
+        currentVersion={status?.version}
+      />
 
-      <section className="card">
-        <h2>Loot Profiles</h2>
-        <p>Downloaded: {status?.downloadedProfiles.length ?? 0}</p>
-        <div className="subSection">
-          <p>Downloads</p>
+      <ServiceContainer
+        groups={[
+          {
+            id: "texture-replacer",
+            title: "Texture replacer",
+            content: (
+              <LootManager
+                status={status}
+                loading={loading}
+                selectedProfile={selectedProfile}
+                canInstall={canInstall}
+                onSelectedProfileChange={setSelectedProfile}
+                onDownloadProfiles={() => runAction(downloadProfiles, "Profiles downloaded.")}
+                onOpenResourcesFolder={() => runAction(openResourcesFolder, "Opened resources folder.")}
+                onClearResources={() => runAction(clearResources, "Downloaded resources cleared.")}
+                onInstallProfile={onInstallProfile}
+                onOpenItemFolder={() => runAction(openItemFolder, "Opened installed folder.")}
+                onClearInstalled={onClearInstalled}
+                onOpenInstalledProfile={onOpenInstalledProfile}
+              />
+            )
+          }
+        ]}
+      />
+
+      {updateStatus?.available ? (
+        <section className="card">
+          <h2>Update available</h2>
+          <p>Version: {updateStatus.version ?? "Unknown"}</p>
           <div className="row">
-            <button disabled={loading} onClick={() => runAction(downloadProfiles, "Profiles downloaded.")}>
-              Download profiles
-            </button>
-            <button disabled={loading} onClick={() => runAction(openResourcesFolder, "Opened resources folder.")}>
-              📂 Open downloaded
-            </button>
-            <button disabled={loading} onClick={() => runAction(clearResources, "Downloaded resources cleared.")}>
-              🗑 Clear downloads
-            </button>
-          </div>
-        </div>
-
-
-
-        <div className="subSection">
-          <p>Profile to install</p>
-          <p>Select a downloaded profile and install it to the game item folder.</p>
-        </div>
-        <div className="row">
-          <select
-            disabled={loading || availableProfiles.length === 0}
-            value={selectedProfile}
-            onChange={(e) => setSelectedProfile(e.target.value)}
-          >
-            {availableProfiles.map((profile) => (
-              <option key={profile.id} value={profile.id}>
-                {profile.id}
-              </option>
-            ))}
-          </select>
-          <button
-            disabled={loading || !canInstall}
-            onClick={onInstallProfile}
-          >
-            Install selected
-          </button>
-        </div>
-
-        <p>Selected details:</p>
-        <p>
-          {selectedProfileData
-            ? `${selectedProfileData.name ?? selectedProfileData.id}${
-                selectedProfileData.author ? ` • by ${selectedProfileData.author}` : ""
-              }${selectedProfileData.createdAt ? ` • ${selectedProfileData.createdAt}` : ""}`
-            : "None"}
-        </p>
-        <p>{selectedProfileData?.description ?? "-"}</p>
-
-        <div className="subSection installedProfileSummary">
-          <p>Installed profile</p>
-          {status?.installedProfile?.name ? (
-            <>
-              <p className="installedProfileName">
-                {status.installedProfile.name}
-                {status.installedProfile.author ? ` • by ${status.installedProfile.author}` : ""}
-              </p>
-              <p>{status.installedProfile.description ?? "No description available."}</p>
-              {installedProfileUrl ? (
-                <button
-                  type="button"
-                  className="linkBtn"
-                  onClick={() => onOpenInstalledProfile(installedProfileUrl)}
-                >
-                  Visit profile
-                </button>
-              ) : null}
-            </>
-          ) : (
-            <p>No profile installed.</p>
-          )}
-        </div>
-        <div className="subSection">
-          <div className="row">
-            <button disabled={loading} onClick={() => runAction(openItemFolder, "Opened installed folder.")}>
-              📁 Open installed
-            </button>
-            <button disabled={loading} onClick={onClearInstalled}>
-              🗑 Clear installed
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <section className="card">
-        <h2>Updater</h2>
-        <p>Current version: {status?.version ?? "..."}</p>
-        <div className="row">
-          <button disabled={loading} onClick={onCheckUpdates}>
-            Check updates
-          </button>
-          <button disabled={loading || !updateStatus?.available} onClick={onInstallUpdate}>
-            Install update
-          </button>
-        </div>
-        <p>
-          {updateStatus
-            ? updateStatus.available
-              ? `Update available: v${updateStatus.version}`
-              : "Up to date."
-            : "No update check yet."}
-        </p>
-      </section>
-
-      {message ? <section className="card status">{message}</section> : null}
-
-      {settingsOpen ? (
-        <div className="modalBackdrop" onClick={() => setSettingsOpen(false)}>
-          <section className="card modalCard" onClick={(event) => event.stopPropagation()}>
-            <div className="modalHeader">
-              <h2>Settings</h2>
-              <button type="button" onClick={() => setSettingsOpen(false)}>
-                Close
+            {updateStatus.installable ? (
+              <button disabled={loading} onClick={onInstallUpdate}>
+                Install update
               </button>
-            </div>
-            <p>Game folder: {status?.selectedGameBase ?? "Not set"}</p>
-            <p>Item folder: {status?.selectedGameItemFolder ?? "Not set"}</p>
-            <div className="row">
-              <button className="buttonStrong" disabled={loading} onClick={onBrowseFolder}>
-                📂 Browse folder
-              </button>
+            ) : (
               <button
-                className="buttonStrong buttonDanger"
-                disabled={loading}
-                onClick={() => runAction(clearGameFolder, "Game folder cleared.")}
+                disabled={loading || !updateStatus.releaseUrl}
+                onClick={() => updateStatus.releaseUrl && onOpenReleaseUrl(updateStatus.releaseUrl)}
               >
-                🗑 Clear
+                View release
               </button>
-              <button disabled={loading} onClick={() => runAction(openItemFolder, "Opened item folder.")}>
-                📁 Open item folder
-              </button>
-            </div>
-          </section>
-        </div>
+            )}
+          </div>
+        </section>
       ) : null}
+
+      <StatusMessage message={message} />
+
+      <AppFooter />
+
+      <SettingsModal
+        open={settingsOpen}
+        status={status}
+        loading={loading}
+        onClose={() => setSettingsOpen(false)}
+        onBrowseFolder={onBrowseFolder}
+        onClearGameFolder={() => runAction(clearGameFolder, "Game folder cleared.")}
+        onOpenItemFolder={() => runAction(openItemFolder, "Opened item folder.")}
+      />
+      <LoadingOverlay visible={loading} />
     </main>
   );
 }

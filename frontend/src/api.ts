@@ -1,4 +1,4 @@
-import type { AppStatus } from "./types";
+import type { AppStatus, UpdateCheckResult } from "./types";
 
 const API_BASE = "http://localhost:8080/api";
 
@@ -65,4 +65,8 @@ export function openResourcesFolder() {
 
 export function openItemFolder() {
   return request<{ message: string }>("/folders/open/item", { method: "POST" });
+}
+
+export function checkBackendUpdate() {
+  return request<UpdateCheckResult>("/update/check");
 }
