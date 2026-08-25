@@ -1,0 +1,48 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "RO Toolbox",
+  "version": "0.1.1",
+  "identifier": "com.bstudio.ro-toolbox",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "",
+    "devUrl": "http://localhost:5173",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "RO Toolbox",
+        "label": "main",
+        "width": 980,
+        "height": 640,
+        "minWidth": 860,
+        "minHeight": 520
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "createUpdaterArtifacts": true,
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.ico"
+    ],
+    "resources": ["resources/RO_Toolbox.jar"]
+  },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IEE1QUJCNThDOEM1RDY2QUUKUldTdVpsMk1qTFdycGVvY0pGbUZERzhHa2gvV3F5TndlWXVPd09BVExtWk02bnAwaGg3OUdmeDQK",
+      "endpoints": [
+        "https://github.com/MartinBStudio/RO_Toolbox/releases/latest/download/latest.json"
+      ],
+      "dialog": false
+    }
+  }
+}

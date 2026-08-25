@@ -1,0 +1,1 @@
+{"root":["./src/app.tsx","./src/api.ts","./src/main.tsx","./src/types.ts","./src/components/appfooter.tsx","./src/components/appheader.tsx","./src/components/loadingoverlay.tsx","./src/components/lootmanager.tsx","./src/components/servicecontainer.tsx","./src/components/settingsmodal.tsx","./src/components/statusmessage.tsx"],"version":"5.9.3"}

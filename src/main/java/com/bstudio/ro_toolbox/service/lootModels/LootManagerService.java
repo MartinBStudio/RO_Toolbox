@@ -1,6 +1,5 @@
 package com.bstudio.ro_toolbox.service.lootModels;
 
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -9,8 +8,11 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Properties;
-import java.util.function.Consumer;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -34,19 +36,10 @@ public class LootManagerService {
 
     private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
 
-    @Getter
     private volatile Path selectedGameBase = null; // base installation folder (no suffix)
-    @Getter
     private volatile String currentLootProfile = null;
 
-    // logger can be updated by the GUI to forward messages
-    private Consumer<String> logger;
-
-    // listeners notified when configuration changes (e.g., selected game base changed)
-    private final java.util.List<Runnable> changeListeners = new java.util.concurrent.CopyOnWriteArrayList<>();
-
     public LootManagerService() {
-        this.logger = null;
         ensureRuntimeDirs();
         loadConfig();
     }
@@ -60,18 +53,9 @@ public class LootManagerService {
         }
     }
 
-    public void setLogger(Consumer<String> logger) { this.logger = logger; }
-
     private void log(String s) {
         LOG.info(s);
-        if (logger != null) logger.accept(s + "\n");
     }
-
-    public void addChangeListener(Runnable r) { if (r != null) changeListeners.add(r); }
-    private void notifyChangeListeners() { for (Runnable r : changeListeners) { try { r.run(); } catch (Throwable ignored) {} } }
-
-    // Allow GUI callers to publish messages to both GUI and underlying logger
-    public void guiMessage(String s) { log(s); }
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
 
@@ -83,7 +67,6 @@ public class LootManagerService {
 
     public void setCurrentLootProfile(String profile) {
         currentLootProfile = (profile == null || profile.isBlank()) ? null : profile;
-        notifyChangeListeners();
     }
 
     // --- config ---
@@ -118,7 +101,6 @@ public class LootManagerService {
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
             selectedGameBase = base.toAbsolutePath().normalize();
             log("Selected game base saved: " + selectedGameBase);
-            notifyChangeListeners();
         } catch (Exception ex) {
             log("Failed to save selected game base: " + ex.getMessage());
             throw new IllegalStateException("Unable to save selected game base to config.", ex);
@@ -136,25 +118,10 @@ public class LootManagerService {
             try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
             selectedGameBase = null;
             log("Selected game base cleared.");
-            notifyChangeListeners();
         } catch (Exception ex) {
             log("Failed to clear selected game base: " + ex.getMessage());
             throw new IllegalStateException("Unable to clear selected game base from config.", ex);
         }
-    }
-
-    public boolean isDirectoryNonEmpty(Path dir) {
-        if (dir == null) return false;
-        if (!Files.exists(dir) || !Files.isDirectory(dir)) return false;
-        try (DirectoryStream<Path> ds = Files.newDirectoryStream(dir)) {
-            return ds.iterator().hasNext();
-        } catch (IOException e) {
-            return false;
-        }
-    }
-
-    public Path getCurrentResourcesRoot() {
-        return (getSelectedGameItemFolder() != null) ? getSelectedGameItemFolder() : RESOURCES_DIR;
     }
 
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
@@ -269,17 +236,97 @@ public class LootManagerService {
         }
     }
 
-    // Helpers for GUI-level workflows
     public void clearResources() throws IOException { deleteDirectoryContents(RESOURCES_DIR); }
     public void clearSelectedItemFolder() throws IOException { Path itemFolder = getSelectedGameItemFolder(); if (itemFolder != null) deleteDirectoryContents(itemFolder); }
 
-    public Path findPocSource(String folderName) {
-        Path pocSource = RESOURCES_DIR.resolve(folderName);
-        if (!Files.exists(pocSource) || !Files.isDirectory(pocSource)) {
-            Path alt = (selectedGameBase != null) ? selectedGameBase.resolve(RESOURCES_DIR.getFileName()).resolve(folderName) : null;
-            if (alt != null && Files.exists(alt) && Files.isDirectory(alt)) pocSource = alt;
+    public record AvailableProfile(
+            String id,
+            String name,
+            String author,
+            String description,
+            String url,
+            String createdAt,
+            long normalizedVersion,
+            Path source
+    ) {
+    }
+
+    public List<String> listDownloadedProfiles() {
+        List<String> profiles = new ArrayList<>();
+        if (RESOURCES_DIR == null || !Files.exists(RESOURCES_DIR) || !Files.isDirectory(RESOURCES_DIR)) {
+            return profiles;
         }
-        return (Files.exists(pocSource) && Files.isDirectory(pocSource)) ? pocSource : null;
+        try (var stream = Files.list(RESOURCES_DIR)) {
+            stream.filter(Files::isDirectory)
+                    .filter(p -> !p.getFileName().toString().startsWith("."))
+                    .forEach(p -> {
+                        Path manifest = p.resolve("manifest.json");
+                        if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
+                            profiles.add(p.getFileName().toString());
+                        }
+                    });
+        } catch (IOException ignored) {
+        }
+        profiles.sort(String::compareToIgnoreCase);
+        return profiles;
+    }
+
+    public List<AvailableProfile> listAvailableProfiles() {
+        List<AvailableProfile> results = new ArrayList<>();
+        Set<String> seen = new LinkedHashSet<>();
+        List<Path> roots = new ArrayList<>();
+        roots.add(RESOURCES_DIR);
+        if (selectedGameBase != null) {
+            roots.add(selectedGameBase.resolveSibling(RESOURCES_DIR.getFileName()));
+        }
+
+        for (Path root : roots) {
+            if (root == null || !Files.exists(root) || !Files.isDirectory(root)) continue;
+            try (var stream = Files.walk(root)) {
+                for (Path p : (Iterable<Path>) stream::iterator) {
+                    if (!Files.isDirectory(p)) continue;
+                    String name = p.getFileName().toString();
+                    if (name.startsWith(".")) continue;
+                    Path manifest = p.resolve("manifest.json");
+                    if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
+                    if (seen.add(name)) {
+                        results.add(new AvailableProfile(
+                                name,
+                                readManifestName(manifest),
+                                readManifestAuthor(manifest),
+                                readManifestDescription(manifest),
+                                readManifestUrl(manifest),
+                                readManifestCreatedAt(manifest),
+                                normalizeVersion(readManifestVersion(manifest)),
+                                p
+                        ));
+                    }
+                }
+            } catch (IOException ignored) {
+            }
+        }
+
+        results.sort((a, b) -> {
+            int versionDiff = Long.compare(b.normalizedVersion(), a.normalizedVersion());
+            if (versionDiff != 0) return versionDiff;
+            return a.id().compareToIgnoreCase(b.id());
+        });
+        return results;
+    }
+
+    public void installProfile(String profileId) throws IOException {
+        Path destination = getSelectedGameItemFolder();
+        if (destination == null) {
+            throw new IllegalStateException("No game installation folder is selected.");
+        }
+        AvailableProfile selected = listAvailableProfiles().stream()
+                .filter(profile -> profile.id().equals(profileId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + profileId));
+
+        clearSelectedItemFolder();
+        copyDirectoryContents(selected.source(), destination);
+        setCurrentLootProfile(selected.id());
     }
 
     public static final class ProfileInfo {
@@ -376,6 +423,33 @@ public class LootManagerService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private String readManifestVersion(Path manifestFile) {
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            if (!matcher.find()) return "0.0.0";
+            return matcher.group(1).trim();
+        } catch (Exception e) {
+            return "0.0.0";
+        }
+    }
+
+    private long normalizeVersion(String version) {
+        if (version == null || version.isBlank()) return 0L;
+        String cleaned = version.trim().replaceFirst("(?i)^v", "");
+        String[] parts = cleaned.split("[.-]");
+        long value = 0L;
+        long multiplier = 1_000_000_000L;
+        for (String part : parts) {
+            if (part == null || part.isBlank()) continue;
+            String digits = part.replaceAll("[^0-9]", "");
+            if (digits.isEmpty()) continue;
+            value += Long.parseLong(digits) * multiplier;
+            multiplier /= 1000L;
+        }
+        return value;
     }
 
 }
