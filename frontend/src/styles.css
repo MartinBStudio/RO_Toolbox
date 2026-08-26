@@ -440,3 +440,17 @@ a {
     transform: rotate(360deg);
   }
 }
+
+.startupLoading,
+.startupError {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: var(--text-muted, #aaa);
+  font-size: 0.95rem;
+}
+
+.startupError {
+  color: var(--danger, #e74c3c);
+}
