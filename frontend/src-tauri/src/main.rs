@@ -1,6 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command};
 use std::sync::Mutex;
 use std::thread;
@@ -47,8 +47,8 @@ fn main() {
 }
 
 fn spawn_backend_with_retry(
-    java_bin: &PathBuf,
-    jar_path: &PathBuf,
+    java_bin: &Path,
+    jar_path: &Path,
     retries: u32,
     delay: Duration,
 ) -> Result<Child, String> {
@@ -85,32 +85,34 @@ fn find_java_bin(app_handle: &AppHandle) -> PathBuf {
             resource_dir
                 .join("jre")
                 .join("bin")
-                .join(java_executable_name()),
+                .join(bundled_java_executable_name()),
         );
     }
 
-    if let Ok(cwd) = std::env::current_dir() {
-        candidates.push(
-            cwd.join("resources")
-                .join("jre")
-                .join("bin")
-                .join(java_executable_name()),
-        );
+    if cfg!(debug_assertions) {
+        if let Ok(cwd) = std::env::current_dir() {
+            candidates.push(
+                cwd.join("resources")
+                    .join("jre")
+                    .join("bin")
+                    .join(bundled_java_executable_name()),
+            );
+        }
     }
 
     candidates
         .into_iter()
         .find(|candidate| candidate.exists())
-        .unwrap_or_else(|| PathBuf::from(java_executable_name()))
+        .unwrap_or_else(|| PathBuf::from("java"))
 }
 
 #[cfg(windows)]
-fn java_executable_name() -> &'static str {
+fn bundled_java_executable_name() -> &'static str {
     "java.exe"
 }
 
 #[cfg(not(windows))]
-fn java_executable_name() -> &'static str {
+fn bundled_java_executable_name() -> &'static str {
     "java"
 }
 
