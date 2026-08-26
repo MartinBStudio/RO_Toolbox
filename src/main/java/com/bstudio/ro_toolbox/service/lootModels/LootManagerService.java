@@ -19,6 +19,8 @@ import java.util.zip.ZipInputStream;
 @Service
 public class LootManagerService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
+    private static final String MANIFEST_FILE_NAME = "manifestLoot.json";
+    private static final String LEGACY_MANIFEST_FILE_NAME = "manifest.json";
     private static final Path APP_DATA_ROOT = resolveAppDataRoot();
     private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("lootManager");
     private static final Path GAME_SUFFIX = Paths.get("3ddata", "item");
@@ -241,14 +243,46 @@ public class LootManagerService {
         Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
 
-        Path manifest = itemFolder.resolve("manifest.json");
+        Path manifest = resolveManifestPath(itemFolder);
         List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
-        if (managedSubfolders == null) {
-            deleteDirectoryContents(itemFolder);
-        } else {
+        if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
             deleteManagedSubfolders(itemFolder, managedSubfolders);
         }
-        Files.deleteIfExists(manifest);
+        deleteManifestFiles(itemFolder, MANIFEST_FILE_NAME);
+    }
+
+    private void removeInstalledProfileFiles(Path destination) throws IOException {
+        Path manifest = destination.resolve(MANIFEST_FILE_NAME);
+        if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
+            List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
+            if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
+                deleteManagedSubfolders(destination, managedSubfolders);
+            }
+        }
+        deleteManifestFiles(destination, MANIFEST_FILE_NAME);
+    }
+
+    private void normalizeInstalledManifest(Path destination) throws IOException {
+        Path currentManifest = destination.resolve(MANIFEST_FILE_NAME);
+        Path legacyManifest = destination.resolve(LEGACY_MANIFEST_FILE_NAME);
+        if (Files.exists(legacyManifest) && Files.isRegularFile(legacyManifest)) {
+            if (!Files.exists(currentManifest) || !Files.isRegularFile(currentManifest)) {
+                Files.move(legacyManifest, currentManifest, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                Files.deleteIfExists(legacyManifest);
+            }
+        }
+    }
+
+    private Path resolveManifestPath(Path directory) {
+        return directory.resolve(MANIFEST_FILE_NAME);
+    }
+
+    private void deleteManifestFiles(Path directory, String... manifestNames) throws IOException {
+        for (String manifestName : manifestNames) {
+            if (manifestName == null || manifestName.isBlank()) continue;
+            Files.deleteIfExists(directory.resolve(manifestName));
+        }
     }
 
     public record AvailableProfile(
@@ -272,7 +306,7 @@ public class LootManagerService {
             stream.filter(Files::isDirectory)
                     .filter(p -> !p.getFileName().toString().startsWith("."))
                     .forEach(p -> {
-                        Path manifest = p.resolve("manifest.json");
+                        Path manifest = resolveManifestPath(p);
                         if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
                             profiles.add(p.getFileName().toString());
                         }
@@ -299,7 +333,7 @@ public class LootManagerService {
                     if (!Files.isDirectory(p)) continue;
                     String name = p.getFileName().toString();
                     if (name.startsWith(".")) continue;
-                    Path manifest = p.resolve("manifest.json");
+                    Path manifest = resolveManifestPath(p);
                     if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
                     if (seen.add(name)) {
                         results.add(new AvailableProfile(
@@ -336,8 +370,9 @@ public class LootManagerService {
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + profileId));
 
-        clearSelectedItemFolder();
+        removeInstalledProfileFiles(destination);
         copyDirectoryContents(selected.source(), destination);
+        normalizeInstalledManifest(destination);
         setCurrentLootProfile(selected.id());
     }
 
@@ -363,11 +398,11 @@ public class LootManagerService {
             return null;
         }
         
-        Path manifest = itemFolder.resolve("manifest.json");
+        Path manifest = resolveManifestPath(itemFolder);
         if (!Files.exists(manifest)) {
             return null;
         }
-        
+
         return new ProfileInfo(
             readManifestName(manifest),
             readManifestAuthor(manifest),
