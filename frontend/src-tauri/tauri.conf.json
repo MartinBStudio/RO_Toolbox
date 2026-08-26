@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "RO.Toolbox",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "identifier": "com.bstudio.ro-toolbox",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -34,7 +34,7 @@
       "icons/128x128@2x.png",
       "icons/icon.ico"
     ],
-    "resources": ["resources/RO_Toolbox.jar"]
+    "resources": ["resources/RO_Toolbox.jar", "resources/jre"]
   },
   "plugins": {
     "updater": {

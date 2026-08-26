@@ -26,7 +26,7 @@ fn main() {
                 return Ok(());
             }
             let jar_path = find_backend_jar(app.handle())?;
-            let child = spawn_backend_with_retry(&jar_path, 5, Duration::from_secs(2))?;
+            let child = spawn_backend_with_retry(app.handle(), &jar_path, 5, Duration::from_secs(2))?;
             let state = app.state::<BackendState>();
             *state.0.lock().expect("backend lock poisoned") = Some(child);
             Ok(())
@@ -45,21 +45,42 @@ fn main() {
     });
 }
 
-fn spawn_backend_with_retry(jar_path: &PathBuf, retries: u32, delay: Duration) -> Result<Child, String> {
+fn spawn_backend_with_retry(
+    app_handle: &AppHandle,
+    jar_path: &PathBuf,
+    retries: u32,
+    delay: Duration,
+) -> Result<Child, String> {
     let mut last_err = String::new();
+    let bundled_java = find_bundled_java(app_handle);
+    let java_label = bundled_java
+        .as_ref()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_else(|| "java".to_string());
+
     for attempt in 0..=retries {
         if attempt > 0 {
             thread::sleep(delay);
         }
         #[allow(unused_mut)]
-        let mut cmd = Command::new("java");
+        let mut cmd = if let Some(ref java_path) = bundled_java {
+            Command::new(java_path)
+        } else {
+            Command::new("java")
+        };
         cmd.arg("-jar").arg(jar_path);
         #[cfg(windows)]
         cmd.creation_flags(CREATE_NO_WINDOW);
         match cmd.spawn() {
             Ok(child) => return Ok(child),
             Err(e) => {
-                last_err = format!("Failed to start backend (attempt {}/{}): {}", attempt + 1, retries + 1, e);
+                last_err = format!(
+                    "Failed to start backend using {} (attempt {}/{}): {}",
+                    java_label,
+                    attempt + 1,
+                    retries + 1,
+                    e
+                );
             }
         }
     }
@@ -101,4 +122,45 @@ fn find_backend_jar(app_handle: &AppHandle) -> Result<PathBuf, String> {
     }
 
     Err("RO_Toolbox.jar not found. Build backend jar and copy it to frontend/src-tauri/resources first.".to_string())
+}
+
+#[cfg(windows)]
+fn bundled_java_bin_name() -> &'static str {
+    "javaw.exe"
+}
+
+#[cfg(not(windows))]
+fn bundled_java_bin_name() -> &'static str {
+    "java"
+}
+
+fn find_bundled_java(app_handle: &AppHandle) -> Option<PathBuf> {
+    let mut candidates = Vec::<PathBuf>::new();
+
+    if let Ok(resource_dir) = app_handle.path().resource_dir() {
+        candidates.push(
+            resource_dir
+                .join("jre")
+                .join("bin")
+                .join(bundled_java_bin_name()),
+        );
+    }
+
+    if let Ok(cwd) = std::env::current_dir() {
+        candidates.push(
+            cwd.join("resources")
+                .join("jre")
+                .join("bin")
+                .join(bundled_java_bin_name()),
+        );
+        candidates.push(
+            cwd.join("src-tauri")
+                .join("resources")
+                .join("jre")
+                .join("bin")
+                .join(bundled_java_bin_name()),
+        );
+    }
+
+    candidates.into_iter().find(|candidate| candidate.exists())
 }

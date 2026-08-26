@@ -28,7 +28,7 @@ A desktop application for managing Rose Online game modifications and custom mod
 ## Installation
 
 1. Download the latest release of RO Toolbox
-2. Run the JAR file (requires Java 21 or higher)
+2. Run the desktop app package (it includes Java runtime automatically)
 3. On first launch, configure your Rose Online game installation folder in Settings
 
 ## Getting Started
@@ -55,7 +55,7 @@ A desktop application for managing Rose Online game modifications and custom mod
 
 ## System Requirements
 
-- **Java**: Version 21 or higher
+- **Java**: Not required for desktop app packages (runtime is bundled). Required only when running standalone JAR manually.
 - **OS**: Windows, macOS, Linux
 - **RAM**: 256 MB minimum
 - **Disk Space**: 50 MB for installation, additional space for profiles

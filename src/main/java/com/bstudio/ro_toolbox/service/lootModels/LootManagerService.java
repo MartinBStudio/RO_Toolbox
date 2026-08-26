@@ -237,7 +237,19 @@ public class LootManagerService {
     }
 
     public void clearResources() throws IOException { deleteDirectoryContents(RESOURCES_DIR); }
-    public void clearSelectedItemFolder() throws IOException { Path itemFolder = getSelectedGameItemFolder(); if (itemFolder != null) deleteDirectoryContents(itemFolder); }
+    public void clearSelectedItemFolder() throws IOException {
+        Path itemFolder = getSelectedGameItemFolder();
+        if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
+
+        Path manifest = itemFolder.resolve("manifest.json");
+        List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
+        if (managedSubfolders == null) {
+            deleteDirectoryContents(itemFolder);
+        } else {
+            deleteManagedSubfolders(itemFolder, managedSubfolders);
+        }
+        Files.deleteIfExists(manifest);
+    }
 
     public record AvailableProfile(
             String id,
@@ -433,6 +445,59 @@ public class LootManagerService {
             return matcher.group(1).trim();
         } catch (Exception e) {
             return "0.0.0";
+        }
+    }
+
+    private List<String> readManifestManagedSubfolders(Path manifestFile) {
+        List<String> subfolders = new ArrayList<>();
+        if (manifestFile == null || !Files.exists(manifestFile) || !Files.isRegularFile(manifestFile)) {
+            return null;
+        }
+        try {
+            String content = Files.readString(manifestFile);
+            java.util.regex.Matcher arrayMatcher = java.util.regex.Pattern.compile(
+                    "\"managedSubfolders\"\\s*:\\s*\\[(.*?)]",
+                    java.util.regex.Pattern.DOTALL
+            ).matcher(content);
+            if (!arrayMatcher.find()) return null;
+
+            String arrayContent = arrayMatcher.group(1);
+            java.util.regex.Matcher itemMatcher = java.util.regex.Pattern.compile(
+                    "\"((?:\\\\.|[^\"\\\\])*)\""
+            ).matcher(arrayContent);
+            while (itemMatcher.find()) {
+                String raw = itemMatcher.group(1)
+                        .replace("\\n", "\n")
+                        .replace("\\\"", "\"")
+                        .replace("\\\\", "\\")
+                        .trim();
+                if (!raw.isEmpty()) subfolders.add(raw);
+            }
+            return subfolders;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private void deleteManagedSubfolders(Path baseDir, List<String> managedSubfolders) throws IOException {
+        if (managedSubfolders == null || managedSubfolders.isEmpty()) return;
+        for (String subfolder : managedSubfolders) {
+            if (subfolder == null || subfolder.isBlank()) continue;
+            Path relative = Paths.get(subfolder).normalize();
+            if (relative.isAbsolute() || relative.startsWith("..")) {
+                log("Skipping invalid managedSubfolder path: " + subfolder);
+                continue;
+            }
+            Path target = baseDir.resolve(relative).normalize();
+            if (!target.startsWith(baseDir)) {
+                log("Skipping out-of-scope managedSubfolder path: " + subfolder);
+                continue;
+            }
+            if (Files.exists(target) && Files.isDirectory(target)) {
+                deleteDirectoryContents(target);
+                Files.deleteIfExists(target);
+                log("Deleted managed subfolder: " + target.toAbsolutePath());
+            }
         }
     }
 
