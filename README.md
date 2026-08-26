@@ -28,7 +28,7 @@ A desktop application for managing Rose Online game modifications and custom mod
 ## Installation
 
 1. Download the latest release of RO Toolbox
-2. Run the JAR file (requires Java 21 or higher)
+2. Run the packaged desktop app for your platform (Java is bundled automatically)
 3. On first launch, configure your Rose Online game installation folder in Settings
 
 ## Getting Started

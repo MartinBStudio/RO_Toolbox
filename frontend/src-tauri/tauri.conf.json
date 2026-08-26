@@ -34,7 +34,7 @@
       "icons/128x128@2x.png",
       "icons/icon.ico"
     ],
-    "resources": ["resources/RO_Toolbox.jar"]
+    "resources": ["resources/RO_Toolbox.jar", "resources/jre"]
   },
   "plugins": {
     "updater": {
