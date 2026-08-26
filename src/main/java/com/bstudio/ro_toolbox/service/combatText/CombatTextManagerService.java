@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.service.lootModels;
+package com.bstudio.ro_toolbox.service.combatText;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,13 +17,13 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 @Service
-public class LootManagerService {
-    private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
-    private static final String MANIFEST_FILE_NAME = "manifestLoot.json";
+public class CombatTextManagerService {
+    private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_CombatText_resources";
+    private static final String MANIFEST_FILE_NAME = "manifestCombatText.json";
     private static final String LEGACY_MANIFEST_FILE_NAME = "manifest.json";
     private static final Path APP_DATA_ROOT = resolveAppDataRoot();
-    private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("lootManager");
-    private static final Path GAME_SUFFIX = Paths.get("3ddata", "item");
+    private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("combatText");
+    private static final Path GAME_SUFFIX = Paths.get("3ddata");
 
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
@@ -36,12 +36,12 @@ public class LootManagerService {
         return Paths.get(System.getProperty("user.home"), ".ro_toolbox");
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CombatTextManagerService.class);
 
-    private volatile Path selectedGameBase = null; // base installation folder (no suffix)
-    private volatile String currentLootProfile = null;
+    private volatile Path selectedGameBase = null;
+    private volatile String currentCombatTextProfile = null;
 
-    public LootManagerService() {
+    public CombatTextManagerService() {
         ensureRuntimeDirs();
         loadConfig();
     }
@@ -65,13 +65,12 @@ public class LootManagerService {
 
     public Path getSelectedGameItemFolder() { return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX); }
 
-    public String getCurrentLootProfile() { return currentLootProfile; }
+    public String getCurrentCombatTextProfile() { return currentCombatTextProfile; }
 
-    public void setCurrentLootProfile(String profile) {
-        currentLootProfile = (profile == null || profile.isBlank()) ? null : profile;
+    public void setCurrentCombatTextProfile(String profile) {
+        currentCombatTextProfile = (profile == null || profile.isBlank()) ? null : profile;
     }
 
-    // --- config ---
     private void loadConfig() {
         try {
             if (!Files.exists(CONFIG_FILE)) return;
@@ -86,7 +85,6 @@ public class LootManagerService {
         }
     }
 
-    /** Save the installation base folder (no 3ddata/item suffix). */
     public void saveSelectedGame(Path base) {
         try {
             if (base == null) {
@@ -100,7 +98,7 @@ public class LootManagerService {
                 try (InputStream in = Files.newInputStream(CONFIG_FILE)) { prop.load(in); }
             }
             prop.setProperty("selectedGame", base.toAbsolutePath().toString());
-            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
+            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO CombatText config"); }
             selectedGameBase = base.toAbsolutePath().normalize();
             log("Selected game base saved: " + selectedGameBase);
         } catch (Exception ex) {
@@ -117,7 +115,7 @@ public class LootManagerService {
                 try (InputStream in = Files.newInputStream(CONFIG_FILE)) { prop.load(in); }
             }
             prop.remove("selectedGame");
-            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
+            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO CombatText config"); }
             selectedGameBase = null;
             log("Selected game base cleared.");
         } catch (Exception ex) {
@@ -161,7 +159,7 @@ public class LootManagerService {
     private InputStream openUrlStream(String urlStr) throws IOException {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestProperty("User-Agent", "RO_LootManager/1.0");
+        conn.setRequestProperty("User-Agent", "RO_CombatTextManager/1.0");
         conn.setInstanceFollowRedirects(true);
         int code = conn.getResponseCode();
         if (code >= 200 && code < 300) return conn.getInputStream();
@@ -239,6 +237,7 @@ public class LootManagerService {
     }
 
     public void clearResources() throws IOException { deleteDirectoryContents(RESOURCES_DIR); }
+
     public void clearSelectedItemFolder() throws IOException {
         Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
@@ -373,7 +372,7 @@ public class LootManagerService {
         removeInstalledProfileFiles(destination);
         copyDirectoryContents(selected.source(), destination);
         normalizeInstalledManifest(destination);
-        setCurrentLootProfile(selected.id());
+        setCurrentCombatTextProfile(selected.id());
     }
 
     public static final class ProfileInfo {
@@ -397,18 +396,18 @@ public class LootManagerService {
         if (itemFolder == null || !Files.exists(itemFolder)) {
             return null;
         }
-        
+
         Path manifest = resolveManifestPath(itemFolder);
         if (!Files.exists(manifest)) {
             return null;
         }
 
         return new ProfileInfo(
-            readManifestName(manifest),
-            readManifestAuthor(manifest),
-            readManifestDescription(manifest),
-            readManifestUrl(manifest),
-            readManifestCreatedAt(manifest)
+                readManifestName(manifest),
+                readManifestAuthor(manifest),
+                readManifestDescription(manifest),
+                readManifestUrl(manifest),
+                readManifestCreatedAt(manifest)
         );
     }
 
@@ -551,5 +550,4 @@ public class LootManagerService {
         }
         return value;
     }
-
 }

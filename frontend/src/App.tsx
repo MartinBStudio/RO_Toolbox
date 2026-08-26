@@ -5,6 +5,7 @@ import {AppFooter} from "./elements/AppFooter.tsx";
 import {LoadingOverlay} from "./elements/LoadingOverlay.tsx";
 import {BackendReadyGate} from "./elements/BackendReadyGate.tsx";
 import {LootManager} from "./components/LootManager";
+import {CombatTextManager} from "./components/CombatTextManager";
 import {ServiceContainer} from "./elements/ServiceContainer.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
@@ -83,6 +84,14 @@ function App() {
                                 contents: [
                                     <LootManager
                                         key="texture-replacer-loot-1"
+                                        status={status}
+                                        loading={loading}
+                                        onBusyChange={setLoading}
+                                        onStatusRefresh={refreshStatus}
+                                        onMessage={setMessage}
+                                    />,
+                                    <CombatTextManager
+                                        key="texture-replacer-combattext-1"
                                         status={status}
                                         loading={loading}
                                         onBusyChange={setLoading}

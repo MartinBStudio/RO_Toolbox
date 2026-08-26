@@ -18,11 +18,17 @@ export type AvailableProfile = {
 export type AppStatus = {
   version: string;
   lootServiceEndpoint: string;
+  combatTextServiceEndpoint: string;
   selectedGameBase: string | null;
   selectedGameItemFolder: string | null;
   installedProfile: ProfileInfo | null;
   downloadedProfiles: string[];
   availableProfiles: AvailableProfile[];
+  combatTextSelectedGameBase: string | null;
+  combatTextSelectedGameItemFolder: string | null;
+  combatTextInstalledProfile: ProfileInfo | null;
+  combatTextDownloadedProfiles: string[];
+  combatTextAvailableProfiles: AvailableProfile[];
 };
 
 export type UpdateCheckResult = {

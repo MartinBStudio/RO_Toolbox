@@ -8,4 +8,12 @@ export {
   openResourcesFolder,
   openItemFolder
 } from "./lootApi.ts";
+export {
+  downloadCombatTextProfiles,
+  installCombatTextProfile,
+  clearCombatTextResources,
+  clearCombatTextInstalled,
+  openCombatTextResourcesFolder,
+  openCombatTextItemFolder
+} from "./combatTextApi.ts";
 export { checkBackendUpdate } from "./updateApi.ts";
