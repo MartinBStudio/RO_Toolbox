@@ -8,6 +8,7 @@ import {LootManager} from "./components/LootManager";
 import {CombatTextManager} from "./components/CombatTextManager";
 import {ServiceContainer} from "./elements/ServiceContainer.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
+import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
 
@@ -16,6 +17,8 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
+
+    const needsSetup = backendReady && status !== null && !status.selectedGameBase;
 
     useEffect(() => {
         if (!message) {
@@ -114,6 +117,14 @@ function App() {
                         onMessage={setMessage}
                     />
                     <LoadingOverlay visible={loading}/>
+                    {needsSetup && (
+                        <GameFolderSetupModal
+                            loading={loading}
+                            onBusyChange={setLoading}
+                            onStatusRefresh={refreshStatus}
+                            onMessage={setMessage}
+                        />
+                    )}
                 </>
             </BackendReadyGate>
         </main>

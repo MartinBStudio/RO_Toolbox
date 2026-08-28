@@ -438,6 +438,42 @@ a {
   align-items: center;
 }
 
+.setupModal {
+  text-align: center;
+  padding: 1.8rem 1.6rem;
+  display: grid;
+  gap: 0.6rem;
+  justify-items: center;
+}
+
+.setupModalIcon {
+  font-size: 2.4rem;
+  line-height: 1;
+}
+
+.setupModalTitle {
+  color: #dce4ef;
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.setupModalDesc {
+  color: #8fa6c0;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  max-width: 360px;
+}
+
+.setupModalDesc code {
+  background: #0d1420;
+  border: 1px solid #243040;
+  border-radius: 4px;
+  padding: 0.05rem 0.3rem;
+  font-size: 0.82rem;
+  color: #a8c4e0;
+}
+
 .modalBackdrop {
   position: fixed;
   inset: 0;
@@ -457,7 +493,47 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.9rem;
+}
+
+.settingsSection {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.settingsSectionLabel {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #4e6480;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.settingsFolderDisplay {
+  background: #0d1420;
+  border: 1px solid #243040;
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.83rem;
+  color: #a8c4e0;
+  font-family: "Consolas", "Courier New", monospace;
+  word-break: break-all;
+  line-height: 1.4;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.settingsFolderEmpty {
+  color: #3d5270;
+  font-style: italic;
+  font-family: inherit;
+}
+
+.settingsFolderActions {
+  display: flex;
+  gap: 0.45rem;
 }
 
 .modalActions {
