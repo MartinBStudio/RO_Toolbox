@@ -47,3 +47,12 @@ export type UpdateInstallResult = {
   success: boolean;
   message: string;
 };
+
+export type ResourcesUpdateCheckResult = {
+  localVersion: string;
+  remoteVersion: string;
+  localExists: boolean;
+  updateAvailable: boolean;
+  success: boolean;
+  message: string;
+};

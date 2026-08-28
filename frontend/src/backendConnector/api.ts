@@ -6,7 +6,8 @@ export {
   clearResources,
   clearInstalled,
   openResourcesFolder,
-  openItemFolder
+  openItemFolder,
+  checkLootResourcesUpdate
 } from "./lootApi.ts";
 export {
   downloadCombatTextProfiles,
@@ -14,6 +15,7 @@ export {
   clearCombatTextResources,
   clearCombatTextInstalled,
   openCombatTextResourcesFolder,
-  openCombatTextItemFolder
+  openCombatTextItemFolder,
+  checkCombatTextResourcesUpdate
 } from "./combatTextApi.ts";
 export { checkBackendUpdate } from "./updateApi.ts";

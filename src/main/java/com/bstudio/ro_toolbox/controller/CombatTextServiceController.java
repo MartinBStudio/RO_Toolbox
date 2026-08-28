@@ -70,6 +70,11 @@ public class CombatTextServiceController {
         return new MessageResponse("Installed models cleared.");
     }
 
+    @GetMapping("/check-update")
+    public CombatTextManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
+        return combatTextManagerService.checkResourcesUpdate();
+    }
+
     @PostMapping("/folders/open/resources")
     public MessageResponse openResourcesFolder() throws IOException {
         Path resources = combatTextManagerService.getResourcesDir();

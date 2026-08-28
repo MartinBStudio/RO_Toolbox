@@ -1,3 +1,4 @@
+import type { ResourcesUpdateCheckResult } from "../types.ts";
 import { request } from "./apiClient.ts";
 
 export function downloadProfiles() {
@@ -25,4 +26,8 @@ export function openResourcesFolder() {
 
 export function openItemFolder() {
   return request<{ message: string }>("/loot/folders/open/item", { method: "POST" });
+}
+
+export function checkLootResourcesUpdate() {
+  return request<ResourcesUpdateCheckResult>("/loot/check-update");
 }

@@ -104,24 +104,31 @@ export function SettingsModal({
     return null;
   }
 
+  const gameFolderSet = Boolean(status?.selectedGameBase);
+
   return (
     <div className="modalBackdrop" onClick={onClose}>
       <section className="card modalCard" onClick={(event) => event.stopPropagation()}>
         <div className="modalHeader">
           <h2>Settings</h2>
-          <button type="button" onClick={onClose}>
-            Close
-          </button>
+          <button type="button" className="buttonSubtle" onClick={onClose}>✕</button>
         </div>
-        <p>Game folder: {status?.selectedGameBase ?? "Not set"}</p>
-        <p>Item folder: {status?.selectedGameItemFolder ?? "Not set"}</p>
-        <div className="row modalActions">
-          <button className="buttonStrong" disabled={loading} onClick={onBrowseFolder}>
-            📂 Set folder
-          </button>
-          <button className="buttonSubtle" disabled={loading} onClick={onClearGameFolder}>
-            🗑 Clear
-          </button>
+
+        <div className="settingsSection">
+          <p className="settingsSectionLabel">ROSE Online folder</p>
+          <div className={`settingsFolderDisplay${gameFolderSet ? "" : " settingsFolderEmpty"}`}>
+            {status?.selectedGameBase ?? "Not set"}
+          </div>
+          <div className="settingsFolderActions">
+            <button className="buttonStrong" disabled={loading} onClick={onBrowseFolder}>
+              📂 Browse…
+            </button>
+            {gameFolderSet && (
+              <button className="buttonSubtle" disabled={loading} onClick={onClearGameFolder}>
+                🗑 Clear
+              </button>
+            )}
+          </div>
         </div>
       </section>
     </div>

@@ -1,3 +1,4 @@
+import type { ResourcesUpdateCheckResult } from "../types.ts";
 import { request } from "./apiClient.ts";
 
 export function downloadCombatTextProfiles() {
@@ -25,4 +26,8 @@ export function openCombatTextResourcesFolder() {
 
 export function openCombatTextItemFolder() {
   return request<{ message: string }>("/combattext/folders/open/item", { method: "POST" });
+}
+
+export function checkCombatTextResourcesUpdate() {
+  return request<ResourcesUpdateCheckResult>("/combattext/check-update");
 }

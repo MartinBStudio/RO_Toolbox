@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import type { AppStatus } from "../types";
 import {
+  checkLootResourcesUpdate,
   clearInstalled,
   clearResources,
   downloadProfiles,
@@ -9,6 +10,7 @@ import {
   openItemFolder,
   openResourcesFolder
 } from "../backendConnector/api.ts";
+import { useApplicationContext } from "../context/ApplicationContext.tsx";
 
 type LootManagerProps = {
   status: AppStatus | null;
@@ -25,8 +27,12 @@ export function LootManager({
   onStatusRefresh,
   onMessage
 }: LootManagerProps) {
+  const { backendReady } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
+  const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
+  const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
+  const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const availableProfiles = status?.availableProfiles ?? [];
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
@@ -49,6 +55,11 @@ export function LootManager({
     }
   }, [availableProfiles, selectedProfile]);
 
+  useEffect(() => {
+    if (!backendReady) return;
+    checkResourcesUpdate();
+  }, [backendReady]);
+
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
       return err.message;
@@ -60,6 +71,25 @@ export function LootManager({
       return err.message;
     }
     return fallback;
+  }
+
+  async function checkResourcesUpdate() {
+    setResourcesUpdateChecking(true);
+    try {
+      const result = await checkLootResourcesUpdate();
+      if (result.success && result.updateAvailable) {
+        setResourcesUpdateAvailable(true);
+        setResourcesUpdateVersion(result.remoteVersion);
+      } else {
+        setResourcesUpdateAvailable(false);
+        setResourcesUpdateVersion(undefined);
+      }
+    } catch (_err) {
+      setResourcesUpdateAvailable(false);
+      setResourcesUpdateVersion(undefined);
+    } finally {
+      setResourcesUpdateChecking(false);
+    }
   }
 
   async function runAction(action: () => Promise<unknown>, successMessage?: string) {
@@ -74,6 +104,33 @@ export function LootManager({
       onMessage(toErrorMessage(err, "Request failed."));
     } finally {
       onBusyChange(false);
+    }
+  }
+
+  async function onResourcesUpdateAction() {
+    if (resourcesUpdateAvailable) {
+      await runAction(downloadProfiles, "Profiles downloaded.");
+      setResourcesUpdateAvailable(false);
+      setResourcesUpdateVersion(undefined);
+    } else {
+      setResourcesUpdateChecking(true);
+      try {
+        const result = await checkLootResourcesUpdate();
+        if (result.success && result.updateAvailable) {
+          setResourcesUpdateAvailable(true);
+          setResourcesUpdateVersion(result.remoteVersion);
+        } else if (result.success) {
+          setResourcesUpdateAvailable(false);
+          setResourcesUpdateVersion(undefined);
+          onMessage("Loot models are up to date.");
+        } else {
+          onMessage(result.message || "Update check failed.");
+        }
+      } catch (err) {
+        onMessage(toErrorMessage(err, "Update check failed."));
+      } finally {
+        setResourcesUpdateChecking(false);
+      }
     }
   }
 
@@ -104,6 +161,11 @@ export function LootManager({
     }
   }
 
+  const resourcesUpdateTitle = resourcesUpdateAvailable
+    ? `Download loot models update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
+    : "Check for loot models updates";
+  const hasProfiles = (status?.downloadedProfiles.length ?? 0) > 0;
+
   return (
     <section className="lootManager">
       <div className="lootAccordion">
@@ -118,7 +180,7 @@ export function LootManager({
             {installedProfileUrl ? (
               <button
                 type="button"
-                className="iconBtn iconBtnSubtle"
+                className="iconBtn iconBtnSubtle iconBtnDim"
                 disabled={loading}
                 onClick={() => onOpenInstalledProfile(installedProfileUrl)}
                 title="Visit author's profile"
@@ -129,7 +191,27 @@ export function LootManager({
             ) : null}
             <button
               type="button"
-              className="iconBtn iconBtnSubtle"
+              className="iconBtn iconBtnSubtle iconBtnDim"
+              disabled={loading}
+              onClick={() => runAction(openResourcesFolder)}
+              title="Open downloaded"
+              aria-label="Open downloaded"
+            >
+              📂
+            </button>
+            <button
+              type="button"
+              className="iconBtn iconBtnSubtle iconBtnDim"
+              disabled={loading}
+              onClick={() => runAction(clearResources, "Downloaded resources cleared.")}
+              title="Clear downloaded"
+              aria-label="Clear downloaded"
+            >
+              🗑
+            </button>
+            <button
+              type="button"
+              className="iconBtn iconBtnSubtle iconBtnDim"
               disabled={loading}
               onClick={() => runAction(openItemFolder)}
               title="Open installed"
@@ -139,7 +221,7 @@ export function LootManager({
             </button>
             <button
               type="button"
-              className="iconBtn iconBtnSubtle"
+              className="iconBtn iconBtnSubtle iconBtnDim"
               disabled={loading}
               onClick={onClearInstalled}
               title="Clear installed"
@@ -147,11 +229,24 @@ export function LootManager({
             >
               🗑
             </button>
+            <span className="headerSep" />
+            <button
+              type="button"
+              className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
+              disabled={loading || resourcesUpdateChecking}
+              onClick={onResourcesUpdateAction}
+              title={resourcesUpdateTitle}
+              aria-label={resourcesUpdateTitle}
+            >
+              {resourcesUpdateAvailable ? "↓" : "⟳"}
+            </button>
             <button
               type="button"
               className="iconBtn iconBtnToggle"
               aria-label={collapsed ? "Expand Loot models" : "Collapse Loot models"}
               aria-expanded={!collapsed}
+              disabled={loading || !hasProfiles}
+              title={!hasProfiles ? "Download profiles first" : undefined}
               onClick={() => setCollapsed((value) => !value)}
             >
               {collapsed ? "▾" : "▴"}
@@ -162,46 +257,7 @@ export function LootManager({
         {!collapsed ? (
           <div className="accordionBody">
             <div className="accordionSection">
-              <p className="sectionTitle">1) Download</p>
-              <p>Download profiles first. Downloaded: {status?.downloadedProfiles.length ?? 0}</p>
-              <div className="headerActions">
-                <button
-                  type="button"
-                  className="iconBtn iconBtnSubtle"
-                  disabled={loading}
-                  onClick={() => runAction(downloadProfiles, "Profiles downloaded.")}
-                  title="Download profiles"
-                  aria-label="Download profiles"
-                >
-                  ⬇
-                </button>
-                <button
-                  type="button"
-                  className="iconBtn iconBtnSubtle"
-                  disabled={loading}
-                  onClick={() => runAction(openResourcesFolder)}
-                  title="Open downloaded"
-                  aria-label="Open downloaded"
-                >
-                  📂
-                </button>
-                <button
-                  type="button"
-                  className="iconBtn iconBtnSubtle"
-                  disabled={loading}
-                  onClick={() => runAction(clearResources, "Downloaded resources cleared.")}
-                  title="Clear downloaded"
-                  aria-label="Clear downloaded"
-                >
-                  🗑
-                </button>
-              </div>
-            </div>
-
-            <div className="accordionSection">
-              <p className="sectionTitle">2) Install</p>
-              <p>Pick one downloaded profile and install it.</p>
-              <div className="compactRow">
+              <div className="profilePickerRow">
                 <select
                   disabled={loading || availableProfiles.length === 0}
                   value={selectedProfile}
@@ -209,7 +265,7 @@ export function LootManager({
                 >
                   {availableProfiles.map((profile) => (
                     <option key={profile.id} value={profile.id}>
-                      {profile.id}
+                      {profile.name ?? profile.id}
                     </option>
                   ))}
                 </select>
@@ -217,16 +273,39 @@ export function LootManager({
                   Install
                 </button>
               </div>
-              <p>
-                {selectedProfileData
-                  ? `${selectedProfileData.name ?? selectedProfileData.id}${
-                      selectedProfileData.author ? ` • by ${selectedProfileData.author}` : ""
-                    }${selectedProfileData.createdAt ? ` • ${selectedProfileData.createdAt}` : ""}`
-                  : "No profile selected"}
-              </p>
-              <p>{selectedProfileData?.description ?? "-"}</p>
+              {selectedProfileData ? (
+                <div className="profileCard">
+                  <div className="profileCardHeader">
+                    <div>
+                      <p className="profileCardName">{selectedProfileData.name ?? selectedProfileData.id}</p>
+                      {(selectedProfileData.author || selectedProfileData.createdAt) && (
+                        <p className="profileCardMeta">
+                          {selectedProfileData.author ? `by ${selectedProfileData.author}` : ""}
+                          {selectedProfileData.author && selectedProfileData.createdAt ? " · " : ""}
+                          {selectedProfileData.createdAt ?? ""}
+                        </p>
+                      )}
+                    </div>
+                    {selectedProfileData.url ? (
+                      <button
+                        type="button"
+                        className="iconBtn iconBtnSubtle iconBtnDim"
+                        onClick={() => openUrl(selectedProfileData.url!)}
+                        title="Open profile page"
+                        aria-label="Open profile page"
+                      >
+                        🔗
+                      </button>
+                    ) : null}
+                  </div>
+                  {selectedProfileData.description ? (
+                    <p className="profileCardDesc">{selectedProfileData.description}</p>
+                  ) : null}
+                </div>
+              ) : (
+                <p className="profileCardEmpty">No profile selected</p>
+              )}
             </div>
-
           </div>
         ) : null}
       </div>

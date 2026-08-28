@@ -25,10 +25,22 @@ fn main() {
             if use_external_backend() {
                 return Ok(());
             }
-            let jar_path = find_backend_jar(app.handle())?;
-            let child = spawn_backend_with_retry(app.handle(), &jar_path, 5, Duration::from_secs(2))?;
-            let state = app.state::<BackendState>();
-            *state.0.lock().expect("backend lock poisoned") = Some(child);
+            let jar_path = match find_backend_jar(app.handle()) {
+                Ok(p) => p,
+                Err(e) => {
+                    eprintln!("[RO Toolbox] Backend JAR not found: {e}");
+                    return Ok(());
+                }
+            };
+            match spawn_backend_with_retry(app.handle(), &jar_path, 5, Duration::from_secs(2)) {
+                Ok(child) => {
+                    let state = app.state::<BackendState>();
+                    *state.0.lock().expect("backend lock poisoned") = Some(child);
+                }
+                Err(e) => {
+                    eprintln!("[RO Toolbox] Failed to start backend: {e}");
+                }
+            }
             Ok(())
         })
         .build(tauri::generate_context!())
