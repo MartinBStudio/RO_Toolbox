@@ -2,6 +2,34 @@
 
 ---
 
+## v0.2.0 – UI Polish, App Guide & Branding Refresh
+
+### 🧭 New: In-app "How to use app" guide
+- Added a new help modal accessible from the header (**?** button)
+- Includes quick onboarding steps for setup, downloading, and installing profiles
+- Includes an important reminder: **restart the game client after installing a new profile**
+
+### 🏷️ Better profile name display
+- Profile names are now shown with a capital first letter in the UI
+- Applied to active profile labels, dropdown options, and profile cards
+- Keeps naming readable even when source profile names are lowercase
+
+### 🖼️ Updated application icon
+- Replaced app icon assets with a toolbox-themed icon set
+- Updated Tauri Windows icon targets (`.ico` + PNG variants)
+
+### 📐 Window sizing adjustment
+- Reduced default app window width for a better fit with current content layout
+
+### 📝 Documentation refresh
+- Updated README to match the current app flow and features
+
+## 📥 Installation / Update
+Download and install using the latest MSI from Releases.  
+If you're already installed, use the in-app updater from the header icon.
+
+---
+
 ## v0.1.9 – Resource Updates, UI Refresh & Startup Improvements
 
 ### 🔄 Automatic resource update checks
