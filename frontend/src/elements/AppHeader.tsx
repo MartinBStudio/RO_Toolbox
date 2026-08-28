@@ -8,6 +8,7 @@ import { useApplicationContext } from "../context/ApplicationContext.tsx";
 
 type AppHeaderProps = {
   onOpenSettings: () => void;
+  onOpenHowToUse: () => void;
   onBusyChange: (busy: boolean) => void;
   onMessage: (message: string) => void;
   loading?: boolean;
@@ -17,6 +18,7 @@ type AppHeaderProps = {
 
 export function AppHeader({
   onOpenSettings,
+  onOpenHowToUse,
   onBusyChange,
   onMessage,
   loading = false,
@@ -167,6 +169,14 @@ export function AppHeader({
             onClick={onUpdateAction}
           >
             {updateAvailable ? "↓" : "⟳"}
+          </button>
+          <button
+            type="button"
+            className="settingsCog"
+            aria-label="Open how to use guide"
+            onClick={onOpenHowToUse}
+          >
+            ?
           </button>
           <button
             type="button"
