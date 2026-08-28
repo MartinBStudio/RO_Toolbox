@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
+import { check as checkTauriUpdate, type DownloadEvent } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { checkBackendUpdate } from "../backendConnector/api.ts";
@@ -9,7 +9,7 @@ import { useApplicationContext } from "../context/ApplicationContext.tsx";
 type AppHeaderProps = {
   onOpenSettings: () => void;
   onOpenHowToUse: () => void;
-  onBusyChange: (busy: boolean) => void;
+  onBusyChange: (busy: boolean, message?: string) => void;
   onMessage: (message: string) => void;
   loading?: boolean;
   backendVersion?: string;
@@ -93,15 +93,36 @@ export function AppHeader({
   }
 
   async function onInstallUpdate() {
-    onBusyChange(true);
+    onBusyChange(true, "Downloading update...");
     try {
       const update = await checkTauriUpdate();
       if (!update?.available) {
         onMessage("No update available.");
         return;
       }
-      onMessage("Downloading update...");
-      await update.downloadAndInstall();
+      let downloaded = 0;
+      let total = 0;
+      await update.download((event: DownloadEvent) => {
+        switch (event.event) {
+          case "Started":
+            total = event.data.contentLength ?? 0;
+            onBusyChange(true, "Downloading update...");
+            break;
+          case "Progress":
+            downloaded += event.data.chunkLength;
+            if (total > 0) {
+              const pct = Math.min(100, Math.round((downloaded / total) * 100));
+              onBusyChange(true, `Downloading update... ${pct}%`);
+            } else {
+              onBusyChange(true, "Downloading update...");
+            }
+            break;
+          case "Finished":
+            onBusyChange(true, "Installing update...");
+            break;
+        }
+      });
+      await update.install();
       onMessage("Update installed. Restarting...");
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
       try {

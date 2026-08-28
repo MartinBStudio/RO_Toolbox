@@ -18,7 +18,10 @@ export function BackendReadyGate({ children, onStartupError }: BackendReadyGateP
   if (!backendReady) {
     return (
       <div className="startingScreen">
-        <p>Starting RO Toolbox…</p>
+        <div className="startingScreenContent">
+          <span className="loadingSpinner" aria-hidden="true" />
+          <p>Starting RO Toolbox…</p>
+        </div>
       </div>
     );
   }

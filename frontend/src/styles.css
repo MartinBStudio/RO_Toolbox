@@ -20,6 +20,12 @@ body {
   letter-spacing: 0.03em;
 }
 
+.startingScreenContent {
+  display: grid;
+  justify-items: center;
+  gap: 0.75rem;
+}
+
 .layout {
   position: relative;
   max-width: 820px;
