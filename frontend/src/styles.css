@@ -331,6 +331,74 @@ button:disabled {
   gap: 0.3rem;
 }
 
+.lootManager .headerSep {
+  width: 1px;
+  height: 1.2rem;
+  background: #2b3344;
+  flex-shrink: 0;
+}
+
+.lootManager .iconBtnDim {
+  min-width: 1.5rem;
+  min-height: 1.5rem;
+  padding: 0.05rem 0.2rem;
+  font-size: 0.75rem;
+  opacity: 0.45;
+}
+
+.lootManager .iconBtnDim:hover:enabled {
+  opacity: 0.8;
+}
+
+.profilePickerRow {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.profileCard {
+  border: 1px solid #243040;
+  border-radius: 6px;
+  background: #0d1420;
+  padding: 0.55rem 0.65rem;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.profileCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.profileCardName {
+  color: #dce4ef;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.profileCardMeta {
+  color: #6a87a8;
+  font-size: 0.78rem;
+  margin-top: 0.1rem;
+}
+
+.profileCardDesc {
+  color: #8fa6c0;
+  font-size: 0.83rem;
+  line-height: 1.4;
+  margin-top: 0.1rem;
+  border-top: 1px solid #1e2d3f;
+  padding-top: 0.25rem;
+}
+
+.profileCardEmpty {
+  color: #4a5f78;
+  font-size: 0.83rem;
+  font-style: italic;
+}
+
 .updateCog {
   background: #1a2d4d;
   border-color: #2b4d86;

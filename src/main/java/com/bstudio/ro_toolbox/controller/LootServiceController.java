@@ -70,6 +70,11 @@ public class LootServiceController {
         return new MessageResponse("Installed models cleared.");
     }
 
+    @GetMapping("/check-update")
+    public LootManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
+        return lootManagerService.checkResourcesUpdate();
+    }
+
     @PostMapping("/folders/open/resources")
     public MessageResponse openResourcesFolder() throws IOException {
         Path resources = lootManagerService.getResourcesDir();
