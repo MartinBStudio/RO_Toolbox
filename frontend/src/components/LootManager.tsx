@@ -11,6 +11,7 @@ import {
   openResourcesFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
+import { capitalizeFirstLetter } from "../formatting.ts";
 
 type LootManagerProps = {
   status: AppStatus | null;
@@ -37,7 +38,7 @@ export function LootManager({
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
   const installedProfileUrl = status?.installedProfile?.url ?? null;
-  const activeProfileName = status?.installedProfile?.name ?? "No active profile";
+  const activeProfileName = capitalizeFirstLetter(status?.installedProfile?.name) ?? "No active profile";
   const activeProfileAuthor = status?.installedProfile?.author
     ? ` • by ${status.installedProfile.author}`
     : "";
@@ -265,7 +266,7 @@ export function LootManager({
                 >
                   {availableProfiles.map((profile) => (
                     <option key={profile.id} value={profile.id}>
-                      {profile.name ?? profile.id}
+                      {capitalizeFirstLetter(profile.name ?? profile.id)}
                     </option>
                   ))}
                 </select>
@@ -277,7 +278,7 @@ export function LootManager({
                 <div className="profileCard">
                   <div className="profileCardHeader">
                     <div>
-                      <p className="profileCardName">{selectedProfileData.name ?? selectedProfileData.id}</p>
+                      <p className="profileCardName">{capitalizeFirstLetter(selectedProfileData.name ?? selectedProfileData.id)}</p>
                       {(selectedProfileData.author || selectedProfileData.createdAt) && (
                         <p className="profileCardMeta">
                           {selectedProfileData.author ? `by ${selectedProfileData.author}` : ""}

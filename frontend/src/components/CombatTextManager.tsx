@@ -11,6 +11,7 @@ import {
   openCombatTextResourcesFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
+import { capitalizeFirstLetter } from "../formatting.ts";
 
 type CombatTextManagerProps = {
   status: AppStatus | null;
@@ -37,7 +38,7 @@ export function CombatTextManager({
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
   const installedProfileUrl = status?.combatTextInstalledProfile?.url ?? null;
-  const activeProfileName = status?.combatTextInstalledProfile?.name ?? "No active profile";
+  const activeProfileName = capitalizeFirstLetter(status?.combatTextInstalledProfile?.name) ?? "No active profile";
   const activeProfileAuthor = status?.combatTextInstalledProfile?.author
     ? ` • by ${status.combatTextInstalledProfile.author}`
     : "";
@@ -268,7 +269,7 @@ export function CombatTextManager({
                 >
                   {availableProfiles.map((profile) => (
                     <option key={profile.id} value={profile.id}>
-                      {profile.name ?? profile.id}
+                      {capitalizeFirstLetter(profile.name ?? profile.id)}
                     </option>
                   ))}
                 </select>
@@ -280,7 +281,7 @@ export function CombatTextManager({
                 <div className="profileCard">
                   <div className="profileCardHeader">
                     <div>
-                      <p className="profileCardName">{selectedProfileData.name ?? selectedProfileData.id}</p>
+                      <p className="profileCardName">{capitalizeFirstLetter(selectedProfileData.name ?? selectedProfileData.id)}</p>
                       {(selectedProfileData.author || selectedProfileData.createdAt) && (
                         <p className="profileCardMeta">
                           {selectedProfileData.author ? `by ${selectedProfileData.author}` : ""}

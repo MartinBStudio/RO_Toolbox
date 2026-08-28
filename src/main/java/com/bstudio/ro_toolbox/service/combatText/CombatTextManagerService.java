@@ -364,15 +364,23 @@ public class CombatTextManagerService {
         if (destination == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
-        AvailableProfile selected = listAvailableProfiles().stream()
-                .filter(profile -> profile.id().equals(profileId))
-                .findFirst()
-                .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + profileId));
+        AvailableProfile selected = findAvailableProfile(profileId);
 
         removeInstalledProfileFiles(destination);
         copyDirectoryContents(selected.source(), destination);
         normalizeInstalledManifest(destination);
         setCurrentCombatTextProfile(selected.id());
+    }
+
+    private AvailableProfile findAvailableProfile(String profileId) {
+        String normalizedProfileId = profileId == null ? "" : profileId.trim();
+        if (normalizedProfileId.isEmpty()) {
+            throw new IllegalArgumentException("profileId is required.");
+        }
+        return listAvailableProfiles().stream()
+                .filter(profile -> profile.id().equals(normalizedProfileId))
+                .findFirst()
+                .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
     }
 
     public static final class ProfileInfo {

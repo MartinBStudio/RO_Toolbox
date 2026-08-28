@@ -540,6 +540,37 @@ a {
   margin-top: 0.5rem;
 }
 
+.howToUseModalCard {
+  width: min(620px, 100%);
+}
+
+.howToUseBody {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.howToUseIntro {
+  color: #9ab2cc;
+  line-height: 1.4;
+}
+
+.howToUseSteps {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: grid;
+  gap: 0.32rem;
+  color: #d3deec;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.howToUseTip {
+  border-top: 1px solid #26354a;
+  padding-top: 0.45rem;
+  color: #83d3b1;
+  font-size: 0.84rem;
+}
+
 .loadingOverlay {
   position: fixed;
   inset: 0;

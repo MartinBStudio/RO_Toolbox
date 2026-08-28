@@ -10,6 +10,7 @@ import {ServiceContainer} from "./elements/ServiceContainer.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
+import {HowToUseModal} from "./elements/HowToUseModal.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
 
 function App() {
@@ -17,6 +18,7 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [message, setMessage] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
+    const [howToUseOpen, setHowToUseOpen] = useState(false);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
 
@@ -73,6 +75,7 @@ function App() {
                 <>
                     <AppHeader
                         onOpenSettings={() => setSettingsOpen(true)}
+                        onOpenHowToUse={() => setHowToUseOpen(true)}
                         onBusyChange={setLoading}
                         onMessage={setMessage}
                         loading={loading}
@@ -115,6 +118,10 @@ function App() {
                         onBusyChange={setLoading}
                         onStatusRefresh={refreshStatus}
                         onMessage={setMessage}
+                    />
+                    <HowToUseModal
+                        open={howToUseOpen}
+                        onClose={() => setHowToUseOpen(false)}
                     />
                     <LoadingOverlay visible={loading}/>
                     {needsSetup && (
