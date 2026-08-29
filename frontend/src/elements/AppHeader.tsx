@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
 import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { openUrl } from "@tauri-apps/plugin-opener";
@@ -121,6 +122,9 @@ export function AppHeader({
         onMessage("No update available.");
         return;
       }
+      // Kill the bundled Java backend before installing so its JRE files
+      // are not locked — otherwise Windows schedules them for reboot replacement.
+      await invoke("stop_backend").catch(() => undefined);
       await update.downloadAndInstall();
       onMessage("Update installed. Restarting...");
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
