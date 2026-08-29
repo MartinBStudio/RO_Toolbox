@@ -16,11 +16,7 @@ struct BackendState(Mutex<Option<Child>>);
 
 #[tauri::command]
 fn stop_backend(state: tauri::State<BackendState>) {
-    let child = state.0.lock().expect("backend lock poisoned").take();
-    if let Some(mut child) = child {
-        let _ = child.kill();
-        let _ = child.wait();
-    }
+    stop_backend_child(&state);
 }
 
 fn main() {
@@ -59,12 +55,58 @@ fn main() {
     app.run(|app_handle, event| {
         if matches!(event, RunEvent::Exit | RunEvent::ExitRequested { .. }) {
             let state = app_handle.state::<BackendState>();
-            let child = state.0.lock().expect("backend lock poisoned").take();
-            if let Some(mut child) = child {
-                let _ = child.kill();
-            }
+            stop_backend_child(&state);
         }
     });
+}
+
+fn stop_backend_child(state: &BackendState) {
+    let child = state.0.lock().expect("backend lock poisoned").take();
+    if let Some(child) = child {
+        terminate_backend_process(child);
+    }
+}
+
+fn terminate_backend_process(mut child: Child) {
+    if matches!(child.try_wait(), Ok(Some(_))) {
+        return;
+    }
+
+    #[cfg(windows)]
+    terminate_process_tree_windows(child.id());
+
+    let _ = child.kill();
+
+    let deadline = std::time::Instant::now() + Duration::from_secs(3);
+    loop {
+        match child.try_wait() {
+            Ok(Some(_)) => break,
+            Ok(None) => {
+                if std::time::Instant::now() >= deadline {
+                    break;
+                }
+                thread::sleep(Duration::from_millis(100));
+            }
+            Err(_) => break,
+        }
+    }
+
+    let _ = child.wait();
+}
+
+#[cfg(windows)]
+fn terminate_process_tree_windows(pid: u32) {
+    #[allow(unused_mut)]
+    let mut command = Command::new("taskkill");
+    command.args(["/PID", &pid.to_string(), "/T", "/F"]);
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    if let Err(err) = command.status() {
+        eprintln!(
+            "[RO Toolbox] Failed to terminate backend process tree (PID {}): {}",
+            pid, err
+        );
+    }
 }
 
 fn spawn_backend_with_retry(
