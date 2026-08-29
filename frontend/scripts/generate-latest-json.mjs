@@ -3,7 +3,9 @@ import path from "node:path";
 
 const rootDir = process.cwd();
 const tauriConfigPath = path.join(rootDir, "src-tauri", "tauri.conf.json");
-const msiDir = path.join(rootDir, "src-tauri", "target", "release", "bundle", "msi");
+const bundleDir = path.join(rootDir, "src-tauri", "target", "release", "bundle");
+const nsisDir = path.join(bundleDir, "nsis");
+const msiDir = path.join(bundleDir, "msi");
 
 const repo = process.env.UPDATE_REPO || "MartinBStudio/RO_Toolbox";
 const notes = process.env.UPDATE_NOTES || "Initial release";
@@ -13,17 +15,46 @@ function readJson(filePath) {
   return JSON.parse(fs.readFileSync(filePath, "utf8"));
 }
 
-function newestFileMatching(regex) {
+function newestFileMatching(dirPath, regex) {
   const files = fs
-    .readdirSync(msiDir)
+    .readdirSync(dirPath)
     .filter((name) => regex.test(name))
     .map((name) => {
-      const fullPath = path.join(msiDir, name);
+      const fullPath = path.join(dirPath, name);
       return { name, fullPath, mtimeMs: fs.statSync(fullPath).mtimeMs };
     })
     .sort((a, b) => b.mtimeMs - a.mtimeMs);
 
   return files[0];
+}
+
+function resolveUpdaterArtifact(version) {
+  const escapedVersion = version.replace(/\./g, "\\.");
+  const nsisPattern = new RegExp(`_${escapedVersion}_x64-setup\\.exe$`);
+  const nsisSigPattern = new RegExp(`_${escapedVersion}_x64-setup\\.exe\\.sig$`);
+
+  if (fs.existsSync(nsisDir)) {
+    const nsisFile = newestFileMatching(nsisDir, nsisPattern);
+    const nsisSig = newestFileMatching(nsisDir, nsisSigPattern);
+    if (nsisFile && nsisSig) {
+      return { file: nsisFile, sig: nsisSig, outputDir: nsisDir };
+    }
+  }
+
+  // Fallback for older pipelines still producing MSI-based updater metadata.
+  const msiPattern = new RegExp(`_${escapedVersion}_x64_en-US\\.msi$`);
+  const msiSigPattern = new RegExp(`_${escapedVersion}_x64_en-US\\.msi\\.sig$`);
+
+  if (!fs.existsSync(msiDir)) {
+    throw new Error(`Neither NSIS nor MSI output directory exists under ${bundleDir}`);
+  }
+
+  const msiFile = newestFileMatching(msiDir, msiPattern);
+  const msiSig = newestFileMatching(msiDir, msiSigPattern);
+  if (!msiFile || !msiSig) {
+    throw new Error(`No updater artifact found for version ${version} in ${bundleDir}`);
+  }
+  return { file: msiFile, sig: msiSig, outputDir: msiDir };
 }
 
 const tauriConfig = readJson(tauriConfigPath);
@@ -33,27 +64,10 @@ if (!version) {
   throw new Error(`Missing version in ${tauriConfigPath}`);
 }
 
-if (!fs.existsSync(msiDir)) {
-  throw new Error(`MSI output directory not found: ${msiDir}`);
-}
+const artifact = resolveUpdaterArtifact(version);
 
-const escapedVersion = version.replace(/\./g, "\\.");
-const msiPattern = new RegExp(`_${escapedVersion}_x64_en-US\\.msi$`);
-const sigPattern = new RegExp(`_${escapedVersion}_x64_en-US\\.msi\\.sig$`);
-
-const msiFile = newestFileMatching(msiPattern);
-const sigFile = newestFileMatching(sigPattern);
-
-if (!msiFile) {
-  throw new Error(`No MSI found for version ${version} in ${msiDir}`);
-}
-
-if (!sigFile) {
-  throw new Error(`No MSI signature found for version ${version} in ${msiDir}`);
-}
-
-const signature = fs.readFileSync(sigFile.fullPath, "utf8").trim();
-const encodedFileName = encodeURIComponent(msiFile.name);
+const signature = fs.readFileSync(artifact.sig.fullPath, "utf8").trim();
+const encodedFileName = encodeURIComponent(artifact.file.name);
 const url = `https://github.com/${repo}/releases/download/v${version}/${encodedFileName}`;
 
 const latestJson = {
@@ -68,6 +82,6 @@ const latestJson = {
   }
 };
 
-const latestJsonPath = path.join(msiDir, "latest.json");
+const latestJsonPath = path.join(artifact.outputDir, "latest.json");
 fs.writeFileSync(latestJsonPath, `${JSON.stringify(latestJson, null, 2)}\n`, "utf8");
 console.log(`Generated ${latestJsonPath} for ${version}`);
