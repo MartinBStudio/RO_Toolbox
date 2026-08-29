@@ -4,6 +4,7 @@ export type ProfileInfo = {
   description: string | null;
   url: string | null;
   createdAt: string | null;
+  version: string | null;
 };
 
 export type AvailableProfile = {
@@ -13,6 +14,7 @@ export type AvailableProfile = {
   description: string | null;
   url: string | null;
   createdAt: string | null;
+  version: string | null;
 };
 
 export type AppStatus = {
@@ -61,4 +63,22 @@ export type ResourcesUpdateCheckResult = {
   updateAvailable: boolean;
   success: boolean;
   message: string;
+};
+
+export type TomlNode = string | number | boolean | null | TomlNode[] | { [key: string]: TomlNode };
+
+export type ConfigEditorFileState = {
+  id: "ignore" | "rose";
+  fileName: string;
+  filePath: string;
+  exists: boolean;
+  content: string | null;
+  parsed: { [key: string]: TomlNode } | null;
+  parseError: string | null;
+};
+
+export type ConfigEditorStatus = {
+  configDir: string;
+  configDirExists: boolean;
+  files: ConfigEditorFileState[];
 };

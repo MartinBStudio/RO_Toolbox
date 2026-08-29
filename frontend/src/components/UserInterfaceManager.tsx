@@ -21,7 +21,7 @@ import {
   openUserInterfaceResourcesFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
-import { capitalizeFirstLetter } from "../formatting.ts";
+import { buildProfileMeta, formatManifestVersion, resolveProfileName } from "../formatting.ts";
 
 type UserInterfaceManagerProps = {
   status: AppStatus | null;
@@ -47,11 +47,18 @@ export function UserInterfaceManager({
   const availableProfiles = status?.userInterfaceAvailableProfiles ?? [];
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
+  const selectedProfileMeta = buildProfileMeta({
+    version: selectedProfileData?.version,
+    author: selectedProfileData?.author,
+    createdAt: selectedProfileData?.createdAt,
+    separator: " · "
+  });
   const installedProfileUrl = status?.userInterfaceInstalledProfile?.url ?? null;
-  const activeProfileName = capitalizeFirstLetter(status?.userInterfaceInstalledProfile?.name) ?? "No active profile";
-  const activeProfileAuthor = status?.userInterfaceInstalledProfile?.author
-    ? ` • by ${status.userInterfaceInstalledProfile.author}`
-    : "";
+  const activeProfileName = resolveProfileName(status?.userInterfaceInstalledProfile?.name, "No active profile");
+  const activeProfileMeta = buildProfileMeta({
+    version: status?.userInterfaceInstalledProfile?.version,
+    author: status?.userInterfaceInstalledProfile?.author
+  });
 
   useEffect(() => {
     if (availableProfiles.length === 0) {
@@ -187,7 +194,7 @@ export function UserInterfaceManager({
           <div>
             <p className="sectionTitle">User interface</p>
             <p className="activeProfileMeta">
-              Active profile: <span className="activeProfileValue">{activeProfileName}{activeProfileAuthor}</span>
+              Active profile: <span className="activeProfileValue">{activeProfileName}{activeProfileMeta ? ` • ${activeProfileMeta}` : ""}</span>
             </p>
           </div>
           <div className="headerActions">
@@ -279,7 +286,8 @@ export function UserInterfaceManager({
                 >
                   {availableProfiles.map((profile) => (
                     <option key={profile.id} value={profile.id}>
-                      {capitalizeFirstLetter(profile.name ?? profile.id)}
+                      {resolveProfileName(profile.name, profile.id)}
+                      {profile.version ? ` (${formatManifestVersion(profile.version)})` : ""}
                     </option>
                   ))}
                 </select>
@@ -288,12 +296,10 @@ export function UserInterfaceManager({
                 <div className="profileCard">
                   <div className="profileCardHeader">
                     <div>
-                      <p className="profileCardName">{capitalizeFirstLetter(selectedProfileData.name ?? selectedProfileData.id)}</p>
-                      {(selectedProfileData.author || selectedProfileData.createdAt) && (
+                      <p className="profileCardName">{resolveProfileName(selectedProfileData.name, selectedProfileData.id)}</p>
+                      {selectedProfileMeta && (
                         <p className="profileCardMeta">
-                          {selectedProfileData.author ? `by ${selectedProfileData.author}` : ""}
-                          {selectedProfileData.author && selectedProfileData.createdAt ? " · " : ""}
-                          {selectedProfileData.createdAt ?? ""}
+                          {selectedProfileMeta}
                         </p>
                       )}
                     </div>

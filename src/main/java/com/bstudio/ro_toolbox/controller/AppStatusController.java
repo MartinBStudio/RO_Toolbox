@@ -31,25 +31,26 @@ public class AppStatusController {
                 new LootServiceSummaryResponse(
                         "/api/loot",
                         installed == null ? null : new ProfileInfoResponse(
-                                installed.name, installed.author, installed.description, installed.url, installed.createdAt
+                                installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
                         )
                 ),
                 new CombatTextServiceSummaryResponse(
                         "/api/combattext",
                         installedCombatText == null ? null : new ProfileInfoResponse(
-                                installedCombatText.name, installedCombatText.author, installedCombatText.description, installedCombatText.url, installedCombatText.createdAt
+                                installedCombatText.name, installedCombatText.author, installedCombatText.description, installedCombatText.url, installedCombatText.createdAt, installedCombatText.version
                         )
                 ),
                 new UserInterfaceServiceSummaryResponse(
                         "/api/userinterface",
                         installedUserInterface == null ? null : new ProfileInfoResponse(
-                                installedUserInterface.name, installedUserInterface.author, installedUserInterface.description, installedUserInterface.url, installedUserInterface.createdAt
+                                installedUserInterface.name, installedUserInterface.author, installedUserInterface.description, installedUserInterface.url, installedUserInterface.createdAt, installedUserInterface.version
                         )
                 ),
                 List.of(
                         new ServiceEndpointResponse("lootService", "/api/loot", "Loot profiles and installation"),
                         new ServiceEndpointResponse("combatTextService", "/api/combattext", "Combat text profiles and installation"),
                         new ServiceEndpointResponse("userInterfaceService", "/api/userinterface", "User interface profiles and installation"),
+                        new ServiceEndpointResponse("configEditorService", "/api/config-editor", "ROSE config TOML editor"),
                         new ServiceEndpointResponse("settings", "/api/settings", "Generic app settings"),
                         new ServiceEndpointResponse("updater", "/api/update", "Backend updater checks and install")
                 )
@@ -77,6 +78,6 @@ public class AppStatusController {
     public record ServiceEndpointResponse(String key, String endpoint, String description) {
     }
 
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt) {
+    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
     }
 }

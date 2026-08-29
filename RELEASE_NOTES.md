@@ -1,5 +1,32 @@
 # RO Toolbox – Release Notes
 
+## v0.2.7 – Config Editor Service
+
+### ✨ New service: Config editor
+- Added a dedicated **Config editor** service (separate from Texture replacer) with sidebar entry and service routing
+- Added backend API at `/api/config-editor` to discover, read, and save:
+  - `%APPDATA%\Rednim Games\ROSE Online\config\ignore.toml`
+  - `%APPDATA%\Rednim Games\ROSE Online\config\rose.toml`
+- Added TOML parsing/validation using `tomlj`; invalid TOML is rejected with line/column error details
+- Added action to open the ROSE config folder directly from the UI
+
+### 🧾 Config editor UI
+- Added file tabs for `ignore.toml` and `rose.toml` with found/missing status badges
+- Added editable TOML source panel with save and reload actions
+- Added structured parsed preview panel for easier reading of TOML content
+
+### 📘 How to use guide update
+- Updated **How to use** modal to include tabbed guides by service
+- Added separate guide tabs for:
+  - **Texture replacer**
+  - **Config editor**
+
+## v0.2.6 – Profile Version Display
+
+### 🔢 Manifest version visibility
+- Added manifest version data to installed and downloadable profile status payloads for Loot, Combat Text, and User Interface services
+- Updated the frontend to show installed profile versions and the available version beside downloaded profile entries
+
 ## v0.2.5 – User Interface Service
 
 ### ✨ New service: User Interface profiles

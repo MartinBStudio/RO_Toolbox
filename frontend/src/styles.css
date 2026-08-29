@@ -353,6 +353,7 @@ p {
 
 input,
 select,
+textarea,
 button {
   border-radius: 7px;
   border: 1px solid #364258;
@@ -366,6 +367,14 @@ input {
   min-width: 0;
   width: 100%;
   flex: 1;
+}
+
+textarea {
+  width: 100%;
+  min-height: 320px;
+  resize: vertical;
+  font-family: "Consolas", "Courier New", monospace;
+  line-height: 1.4;
 }
 
 select {
@@ -786,6 +795,24 @@ a {
   gap: 0.6rem;
 }
 
+.howToUseTabs {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.howToUseTab {
+  background: #1a2333;
+  border-color: #3a4a64;
+  color: #dce4ef;
+  font-weight: 600;
+}
+
+.howToUseTabActive {
+  background: #1b4b8d;
+  border-color: #3d75d7;
+}
+
 .howToUseIntro {
   color: #9ab2cc;
   line-height: 1.4;
@@ -874,5 +901,122 @@ a {
   }
   to {
     transform: rotate(360deg);
+  }
+}
+
+.configEditor {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.configEditorHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+}
+
+.configEditorPath {
+  margin-top: 0.2rem;
+  font-family: "Consolas", "Courier New", monospace;
+  color: #8fa6c0;
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
+.configEditorFileTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.configEditorFileTab {
+  background: #1a2333;
+  border-color: #3a4a64;
+  display: inline-flex;
+  gap: 0.45rem;
+  align-items: center;
+  font-weight: 600;
+}
+
+.configEditorFileTabActive {
+  background: #1b4b8d;
+  border-color: #3d75d7;
+}
+
+.configEditorFileBadge {
+  border: 1px solid #77503a;
+  border-radius: 999px;
+  padding: 0.02rem 0.35rem;
+  font-size: 0.72rem;
+  color: #d9a46f;
+}
+
+.configEditorFileBadgeFound {
+  border-color: #2f7c5c;
+  color: #76d6af;
+}
+
+.configEditorBody {
+  display: grid;
+  gap: 0.65rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.configEditorPane {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.configEditorTextarea {
+  background: #0d1420;
+  border-color: #243040;
+}
+
+.configEditorMeta {
+  color: #59718d;
+  font-size: 0.78rem;
+  font-family: "Consolas", "Courier New", monospace;
+  word-break: break-all;
+}
+
+.configEditorError {
+  border: 1px solid #764040;
+  background: #2a1818;
+  color: #f0b2b2;
+  border-radius: 6px;
+  padding: 0.5rem 0.6rem;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.configTree {
+  border: 1px solid #243040;
+  border-radius: 6px;
+  background: #0d1420;
+  padding: 0.5rem 0.65rem;
+  max-height: 430px;
+  overflow: auto;
+}
+
+.configTreeList {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.configTreeKey {
+  color: #9bc0eb;
+  font-weight: 600;
+}
+
+.configTreeValue {
+  color: #d8e6f7;
+}
+
+@media (max-width: 900px) {
+  .configEditorBody {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
