@@ -1,6 +1,6 @@
 # RO Toolbox – Release Notes
 
-## v0.2.2
+## v0.2.3
 
 ### ✨ Current update
 - Refined the app layout into a compact header + sidebar/content structure
