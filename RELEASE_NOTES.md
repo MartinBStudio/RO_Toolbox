@@ -1,13 +1,14 @@
 # RO Toolbox – Release Notes
 
-## v0.2.3
+## v0.2.4 – Updater Stability Improvements
 
-### ✨ Current update
-- Refined the app layout into a compact header + sidebar/content structure
-- Improved the service panel and content spacing for a cleaner desktop-style layout
-- Added a more polished download/loading modal with a clear progress bar
-- Kept the existing loot models and combat text workflows intact
-- Updated the app branding assets and compacted the overall window sizing
+### 🔄 In-app updater artifact update
+- Updated updater metadata generation to prefer the NSIS setup artifact (`*_x64-setup.exe`) for `latest.json`
+- Keeps compatibility by falling back to MSI metadata when NSIS artifacts are not present
 
-## 📥 Installation / Update
-Download and install using the latest MSI from Releases. If you're already installed, use the in-app updater from the header icon.
+### 🛑 Backend/JRE shutdown reliability
+- Improved desktop app shutdown flow to terminate the bundled backend Java process more reliably
+- Added stronger Windows process-tree termination on app exit to prevent lingering JRE processes after closing the app
+
+### 🧩 General stability
+- Unified backend stop handling for both explicit updater shutdown and normal app exit paths
