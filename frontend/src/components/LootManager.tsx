@@ -195,8 +195,8 @@ export function LootManager({
               className="iconBtn iconBtnSubtle iconBtnDim"
               disabled={loading}
               onClick={() => runAction(openResourcesFolder)}
-              title="Open downloaded"
-              aria-label="Open downloaded"
+              title="Browse downloaded"
+              aria-label="Browse downloaded"
             >
               📂
             </button>
@@ -215,8 +215,8 @@ export function LootManager({
               className="iconBtn iconBtnSubtle iconBtnDim"
               disabled={loading}
               onClick={() => runAction(openItemFolder)}
-              title="Open installed"
-              aria-label="Open installed"
+              title="Browse installed"
+              aria-label="Browse installed"
             >
               📁
             </button>

@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -20,6 +21,8 @@ import java.util.regex.Pattern;
 public class UpdaterService {
     private static final String GITHUB_OWNER = "MartinBStudio";
     private static final String GITHUB_REPO = "RO_Toolbox";
+    private static final String LATEST_RELEASE_API_URL = "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases/latest";
+    private static final String TAURI_LATEST_JSON_URL = "https://github.com/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases/latest/download/latest.json";
     private static final String RELEASES_URL = "https://github.com/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases";
 
     private final RoToolboxApplication app;
@@ -28,10 +31,9 @@ public class UpdaterService {
         String currentVersion = app.getVersion();
         String fallbackUrl = RELEASES_URL;
         try {
-            String apiUrl = "https://api.github.com/repos/" + GITHUB_OWNER + "/" + GITHUB_REPO + "/releases/latest";
             HttpClient client = HttpClient.newHttpClient();
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(apiUrl))
+                    .uri(URI.create(LATEST_RELEASE_API_URL))
                     .header("Accept", "application/vnd.github+json")
                     .header("User-Agent", "RO-Toolbox-Updater")
                     .build();
@@ -76,6 +78,10 @@ public class UpdaterService {
             return new UpdateCheckResult(currentVersion, "unknown", parseVersionNumber(currentVersion), 0, false, fallbackUrl,
                     "Unable to check GitHub release: " + ex.getMessage(), false, null);
         }
+    }
+
+    public ReleaseDownload openLatestReleaseDownload() throws IOException {
+        return openReleaseDownload(resolveLatestUpdaterAssetUrl());
     }
 
     public UpdateInstallResult installUpdate(UpdateCheckResult result) {
@@ -131,6 +137,124 @@ public class UpdaterService {
         } catch (Exception ex) {
             return new UpdateInstallResult(false, "Failed to download and install the update: " + ex.getMessage());
         }
+    }
+
+    private ReleaseDownload openReleaseDownload(String url) throws IOException {
+        String currentUrl = url;
+        int maxRedirects = 10;
+        while (maxRedirects-- > 0) {
+            java.net.HttpURLConnection conn = (java.net.HttpURLConnection) new java.net.URL(currentUrl).openConnection();
+            conn.setRequestProperty("User-Agent", "Mozilla/5.0 RO-Toolbox-Updater");
+            conn.setRequestProperty("Accept", "application/octet-stream");
+            conn.setInstanceFollowRedirects(false);
+            conn.setConnectTimeout(15000);
+            conn.setReadTimeout(120000);
+            conn.connect();
+
+            int status = conn.getResponseCode();
+            if (status >= 200 && status < 300) {
+                InputStream inputStream = conn.getInputStream();
+                String contentType = conn.getContentType();
+                return new ReleaseDownload(
+                        inputStream,
+                        resolveDownloadFileName(currentUrl),
+                        conn.getContentLengthLong(),
+                        contentType == null || contentType.isBlank() ? "application/java-archive" : contentType,
+                        conn
+                );
+            } else if (status == 301 || status == 302 || status == 303 || status == 307 || status == 308) {
+                String location = conn.getHeaderField("Location");
+                conn.disconnect();
+                if (location == null || location.isBlank()) {
+                    throw new IOException("Redirect with no Location header from: " + currentUrl);
+                }
+                currentUrl = location;
+            } else {
+                conn.disconnect();
+                throw new IOException("Download failed with status " + status + " from: " + currentUrl);
+            }
+        }
+        throw new IOException("Too many redirects while downloading update.");
+    }
+
+    private String resolveLatestUpdaterAssetUrl() throws IOException {
+        String platformKey = resolveUpdaterPlatformKey();
+        HttpClient client = HttpClient.newBuilder()
+                .followRedirects(HttpClient.Redirect.ALWAYS)
+                .build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(TAURI_LATEST_JSON_URL))
+                .header("Accept", "application/json")
+                .header("User-Agent", "RO-Toolbox-Updater")
+                .build();
+
+        try {
+            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() != 200) {
+                throw new IOException("Latest updater manifest check failed with status " + response.statusCode() + ".");
+            }
+
+            String body = response.body();
+            Pattern platformPattern = Pattern.compile("\"" + Pattern.quote(platformKey) + "\"\\s*:\\s*\\{.*?\"url\"\\s*:\\s*\"([^\"]+)\"", Pattern.DOTALL);
+            Matcher platformMatcher = platformPattern.matcher(body);
+            if (platformMatcher.find()) {
+                return platformMatcher.group(1);
+            }
+
+            Matcher anyUrlMatcher = Pattern.compile("\"url\"\\s*:\\s*\"([^\"]+)\"").matcher(body);
+            if (anyUrlMatcher.find()) {
+                return anyUrlMatcher.group(1);
+            }
+
+            throw new IOException("No downloadable updater package was found in latest.json.");
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Latest updater manifest request was interrupted.", ex);
+        }
+    }
+
+    private String resolveUpdaterPlatformKey() throws IOException {
+        String osName = System.getProperty("os.name", "").toLowerCase();
+        String osPart;
+        if (osName.contains("win")) {
+            osPart = "windows";
+        } else if (osName.contains("mac")) {
+            osPart = "darwin";
+        } else if (osName.contains("nux") || osName.contains("linux")) {
+            osPart = "linux";
+        } else {
+            throw new IOException("Unsupported updater test platform: " + osName);
+        }
+
+        String archName = System.getProperty("os.arch", "").toLowerCase();
+        String archPart;
+        if (archName.contains("aarch64") || archName.contains("arm64")) {
+            archPart = "aarch64";
+        } else if (archName.contains("64")) {
+            archPart = "x86_64";
+        } else if (archName.contains("86")) {
+            archPart = "i686";
+        } else {
+            throw new IOException("Unsupported updater test architecture: " + archName);
+        }
+
+        return osPart + "-" + archPart;
+    }
+
+    private String resolveDownloadFileName(String url) {
+        try {
+            String path = URI.create(url).getPath();
+            if (path != null) {
+                int slashIndex = path.lastIndexOf('/');
+                String candidate = slashIndex >= 0 ? path.substring(slashIndex + 1) : path;
+                if (candidate != null && !candidate.isBlank()) {
+                    return candidate;
+                }
+            }
+        } catch (Exception ignored) {
+            // Fall back to the known jar name if the URL cannot be parsed.
+        }
+        return "RO_Toolbox.jar";
     }
 
     /** Returns the shell command used to relaunch the app after the update. */
@@ -235,5 +359,22 @@ public class UpdaterService {
             boolean success,
             String message
     ) {
+    }
+
+    public record ReleaseDownload(
+            InputStream inputStream,
+            String fileName,
+            long contentLength,
+            String contentType,
+            java.net.HttpURLConnection connection
+    ) implements AutoCloseable {
+        @Override
+        public void close() throws IOException {
+            try {
+                inputStream.close();
+            } finally {
+                connection.disconnect();
+            }
+        }
     }
 }

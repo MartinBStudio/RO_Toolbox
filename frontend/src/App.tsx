@@ -16,6 +16,7 @@ import {useApplicationContext} from "./context/ApplicationContext.tsx";
 function App() {
     const {backendReady, status, appVersion, refreshStatus} = useApplicationContext();
     const [loading, setLoading] = useState(false);
+    const [loadingMessage, setLoadingMessage] = useState<string | undefined>(undefined);
     const [message, setMessage] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [howToUseOpen, setHowToUseOpen] = useState(false);
@@ -76,7 +77,7 @@ function App() {
                     <AppHeader
                         onOpenSettings={() => setSettingsOpen(true)}
                         onOpenHowToUse={() => setHowToUseOpen(true)}
-                        onBusyChange={setLoading}
+                        onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                         onMessage={setMessage}
                         loading={loading}
                         appVersion={appVersion ?? undefined}
@@ -123,7 +124,7 @@ function App() {
                         open={howToUseOpen}
                         onClose={() => setHowToUseOpen(false)}
                     />
-                    <LoadingOverlay visible={loading}/>
+                    <LoadingOverlay visible={loading} label={loadingMessage}/>
                     {needsSetup && (
                         <GameFolderSetupModal
                             loading={loading}

@@ -3,13 +3,13 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import { checkBackendUpdate } from "../backendConnector/api.ts";
+import { checkBackendUpdate, fetchLatestReleaseDownload } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
 
 type AppHeaderProps = {
   onOpenSettings: () => void;
   onOpenHowToUse: () => void;
-  onBusyChange: (busy: boolean) => void;
+  onBusyChange: (busy: boolean, message?: string) => void;
   onMessage: (message: string) => void;
   loading?: boolean;
   backendVersion?: string;
@@ -25,7 +25,7 @@ export function AppHeader({
   backendVersion,
   appVersion
 }: AppHeaderProps) {
-  const { backendReady } = useApplicationContext();
+  const { backendReady, debugMode } = useApplicationContext();
   const [updateChecking, setUpdateChecking] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [updateInstallable, setUpdateInstallable] = useState(false);
@@ -43,6 +43,21 @@ export function AppHeader({
       return err.message;
     }
     return fallback;
+  }
+
+  function resolveDownloadFileName(response: Response) {
+    const contentDisposition = response.headers.get("content-disposition");
+    if (contentDisposition) {
+      const encodedMatch = contentDisposition.match(/filename\*=UTF-8''([^;]+)/i);
+      if (encodedMatch?.[1]) {
+        return decodeURIComponent(encodedMatch[1]);
+      }
+      const plainMatch = contentDisposition.match(/filename="([^"]+)"/i);
+      if (plainMatch?.[1]) {
+        return plainMatch[1];
+      }
+    }
+    return "RO_Toolbox.jar";
   }
 
   async function checkForUpdates(showUpToDateMessage = false) {
@@ -93,14 +108,13 @@ export function AppHeader({
   }
 
   async function onInstallUpdate() {
-    onBusyChange(true);
+    onBusyChange(true, "Downloading update...");
     try {
       const update = await checkTauriUpdate();
       if (!update?.available) {
         onMessage("No update available.");
         return;
       }
-      onMessage("Downloading update...");
       await update.downloadAndInstall();
       onMessage("Update installed. Restarting...");
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
@@ -112,6 +126,47 @@ export function AppHeader({
       }
     } catch (err) {
       onMessage(toErrorMessage(err, "Update failed."));
+    } finally {
+      onBusyChange(false);
+    }
+  }
+
+  async function onDownloadLatestRelease() {
+    onBusyChange(true, "Downloading latest release...");
+    try {
+      const response = await fetchLatestReleaseDownload();
+      if (!response.body) {
+        throw new Error("Download stream is unavailable.");
+      }
+
+      const totalHeader = response.headers.get("content-length");
+      const total = totalHeader ? Number.parseInt(totalHeader, 10) : 0;
+      const reader = response.body.getReader();
+      let downloaded = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) {
+          break;
+        }
+        if (!value) {
+          continue;
+        }
+
+        downloaded += value.byteLength;
+
+        if (total > 0) {
+          const pct = Math.min(100, Math.round((downloaded / total) * 100));
+          onBusyChange(true, `Downloading latest release... ${pct}%`);
+        } else {
+          onBusyChange(true, "Downloading latest release...");
+        }
+      }
+
+      const fileName = resolveDownloadFileName(response);
+      onMessage(`Downloaded ${fileName} for test. The app was not updated.`);
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Latest release download failed."));
     } finally {
       onBusyChange(false);
     }
@@ -170,6 +225,18 @@ export function AppHeader({
           >
             {updateAvailable ? "↓" : "⟳"}
           </button>
+          {debugMode && (
+            <button
+              type="button"
+              className="settingsCog downloadTestCog"
+              aria-label="Download the latest release package for testing"
+              title="Download the latest release package for testing"
+              disabled={loading || updateChecking}
+              onClick={onDownloadLatestRelease}
+            >
+              ⇩
+            </button>
+          )}
           <button
             type="button"
             className="settingsCog"

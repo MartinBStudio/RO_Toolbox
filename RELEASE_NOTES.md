@@ -2,6 +2,21 @@
 
 ---
 
+## v0.2.1 – Improved Loading Experience
+
+### ⏳ Loading spinner on startup
+- The initial "Starting RO Toolbox…" screen now displays a spinner while the backend is initialising, replacing the plain text indicator
+
+### 📥 Update download progress
+- When installing an app update, the loading overlay now shows real-time download progress (e.g. *Downloading update… 42%*)
+- After the download completes, the overlay switches to *Installing update…* before the app restarts
+
+## 📥 Installation / Update
+Download and install using the latest MSI from Releases.  
+If you're already installed, use the in-app updater from the header icon.
+
+---
+
 ## v0.2.0 – UI Polish, App Guide & Branding Refresh
 
 ### 🧭 New: In-app "How to use app" guide

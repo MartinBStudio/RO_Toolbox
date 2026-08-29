@@ -3,11 +3,15 @@ import { getVersion as getAppVersion } from "@tauri-apps/api/app";
 import { getStatus } from "../backendConnector/api.ts";
 import type { AppStatus } from "../types";
 
+const DEBUG_MODE_STORAGE_KEY = "roToolbox.debugMode";
+
 type ApplicationContextValue = {
   backendReady: boolean;
   status: AppStatus | null;
   appVersion: string | null;
   startupError: string | null;
+  debugMode: boolean;
+  setDebugMode: (enabled: boolean) => void;
   refreshStatus: () => Promise<void>;
 };
 
@@ -22,10 +26,27 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
   const [status, setStatus] = useState<AppStatus | null>(null);
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const [startupError, setStartupError] = useState<string | null>(null);
+  const [debugMode, setDebugMode] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     setStatus(await getStatus());
   }, []);
+
+  useEffect(() => {
+    try {
+      setDebugMode(window.localStorage.getItem(DEBUG_MODE_STORAGE_KEY) === "true");
+    } catch {
+      setDebugMode(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(DEBUG_MODE_STORAGE_KEY, String(debugMode));
+    } catch {
+      // Ignore storage failures and keep the in-memory toggle state.
+    }
+  }, [debugMode]);
 
   useEffect(() => {
     getAppVersion()
@@ -66,9 +87,11 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
       status,
       appVersion,
       startupError,
+      debugMode,
+      setDebugMode,
       refreshStatus
     }),
-    [appVersion, backendReady, refreshStatus, startupError, status]
+    [appVersion, backendReady, debugMode, refreshStatus, startupError, status]
   );
 
   return <ApplicationContext.Provider value={value}>{children}</ApplicationContext.Provider>;

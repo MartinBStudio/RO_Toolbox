@@ -1,6 +1,7 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import type { AppStatus } from "../types.ts";
 import { clearGameFolder, saveGameFolder } from "../backendConnector/api.ts";
+import { useApplicationContext } from "../context/ApplicationContext.tsx";
 
 type SettingsModalProps = {
   open: boolean;
@@ -21,6 +22,8 @@ export function SettingsModal({
   onStatusRefresh,
   onMessage
 }: SettingsModalProps) {
+  const { debugMode, setDebugMode } = useApplicationContext();
+
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
       return err.message;
@@ -128,6 +131,25 @@ export function SettingsModal({
                 🗑 Clear
               </button>
             )}
+          </div>
+        </div>
+
+        <div className="settingsSection settingsSectionSeparated">
+          <div className="settingsToggleRow">
+            <div>
+              <p className="settingsSectionLabel">Debug mode</p>
+              <p className="settingsToggleHelp">Show debug information.</p>
+            </div>
+            <label className="settingsToggle" aria-label="Toggle debug mode">
+              <input
+                type="checkbox"
+                checked={debugMode}
+                onChange={(event) => setDebugMode(event.target.checked)}
+              />
+              <span className="settingsToggleTrack" aria-hidden="true">
+                <span className="settingsToggleThumb" />
+              </span>
+            </label>
           </div>
         </div>
       </section>

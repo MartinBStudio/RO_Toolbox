@@ -198,7 +198,7 @@ export function CombatTextManager({
               className="iconBtn iconBtnSubtle iconBtnDim"
               disabled={loading}
               onClick={() => runAction(openCombatTextResourcesFolder)}
-              title="Open downloaded"
+              title="Browse downloaded"
               aria-label="Open downloaded"
             >
               📂
@@ -218,8 +218,8 @@ export function CombatTextManager({
               className="iconBtn iconBtnSubtle iconBtnDim"
               disabled={loading}
               onClick={() => runAction(openCombatTextItemFolder)}
-              title="Open installed"
-              aria-label="Open installed"
+              title="Browse installed"
+              aria-label="Browse installed"
             >
               📁
             </button>
