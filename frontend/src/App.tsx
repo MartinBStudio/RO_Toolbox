@@ -7,6 +7,7 @@ import {LoadingOverlay} from "./elements/LoadingOverlay.tsx";
 import {BackendReadyGate} from "./elements/BackendReadyGate.tsx";
 import {LootManager} from "./components/LootManager";
 import {CombatTextManager} from "./components/CombatTextManager";
+import {UserInterfaceManager} from "./components/UserInterfaceManager";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
@@ -120,6 +121,13 @@ function App() {
                                         onMessage={setMessage}
                                     />
                                     <CombatTextManager
+                                        status={status}
+                                        loading={loading}
+                                        onBusyChange={setLoading}
+                                        onStatusRefresh={refreshStatus}
+                                        onMessage={setMessage}
+                                    />
+                                    <UserInterfaceManager
                                         status={status}
                                         loading={loading}
                                         onBusyChange={setLoading}

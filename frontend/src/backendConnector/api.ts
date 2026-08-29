@@ -18,4 +18,13 @@ export {
   openCombatTextItemFolder,
   checkCombatTextResourcesUpdate
 } from "./combatTextApi.ts";
+export {
+  downloadUserInterfaceProfiles,
+  installUserInterfaceProfile,
+  clearUserInterfaceResources,
+  clearUserInterfaceInstalled,
+  openUserInterfaceResourcesFolder,
+  openUserInterfaceItemFolder,
+  checkUserInterfaceResourcesUpdate
+} from "./userInterfaceApi.ts";
 export { checkBackendUpdate, fetchLatestReleaseDownload } from "./updateApi.ts";
