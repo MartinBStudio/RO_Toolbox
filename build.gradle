@@ -39,6 +39,7 @@ dependencies {
         exclude group: 'org.springframework.boot', module: 'spring-boot-starter-logging'
     }
     implementation 'org.springframework.boot:spring-boot-starter-log4j2'
+    implementation 'org.tomlj:tomlj:1.1.1'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation('org.springframework.boot:spring-boot-starter-test') {

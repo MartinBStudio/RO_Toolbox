@@ -8,6 +8,7 @@ import {BackendReadyGate} from "./elements/BackendReadyGate.tsx";
 import {LootManager} from "./components/LootManager";
 import {CombatTextManager} from "./components/CombatTextManager";
 import {UserInterfaceManager} from "./components/UserInterfaceManager";
+import {ConfigEditorManager} from "./components/ConfigEditorManager.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
@@ -15,7 +16,8 @@ import {HowToUseModal} from "./elements/HowToUseModal.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
 
 const SERVICES = [
-    {id: "texture-replacer", title: "Texture replacer"}
+    {id: "texture-replacer", title: "Texture replacer"},
+    {id: "config-editor", title: "Config editor"}
 ] as const;
 
 function App() {
@@ -135,6 +137,13 @@ function App() {
                                         onMessage={setMessage}
                                     />
                                 </div>
+                            )}
+                            {selectedService === "config-editor" && (
+                                <ConfigEditorManager
+                                    loading={loading}
+                                    onBusyChange={setLoading}
+                                    onMessage={setMessage}
+                                />
                             )}
                         </section>
                     </div>

@@ -50,6 +50,7 @@ public class AppStatusController {
                         new ServiceEndpointResponse("lootService", "/api/loot", "Loot profiles and installation"),
                         new ServiceEndpointResponse("combatTextService", "/api/combattext", "Combat text profiles and installation"),
                         new ServiceEndpointResponse("userInterfaceService", "/api/userinterface", "User interface profiles and installation"),
+                        new ServiceEndpointResponse("configEditorService", "/api/config-editor", "ROSE config TOML editor"),
                         new ServiceEndpointResponse("settings", "/api/settings", "Generic app settings"),
                         new ServiceEndpointResponse("updater", "/api/update", "Backend updater checks and install")
                 )

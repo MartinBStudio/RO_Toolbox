@@ -64,3 +64,21 @@ export type ResourcesUpdateCheckResult = {
   success: boolean;
   message: string;
 };
+
+export type TomlNode = string | number | boolean | null | TomlNode[] | { [key: string]: TomlNode };
+
+export type ConfigEditorFileState = {
+  id: "ignore" | "rose";
+  fileName: string;
+  filePath: string;
+  exists: boolean;
+  content: string | null;
+  parsed: { [key: string]: TomlNode } | null;
+  parseError: string | null;
+};
+
+export type ConfigEditorStatus = {
+  configDir: string;
+  configDirExists: boolean;
+  files: ConfigEditorFileState[];
+};
