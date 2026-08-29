@@ -18,4 +18,4 @@ export {
   openCombatTextItemFolder,
   checkCombatTextResourcesUpdate
 } from "./combatTextApi.ts";
-export { checkBackendUpdate } from "./updateApi.ts";
+export { checkBackendUpdate, fetchLatestReleaseDownload } from "./updateApi.ts";

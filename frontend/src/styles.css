@@ -410,6 +410,11 @@ button:disabled {
   border-color: #2b4d86;
 }
 
+.downloadTestCog {
+  background: #24334d;
+  border-color: #486791;
+}
+
 .updateAvailable {
   background: #0b7a5a;
   border-color: #21a67f;
@@ -507,6 +512,12 @@ a {
   gap: 0.45rem;
 }
 
+.settingsSectionSeparated {
+  margin-top: 0.9rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid #243040;
+}
+
 .settingsSectionLabel {
   font-size: 0.72rem;
   font-weight: 700;
@@ -540,6 +551,62 @@ a {
 .settingsFolderActions {
   display: flex;
   gap: 0.45rem;
+}
+
+.settingsToggleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.settingsToggleHelp {
+  color: #8fa6c0;
+  font-size: 0.84rem;
+}
+
+.settingsToggle {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.settingsToggle input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+
+.settingsToggleTrack {
+  width: 2.1rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: #243040;
+  border: 1px solid #3a4a64;
+  padding: 0.1rem;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.settingsToggleThumb {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 50%;
+  background: #dce4ef;
+  transform: translateX(0);
+  transition: transform 0.15s ease;
+}
+
+.settingsToggle input:checked + .settingsToggleTrack {
+  background: #0b7a5a;
+  border-color: #21a67f;
+}
+
+.settingsToggle input:checked + .settingsToggleTrack .settingsToggleThumb {
+  transform: translateX(0.9rem);
 }
 
 .modalActions {

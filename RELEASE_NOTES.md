@@ -2,7 +2,7 @@
 
 ---
 
-## v2.0.1 – Improved Loading Experience
+## v0.2.1 – Improved Loading Experience
 
 ### ⏳ Loading spinner on startup
 - The initial "Starting RO Toolbox…" screen now displays a spinner while the backend is initialising, replacing the plain text indicator
