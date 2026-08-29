@@ -19,6 +19,7 @@ export type AppStatus = {
   version: string;
   lootServiceEndpoint: string;
   combatTextServiceEndpoint: string;
+  userInterfaceServiceEndpoint: string;
   selectedGameBase: string | null;
   selectedGameItemFolder: string | null;
   installedProfile: ProfileInfo | null;
@@ -29,6 +30,11 @@ export type AppStatus = {
   combatTextInstalledProfile: ProfileInfo | null;
   combatTextDownloadedProfiles: string[];
   combatTextAvailableProfiles: AvailableProfile[];
+  userInterfaceSelectedGameBase: string | null;
+  userInterfaceSelectedGameItemFolder: string | null;
+  userInterfaceInstalledProfile: ProfileInfo | null;
+  userInterfaceDownloadedProfiles: string[];
+  userInterfaceAvailableProfiles: AvailableProfile[];
 };
 
 export type UpdateCheckResult = {
