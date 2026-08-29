@@ -14,6 +14,15 @@ const CREATE_NO_WINDOW: u32 = 0x08000000;
 
 struct BackendState(Mutex<Option<Child>>);
 
+#[tauri::command]
+fn stop_backend(state: tauri::State<BackendState>) {
+    let child = state.0.lock().expect("backend lock poisoned").take();
+    if let Some(mut child) = child {
+        let _ = child.kill();
+        let _ = child.wait();
+    }
+}
+
 fn main() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_updater::Builder::new().build())
@@ -21,6 +30,7 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(BackendState(Mutex::new(None)))
+        .invoke_handler(tauri::generate_handler![stop_backend])
         .setup(|app| {
             if use_external_backend() {
                 return Ok(());
