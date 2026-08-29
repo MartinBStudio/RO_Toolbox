@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import {
+  ArrowDownTrayIcon,
+  ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  TrashIcon
+} from "@heroicons/react/24/outline";
 import type { AppStatus } from "../types";
 import {
   checkCombatTextResourcesUpdate,
@@ -201,7 +211,7 @@ export function CombatTextManager({
               title="Browse downloaded"
               aria-label="Open downloaded"
             >
-              📂
+              <FolderOpenIcon className="heroIcon" />
             </button>
             <button
               type="button"
@@ -211,7 +221,7 @@ export function CombatTextManager({
               title="Clear downloaded"
               aria-label="Clear downloaded"
             >
-              🗑
+              <TrashIcon className="heroIcon" />
             </button>
             <button
               type="button"
@@ -221,7 +231,7 @@ export function CombatTextManager({
               title="Browse installed"
               aria-label="Browse installed"
             >
-              📁
+              <FolderIcon className="heroIcon" />
             </button>
             <button
               type="button"
@@ -231,7 +241,7 @@ export function CombatTextManager({
               title="Clear installed"
               aria-label="Clear installed"
             >
-              🗑
+              <TrashIcon className="heroIcon" />
             </button>
             <span className="headerSep" />
             <button
@@ -242,7 +252,7 @@ export function CombatTextManager({
               title={resourcesUpdateTitle}
               aria-label={resourcesUpdateTitle}
             >
-              {resourcesUpdateAvailable ? "↓" : "⟳"}
+              {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
             </button>
             <button
               type="button"
@@ -253,7 +263,7 @@ export function CombatTextManager({
               title={!hasProfiles ? "Download profiles first" : undefined}
               onClick={() => setCollapsed((value) => !value)}
             >
-              {collapsed ? "▾" : "▴"}
+              {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
             </button>
           </div>
         </div>
@@ -273,9 +283,6 @@ export function CombatTextManager({
                     </option>
                   ))}
                 </select>
-                <button className="buttonStrong" disabled={loading || !canInstall} onClick={onInstallProfile}>
-                  Install
-                </button>
               </div>
               {selectedProfileData ? (
                 <div className="profileCard">
@@ -298,16 +305,24 @@ export function CombatTextManager({
                         title="Open profile page"
                         aria-label="Open profile page"
                       >
-                        🔗
+                        <ArrowTopRightOnSquareIcon className="heroIcon" />
                       </button>
                     ) : null}
                   </div>
                   {selectedProfileData.description ? (
                     <p className="profileCardDesc">{selectedProfileData.description}</p>
                   ) : null}
+                  <button className="buttonStrong profileInstallBtn" disabled={loading || !canInstall} onClick={onInstallProfile}>
+                    Install
+                  </button>
                 </div>
               ) : (
-                <p className="profileCardEmpty">No profile selected</p>
+                <>
+                  <p className="profileCardEmpty">No profile selected</p>
+                  <button className="buttonStrong profileInstallBtn" disabled={loading || !canInstall} onClick={onInstallProfile}>
+                    Install
+                  </button>
+                </>
               )}
             </div>
           </div>

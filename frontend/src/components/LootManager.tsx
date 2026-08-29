@@ -1,5 +1,15 @@
 import { useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import {
+  ArrowDownTrayIcon,
+  ArrowPathIcon,
+  ArrowTopRightOnSquareIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+  FolderOpenIcon,
+  FolderIcon,
+  TrashIcon
+} from "@heroicons/react/24/outline";
 import type { AppStatus } from "../types";
 import {
   checkLootResourcesUpdate,
@@ -198,7 +208,7 @@ export function LootManager({
               title="Browse downloaded"
               aria-label="Browse downloaded"
             >
-              📂
+              <FolderOpenIcon className="heroIcon" />
             </button>
             <button
               type="button"
@@ -208,7 +218,7 @@ export function LootManager({
               title="Clear downloaded"
               aria-label="Clear downloaded"
             >
-              🗑
+              <TrashIcon className="heroIcon" />
             </button>
             <button
               type="button"
@@ -218,7 +228,7 @@ export function LootManager({
               title="Browse installed"
               aria-label="Browse installed"
             >
-              📁
+              <FolderIcon className="heroIcon" />
             </button>
             <button
               type="button"
@@ -228,7 +238,7 @@ export function LootManager({
               title="Clear installed"
               aria-label="Clear installed"
             >
-              🗑
+              <TrashIcon className="heroIcon" />
             </button>
             <span className="headerSep" />
             <button
@@ -239,7 +249,7 @@ export function LootManager({
               title={resourcesUpdateTitle}
               aria-label={resourcesUpdateTitle}
             >
-              {resourcesUpdateAvailable ? "↓" : "⟳"}
+              {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
             </button>
             <button
               type="button"
@@ -250,7 +260,7 @@ export function LootManager({
               title={!hasProfiles ? "Download profiles first" : undefined}
               onClick={() => setCollapsed((value) => !value)}
             >
-              {collapsed ? "▾" : "▴"}
+              {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
             </button>
           </div>
         </div>
@@ -270,9 +280,6 @@ export function LootManager({
                     </option>
                   ))}
                 </select>
-                <button className="buttonStrong" disabled={loading || !canInstall} onClick={onInstallProfile}>
-                  Install
-                </button>
               </div>
               {selectedProfileData ? (
                 <div className="profileCard">
@@ -295,16 +302,24 @@ export function LootManager({
                         title="Open profile page"
                         aria-label="Open profile page"
                       >
-                        🔗
+                        <ArrowTopRightOnSquareIcon className="heroIcon" />
                       </button>
                     ) : null}
                   </div>
                   {selectedProfileData.description ? (
                     <p className="profileCardDesc">{selectedProfileData.description}</p>
                   ) : null}
+                  <button className="buttonStrong profileInstallBtn" disabled={loading || !canInstall} onClick={onInstallProfile}>
+                    Install
+                  </button>
                 </div>
               ) : (
-                <p className="profileCardEmpty">No profile selected</p>
+                <>
+                  <p className="profileCardEmpty">No profile selected</p>
+                  <button className="buttonStrong profileInstallBtn" disabled={loading || !canInstall} onClick={onInstallProfile}>
+                    Install
+                  </button>
+                </>
               )}
             </div>
           </div>

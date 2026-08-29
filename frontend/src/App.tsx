@@ -1,17 +1,21 @@
 import {useEffect, useState} from "react";
 import {LogicalSize, getCurrentWindow} from "@tauri-apps/api/window";
+import { SparklesIcon } from "@heroicons/react/24/outline";
 import {AppHeader} from "./elements/AppHeader.tsx";
 import {AppFooter} from "./elements/AppFooter.tsx";
 import {LoadingOverlay} from "./elements/LoadingOverlay.tsx";
 import {BackendReadyGate} from "./elements/BackendReadyGate.tsx";
 import {LootManager} from "./components/LootManager";
 import {CombatTextManager} from "./components/CombatTextManager";
-import {ServiceContainer} from "./elements/ServiceContainer.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
 import {HowToUseModal} from "./elements/HowToUseModal.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
+
+const SERVICES = [
+    {id: "texture-replacer", title: "Texture replacer"}
+] as const;
 
 function App() {
     const {backendReady, status, appVersion, refreshStatus} = useApplicationContext();
@@ -20,6 +24,7 @@ function App() {
     const [message, setMessage] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [howToUseOpen, setHowToUseOpen] = useState(false);
+    const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>("texture-replacer");
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
 
@@ -37,9 +42,9 @@ function App() {
 
         const appWindow = getCurrentWindow();
         let frameId = 0;
-        const minHeight = 420;
-        const maxHeight = 920;
-        const verticalPadding = 26;
+        const minHeight = 350;
+        const maxHeight = 760;
+        const verticalPadding = 20;
 
         const syncHeight = async () => {
             const contentHeight = Math.ceil(document.documentElement.scrollHeight + verticalPadding);
@@ -83,32 +88,48 @@ function App() {
                         appVersion={appVersion ?? undefined}
                         backendVersion={status?.version}
                     />
-                    <ServiceContainer
-                        groups={[
-                            {
-                                id: "texture-replacer",
-                                title: "Texture replacer",
-                                contents: [
+                    <div className="appWorkspace">
+                        <aside className="appSidebar">
+                            <div className="card sidebarPanel">
+                                <div className="serviceList">
+                                    {SERVICES.map((service) => (
+                                        <button
+                                            key={service.id}
+                                            type="button"
+                                            className={`serviceListItem${selectedService === service.id ? " serviceListItemActive" : ""}`}
+                                            onClick={() => setSelectedService(service.id)}
+                                        >
+                                            <span className="serviceListIcon" aria-hidden="true">
+                                                <SparklesIcon />
+                                            </span>
+                                            <span>{service.title}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </aside>
+
+                        <section className="appContent">
+                            {selectedService === "texture-replacer" && (
+                                <div className="card serviceContentPanel">
                                     <LootManager
-                                        key="texture-replacer-loot-1"
-                                        status={status}
-                                        loading={loading}
-                                        onBusyChange={setLoading}
-                                        onStatusRefresh={refreshStatus}
-                                        onMessage={setMessage}
-                                    />,
-                                    <CombatTextManager
-                                        key="texture-replacer-combattext-1"
                                         status={status}
                                         loading={loading}
                                         onBusyChange={setLoading}
                                         onStatusRefresh={refreshStatus}
                                         onMessage={setMessage}
                                     />
-                                ]
-                            }
-                        ]}
-                    />
+                                    <CombatTextManager
+                                        status={status}
+                                        loading={loading}
+                                        onBusyChange={setLoading}
+                                        onStatusRefresh={refreshStatus}
+                                        onMessage={setMessage}
+                                    />
+                                </div>
+                            )}
+                        </section>
+                    </div>
                     <StatusMessage message={message}/>
                     <AppFooter/>
                     <SettingsModal
