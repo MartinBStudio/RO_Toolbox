@@ -3,6 +3,12 @@ import { getCurrentWindow } from "@tauri-apps/api/window";
 import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import {
+  ArrowDownTrayIcon,
+  ArrowPathIcon,
+  Cog6ToothIcon,
+  QuestionMarkCircleIcon
+} from "@heroicons/react/24/outline";
 import { checkBackendUpdate, fetchLatestReleaseDownload } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
 
@@ -223,7 +229,7 @@ export function AppHeader({
             disabled={loading || updateChecking}
             onClick={onUpdateAction}
           >
-            {updateAvailable ? "↓" : "⟳"}
+            {updateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
           </button>
           {debugMode && (
             <button
@@ -234,7 +240,7 @@ export function AppHeader({
               disabled={loading || updateChecking}
               onClick={onDownloadLatestRelease}
             >
-              ⇩
+              <ArrowDownTrayIcon className="heroIcon" />
             </button>
           )}
           <button
@@ -243,7 +249,7 @@ export function AppHeader({
             aria-label="Open how to use guide"
             onClick={onOpenHowToUse}
           >
-            ?
+            <QuestionMarkCircleIcon className="heroIcon" />
           </button>
           <button
             type="button"
@@ -251,7 +257,7 @@ export function AppHeader({
             aria-label="Open settings"
             onClick={onOpenSettings}
           >
-            ⚙
+            <Cog6ToothIcon className="heroIcon" />
           </button>
         </div>
       </div>
