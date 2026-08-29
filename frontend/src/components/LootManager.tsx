@@ -21,7 +21,7 @@ import {
   openResourcesFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
-import { capitalizeFirstLetter } from "../formatting.ts";
+import { capitalizeFirstLetter, formatManifestVersion, joinMeta } from "../formatting.ts";
 
 type LootManagerProps = {
   status: AppStatus | null;
@@ -49,9 +49,10 @@ export function LootManager({
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
   const installedProfileUrl = status?.installedProfile?.url ?? null;
   const activeProfileName = capitalizeFirstLetter(status?.installedProfile?.name) ?? "No active profile";
-  const activeProfileAuthor = status?.installedProfile?.author
-    ? ` • by ${status.installedProfile.author}`
-    : "";
+  const activeProfileMeta = joinMeta([
+    formatManifestVersion(status?.installedProfile?.version),
+    status?.installedProfile?.author ? `by ${status.installedProfile.author}` : null
+  ]);
 
   useEffect(() => {
     if (availableProfiles.length === 0) {
@@ -184,7 +185,7 @@ export function LootManager({
           <div>
             <p className="sectionTitle">Loot models</p>
             <p className="activeProfileMeta">
-              Active profile: <span className="activeProfileValue">{activeProfileName}{activeProfileAuthor}</span>
+              Active profile: <span className="activeProfileValue">{activeProfileName}{activeProfileMeta ? ` • ${activeProfileMeta}` : ""}</span>
             </p>
           </div>
           <div className="headerActions">
@@ -277,6 +278,7 @@ export function LootManager({
                   {availableProfiles.map((profile) => (
                     <option key={profile.id} value={profile.id}>
                       {capitalizeFirstLetter(profile.name ?? profile.id)}
+                      {profile.version ? ` (${formatManifestVersion(profile.version)})` : ""}
                     </option>
                   ))}
                 </select>
@@ -286,11 +288,17 @@ export function LootManager({
                   <div className="profileCardHeader">
                     <div>
                       <p className="profileCardName">{capitalizeFirstLetter(selectedProfileData.name ?? selectedProfileData.id)}</p>
-                      {(selectedProfileData.author || selectedProfileData.createdAt) && (
+                      {joinMeta([
+                        formatManifestVersion(selectedProfileData.version),
+                        selectedProfileData.author ? `by ${selectedProfileData.author}` : null,
+                        selectedProfileData.createdAt
+                      ]) && (
                         <p className="profileCardMeta">
-                          {selectedProfileData.author ? `by ${selectedProfileData.author}` : ""}
-                          {selectedProfileData.author && selectedProfileData.createdAt ? " · " : ""}
-                          {selectedProfileData.createdAt ?? ""}
+                          {joinMeta([
+                            formatManifestVersion(selectedProfileData.version),
+                            selectedProfileData.author ? `by ${selectedProfileData.author}` : null,
+                            selectedProfileData.createdAt
+                          ], " · ")}
                         </p>
                       )}
                     </div>

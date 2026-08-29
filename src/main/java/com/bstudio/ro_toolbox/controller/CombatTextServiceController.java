@@ -24,7 +24,7 @@ public class CombatTextServiceController {
                 absoluteOrNull(combatTextManagerService.getSelectedGameBase()),
                 absoluteOrNull(combatTextManagerService.getSelectedGameItemFolder()),
                 installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt
+                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
                 ),
                 combatTextManagerService.listDownloadedProfiles(),
                 combatTextManagerService.listAvailableProfiles().stream()
@@ -34,7 +34,8 @@ public class CombatTextServiceController {
                                 profile.author(),
                                 profile.description(),
                                 profile.url(),
-                                profile.createdAt()
+                                profile.createdAt(),
+                                profile.version()
                         ))
                         .toList()
         );
@@ -133,10 +134,10 @@ public class CombatTextServiceController {
     public record MessageResponse(String message) {
     }
 
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt) {
+    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
     }
 
-    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt) {
+    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version) {
     }
 
     public record CombatTextStatusResponse(

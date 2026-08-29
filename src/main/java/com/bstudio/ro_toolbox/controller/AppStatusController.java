@@ -31,19 +31,19 @@ public class AppStatusController {
                 new LootServiceSummaryResponse(
                         "/api/loot",
                         installed == null ? null : new ProfileInfoResponse(
-                                installed.name, installed.author, installed.description, installed.url, installed.createdAt
+                                installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
                         )
                 ),
                 new CombatTextServiceSummaryResponse(
                         "/api/combattext",
                         installedCombatText == null ? null : new ProfileInfoResponse(
-                                installedCombatText.name, installedCombatText.author, installedCombatText.description, installedCombatText.url, installedCombatText.createdAt
+                                installedCombatText.name, installedCombatText.author, installedCombatText.description, installedCombatText.url, installedCombatText.createdAt, installedCombatText.version
                         )
                 ),
                 new UserInterfaceServiceSummaryResponse(
                         "/api/userinterface",
                         installedUserInterface == null ? null : new ProfileInfoResponse(
-                                installedUserInterface.name, installedUserInterface.author, installedUserInterface.description, installedUserInterface.url, installedUserInterface.createdAt
+                                installedUserInterface.name, installedUserInterface.author, installedUserInterface.description, installedUserInterface.url, installedUserInterface.createdAt, installedUserInterface.version
                         )
                 ),
                 List.of(
@@ -77,6 +77,6 @@ public class AppStatusController {
     public record ServiceEndpointResponse(String key, String endpoint, String description) {
     }
 
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt) {
+    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
     }
 }

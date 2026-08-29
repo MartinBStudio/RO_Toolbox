@@ -4,6 +4,7 @@ export type ProfileInfo = {
   description: string | null;
   url: string | null;
   createdAt: string | null;
+  version: string | null;
 };
 
 export type AvailableProfile = {
@@ -13,6 +14,7 @@ export type AvailableProfile = {
   description: string | null;
   url: string | null;
   createdAt: string | null;
+  version: string | null;
 };
 
 export type AppStatus = {

@@ -386,6 +386,7 @@ public class UserInterfaceManagerService {
             String description,
             String url,
             String createdAt,
+            String version,
             long normalizedVersion,
             Path source
     ) {
@@ -439,6 +440,7 @@ public class UserInterfaceManagerService {
                                 readManifestDescription(manifest),
                                 readManifestUrl(manifest),
                                 readManifestCreatedAt(manifest),
+                                readManifestVersion(manifest),
                                 normalizeVersion(readManifestVersion(manifest)),
                                 p
                         ));
@@ -486,13 +488,15 @@ public class UserInterfaceManagerService {
         public final String description;
         public final String url;
         public final String createdAt;
+        public final String version;
 
-        public ProfileInfo(String name, String author, String description, String url, String createdAt) {
+        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version) {
             this.name = name;
             this.author = author;
             this.description = description;
             this.url = url;
             this.createdAt = createdAt;
+            this.version = version;
         }
     }
 
@@ -512,7 +516,8 @@ public class UserInterfaceManagerService {
                 readManifestAuthor(manifest),
                 readManifestDescription(manifest),
                 readManifestUrl(manifest),
-                readManifestCreatedAt(manifest)
+                readManifestCreatedAt(manifest),
+                readManifestVersion(manifest)
         );
     }
 

@@ -291,6 +291,7 @@ public class CombatTextManagerService {
             String description,
             String url,
             String createdAt,
+            String version,
             long normalizedVersion,
             Path source
     ) {
@@ -342,6 +343,7 @@ public class CombatTextManagerService {
                                 readManifestDescription(manifest),
                                 readManifestUrl(manifest),
                                 readManifestCreatedAt(manifest),
+                                readManifestVersion(manifest),
                                 normalizeVersion(readManifestVersion(manifest)),
                                 p
                         ));
@@ -389,13 +391,15 @@ public class CombatTextManagerService {
         public final String description;
         public final String url;
         public final String createdAt;
+        public final String version;
 
-        public ProfileInfo(String name, String author, String description, String url, String createdAt) {
+        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version) {
             this.name = name;
             this.author = author;
             this.description = description;
             this.url = url;
             this.createdAt = createdAt;
+            this.version = version;
         }
     }
 
@@ -415,7 +419,8 @@ public class CombatTextManagerService {
                 readManifestAuthor(manifest),
                 readManifestDescription(manifest),
                 readManifestUrl(manifest),
-                readManifestCreatedAt(manifest)
+                readManifestCreatedAt(manifest),
+                readManifestVersion(manifest)
         );
     }
 

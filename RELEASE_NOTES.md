@@ -1,5 +1,11 @@
 # RO Toolbox – Release Notes
 
+## v0.2.6 – Profile Version Display
+
+### 🔢 Manifest version visibility
+- Added manifest version data to installed and downloadable profile status payloads for Loot, Combat Text, and User Interface services
+- Updated the frontend to show installed profile versions and the available version beside downloaded profile entries
+
 ## v0.2.5 – User Interface Service
 
 ### ✨ New service: User Interface profiles
