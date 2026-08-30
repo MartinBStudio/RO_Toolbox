@@ -64,6 +64,8 @@ export function HowToUseModal({ open, onClose }: HowToUseModalProps) {
               <ol className="howToUseSteps">
                 <li>Open the <strong>Config editor</strong> service tab from the sidebar.</li>
                 <li>Select <strong>ignore.toml</strong> or <strong>rose.toml</strong> from the file tabs.</li>
+                <li>For <strong>ignore.toml</strong>, use the ignore list manager to <strong>Add</strong> or <strong>Delete</strong> entries quickly.</li>
+                <li>For <strong>rose.toml</strong>, use the boolean values manager to switch any <strong>true/false</strong> setting.</li>
                 <li>Edit TOML in the source panel and use <strong>Save</strong> to write changes.</li>
                 <li>Use <strong>⟳</strong> to reload from disk and <strong>📂</strong> to open the config folder.</li>
                 <li>Check the parsed preview panel to verify values are structured as expected.</li>

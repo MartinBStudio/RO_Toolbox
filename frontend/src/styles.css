@@ -261,6 +261,12 @@ p {
   font-weight: 600;
 }
 
+.activeProfileVersion {
+  color: #7f93ad;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
 .sidebarPanel {
   display: grid;
   gap: 0.7rem;
@@ -561,6 +567,12 @@ button .heroIcon {
   color: #6a87a8;
   font-size: 0.78rem;
   margin-top: 0.1rem;
+}
+
+.profileCardInstalled {
+  color: #76d6af;
+  font-size: 0.8rem;
+  font-weight: 600;
 }
 
 .profileCardDesc {
@@ -868,22 +880,6 @@ a {
   animation: spin 0.9s linear infinite;
 }
 
-.loadingProgressWrap {
-  width: 100%;
-  height: 0.5rem;
-  border-radius: 999px;
-  background: #101725;
-  border: 1px solid #2b3344;
-  overflow: hidden;
-}
-
-.loadingProgressBar {
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #5bb5ff 0%, #7de0c8 100%);
-  box-shadow: 0 0 12px rgba(91, 181, 255, 0.45);
-}
-
 .loadingLabel {
   width: 100%;
   color: #dce4ef;
@@ -922,6 +918,12 @@ a {
   color: #8fa6c0;
   font-size: 0.8rem;
   word-break: break-all;
+}
+
+.configEditorWarning {
+  color: #f0b66c;
+  font-size: 0.84rem;
+  line-height: 1.35;
 }
 
 .configEditorFileTabs {
@@ -978,6 +980,113 @@ a {
   font-size: 0.78rem;
   font-family: "Consolas", "Courier New", monospace;
   word-break: break-all;
+}
+
+.configEditorIgnorePanel {
+  border: 1px solid #243040;
+  border-radius: 6px;
+  background: #121a27;
+  padding: 0.5rem 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.configEditorIgnoreAddRow {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.configEditorIgnoreAddRow > button {
+  flex: 0 0 auto;
+}
+
+.configEditorIgnoreList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.configEditorIgnoreItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #0d1420;
+  border: 1px solid #243040;
+  border-radius: 6px;
+  padding: 0.33rem 0.45rem;
+}
+
+.configEditorIgnoreName {
+  color: #d8e6f7;
+  word-break: break-word;
+}
+
+.configEditorBooleanPanel {
+  border: 1px solid #243040;
+  border-radius: 6px;
+  background: #121a27;
+  padding: 0.5rem 0.6rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.configEditorBooleanList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.3rem;
+  max-height: 260px;
+  overflow: auto;
+}
+
+.configEditorBooleanItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  background: #0d1420;
+  border: 1px solid #243040;
+  border-radius: 6px;
+  padding: 0.33rem 0.45rem;
+}
+
+.configEditorBooleanMeta {
+  min-width: 0;
+  display: grid;
+  gap: 0.08rem;
+}
+
+.configEditorBooleanPath {
+  color: #7f9fc2;
+  font-size: 0.72rem;
+  font-family: "Consolas", "Courier New", monospace;
+}
+
+.configEditorBooleanKey {
+  color: #d8e6f7;
+  font-size: 0.83rem;
+  word-break: break-word;
+}
+
+.configEditorBooleanActions {
+  display: flex;
+  gap: 0.32rem;
+  flex: 0 0 auto;
+}
+
+.configEditorBooleanActions > button {
+  min-width: 3.3rem;
+  text-transform: lowercase;
+}
+
+.configEditorBooleanActive {
+  background: #1b4b8d;
+  border-color: #3d75d7;
+  color: #e8f2ff;
 }
 
 .configEditorError {

@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class ConfigEditorService {
@@ -67,6 +68,37 @@ public class ConfigEditorService {
 
     public Path getConfigDir() {
         return configDir;
+    }
+
+    public IgnoreListState readIgnoreList() throws IOException {
+        ParsedIgnoreData data = readIgnoreData();
+        return new IgnoreListState(data.names(), data.fileState());
+    }
+
+    public IgnoreListState addIgnoreName(String name) throws IOException {
+        String normalizedName = normalizeIgnoreName(name);
+        ParsedIgnoreData data = readIgnoreData();
+        boolean exists = data.names().stream().anyMatch(entry -> entry.equalsIgnoreCase(normalizedName));
+        if (exists) {
+            throw new IllegalArgumentException("Ignore entry already exists: " + normalizedName);
+        }
+        List<String> updatedNames = new ArrayList<>(data.names());
+        updatedNames.add(normalizedName);
+        ConfigFileState updatedFile = saveIgnoreList(updatedNames);
+        return new IgnoreListState(updatedNames, updatedFile);
+    }
+
+    public IgnoreListState deleteIgnoreName(String name) throws IOException {
+        String normalizedName = normalizeIgnoreName(name);
+        ParsedIgnoreData data = readIgnoreData();
+        List<String> updatedNames = data.names().stream()
+                .filter(entry -> !entry.equalsIgnoreCase(normalizedName))
+                .collect(Collectors.toCollection(ArrayList::new));
+        if (updatedNames.size() == data.names().size()) {
+            throw new IllegalArgumentException("Ignore entry not found: " + normalizedName);
+        }
+        ConfigFileState updatedFile = saveIgnoreList(updatedNames);
+        return new IgnoreListState(updatedNames, updatedFile);
     }
 
     private ConfigFileSpec findTargetFile(String fileId) {
@@ -129,6 +161,76 @@ public class ConfigEditorService {
         return value.toString();
     }
 
+    private ParsedIgnoreData readIgnoreData() throws IOException {
+        ConfigFileSpec ignoreSpec = findTargetFile(IGNORE_ID);
+        ConfigFileState fileState = readFileState(ignoreSpec);
+        if (fileState.parseError() != null) {
+            throw new IllegalArgumentException(fileState.parseError());
+        }
+        if (fileState.content() == null || fileState.content().isBlank()) {
+            return new ParsedIgnoreData(new ArrayList<>(), fileState);
+        }
+
+        TomlParseResult parsed = Toml.parse(fileState.content());
+        List<String> names = parseIgnoreNames(parsed);
+        return new ParsedIgnoreData(names, fileState);
+    }
+
+    private List<String> parseIgnoreNames(TomlParseResult parsed) {
+        Object ignoreValue = parsed.get("ignore");
+        if (ignoreValue == null) {
+            return new ArrayList<>();
+        }
+        if (!(ignoreValue instanceof TomlArray ignoreArray)) {
+            throw new IllegalArgumentException("Invalid ignore.toml format: expected [[ignore]] table array.");
+        }
+
+        List<String> names = new ArrayList<>();
+        for (int index = 0; index < ignoreArray.size(); index++) {
+            Object item = ignoreArray.get(index);
+            if (!(item instanceof TomlTable table)) {
+                throw new IllegalArgumentException("Invalid ignore.toml format: each [[ignore]] entry must be a table.");
+            }
+            String name = table.getString("name");
+            if (name == null || name.isBlank()) {
+                throw new IllegalArgumentException("Invalid ignore.toml format: each [[ignore]] entry requires non-empty name.");
+            }
+            names.add(name.trim());
+        }
+        return names;
+    }
+
+    private ConfigFileState saveIgnoreList(List<String> names) throws IOException {
+        String content = buildIgnoreToml(names);
+        return save(IGNORE_ID, content);
+    }
+
+    private String buildIgnoreToml(List<String> names) {
+        if (names.isEmpty()) {
+            return "";
+        }
+        StringBuilder builder = new StringBuilder();
+        for (int index = 0; index < names.size(); index++) {
+            if (index > 0) {
+                builder.append(System.lineSeparator());
+            }
+            builder.append("[[ignore]]").append(System.lineSeparator());
+            builder.append("name = '").append(escapeTomlLiteral(names.get(index))).append("'").append(System.lineSeparator());
+        }
+        return builder.toString();
+    }
+
+    private static String normalizeIgnoreName(String value) {
+        if (value == null || value.isBlank()) {
+            throw new IllegalArgumentException("name is required.");
+        }
+        return value.trim();
+    }
+
+    private static String escapeTomlLiteral(String value) {
+        return value.replace("'", "''");
+    }
+
     private static Path resolveRoseConfigDir() {
         String appData = System.getenv("APPDATA");
         if (appData != null && !appData.isBlank()) {
@@ -152,5 +254,11 @@ public class ConfigEditorService {
             Map<String, Object> parsed,
             String parseError
     ) {
+    }
+
+    public record IgnoreListState(List<String> names, ConfigFileState file) {
+    }
+
+    private record ParsedIgnoreData(List<String> names, ConfigFileState fileState) {
     }
 }

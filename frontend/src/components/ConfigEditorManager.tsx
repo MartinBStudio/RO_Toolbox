@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { ArrowPathIcon, FolderOpenIcon } from "@heroicons/react/24/outline";
 import {
+  addIgnoreListEntry,
+  deleteIgnoreListEntry,
   getConfigEditorStatus,
   openConfigEditorFolder,
   saveConfigEditorFile
@@ -14,6 +16,14 @@ type ConfigEditorManagerProps = {
   onMessage: (message: string) => void;
 };
 
+type TomlBooleanEntry = {
+  id: string;
+  lineIndex: number;
+  context: string;
+  key: string;
+  value: boolean;
+};
+
 const FILE_ORDER: Array<ConfigEditorFileState["id"]> = ["ignore", "rose"];
 
 export function ConfigEditorManager({ loading, onBusyChange, onMessage }: ConfigEditorManagerProps) {
@@ -21,11 +31,20 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
   const [selectedFileId, setSelectedFileId] = useState<ConfigEditorFileState["id"]>("ignore");
   const [editorContent, setEditorContent] = useState("");
   const [editorDirty, setEditorDirty] = useState(false);
+  const [ignoreNames, setIgnoreNames] = useState<string[]>([]);
+  const [newIgnoreName, setNewIgnoreName] = useState("");
 
   const selectedFile = useMemo(
     () => status?.files.find((file) => file.id === selectedFileId) ?? null,
     [selectedFileId, status]
   );
+
+  const roseBooleanEntries = useMemo(() => {
+    if (selectedFile?.id !== "rose") {
+      return [];
+    }
+    return extractBooleanEntriesFromTomlSource(editorContent);
+  }, [selectedFile?.id, editorContent]);
 
   useEffect(() => {
     loadStatus(false).catch((err) => {
@@ -42,6 +61,11 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
     setEditorContent(selectedFile.content ?? "");
     setEditorDirty(false);
   }, [selectedFileId, selectedFile?.content, selectedFile?.exists]);
+
+  useEffect(() => {
+    const ignoreFile = status?.files.find((file) => file.id === "ignore");
+    setIgnoreNames(extractIgnoreNames(ignoreFile));
+  }, [status]);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -120,6 +144,75 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
     }
   }
 
+  async function onAddIgnoreName() {
+    const nextName = newIgnoreName.trim();
+    if (!nextName) {
+      onMessage("Ignore name is required.");
+      return;
+    }
+    if (selectedFileId === "ignore" && editorDirty) {
+      const confirmed = window.confirm("Discard unsaved changes in ignore.toml before adding an entry?");
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    onBusyChange(true);
+    try {
+      const result = await addIgnoreListEntry(nextName);
+      await loadStatus(false);
+      setIgnoreNames(result.names);
+      setNewIgnoreName("");
+      onMessage(`Added "${nextName}" to ignore list.`);
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to add ignore entry."));
+    } finally {
+      onBusyChange(false);
+    }
+  }
+
+  async function onDeleteIgnoreName(name: string) {
+    if (selectedFileId === "ignore" && editorDirty) {
+      const confirmed = window.confirm("Discard unsaved changes in ignore.toml before deleting an entry?");
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    onBusyChange(true);
+    try {
+      const result = await deleteIgnoreListEntry(name);
+      await loadStatus(false);
+      setIgnoreNames(result.names);
+      onMessage(`Removed "${name}" from ignore list.`);
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to remove ignore entry."));
+    } finally {
+      onBusyChange(false);
+    }
+  }
+
+  function onToggleRoseBoolean(entry: TomlBooleanEntry, nextValue: boolean) {
+    const lines = editorContent.split(/\r?\n/);
+    const originalLine = lines[entry.lineIndex];
+    if (originalLine === undefined) {
+      onMessage("Could not update value: line not found.");
+      return;
+    }
+
+    const match = originalLine.match(/^(\s*[A-Za-z0-9_-]+\s*=\s*)(true|false)(\s*(?:#.*)?)$/);
+    if (!match) {
+      onMessage(`Could not update value for ${entry.context}.${entry.key}.`);
+      return;
+    }
+
+    lines[entry.lineIndex] = `${match[1]}${nextValue ? "true" : "false"}${match[3] ?? ""}`;
+    const hasTrailingNewLine = editorContent.endsWith("\n");
+    const nextContent = lines.join("\n") + (hasTrailingNewLine ? "\n" : "");
+    setEditorContent(nextContent);
+    setEditorDirty(true);
+  }
+
   function onFileChange(fileId: ConfigEditorFileState["id"]) {
     if (fileId === selectedFileId) {
       return;
@@ -139,7 +232,7 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
     <section className="card configEditor">
       <div className="configEditorHeader">
         <div>
-          <h2>Config editor</h2>
+          <p className="configEditorWarning">Warning: edit these files only when the ROSE client is closed.</p>
           <p className="configEditorPath">{status?.configDir ?? "%APPDATA%\\Rednim Games\\ROSE Online\\config"}</p>
         </div>
         <div className="headerActions">
@@ -192,6 +285,74 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
       {selectedFile ? (
         <div className="configEditorBody">
           <div className="configEditorPane">
+            {selectedFile.id === "ignore" && (
+              <div className="configEditorIgnorePanel">
+                <p className="settingsSectionLabel">Ignore list manager</p>
+                <div className="configEditorIgnoreAddRow">
+                  <input
+                    type="text"
+                    value={newIgnoreName}
+                    onChange={(event) => setNewIgnoreName(event.target.value)}
+                    placeholder="Entry name"
+                    disabled={loading}
+                  />
+                  <button type="button" className="buttonSubtle" disabled={loading} onClick={onAddIgnoreName}>
+                    Add
+                  </button>
+                </div>
+                {ignoreNames.length > 0 ? (
+                  <ul className="configEditorIgnoreList">
+                    {ignoreNames.map((name, index) => (
+                      <li key={`${name}-${index}`} className="configEditorIgnoreItem">
+                        <span className="configEditorIgnoreName">{name}</span>
+                        <button type="button" className="buttonSubtle" disabled={loading} onClick={() => onDeleteIgnoreName(name)}>
+                          Delete
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="profileCardEmpty">No ignore entries yet.</p>
+                )}
+              </div>
+            )}
+            {selectedFile.id === "rose" && (
+              <div className="configEditorBooleanPanel">
+                <p className="settingsSectionLabel">Boolean values manager</p>
+                {roseBooleanEntries.length > 0 ? (
+                  <ul className="configEditorBooleanList">
+                    {roseBooleanEntries.map((entry) => (
+                      <li key={entry.id} className="configEditorBooleanItem">
+                        <div className="configEditorBooleanMeta">
+                          <span className="configEditorBooleanPath">{entry.context}</span>
+                          <span className="configEditorBooleanKey">{entry.key}</span>
+                        </div>
+                        <div className="configEditorBooleanActions">
+                          <button
+                            type="button"
+                            className={`buttonSubtle${entry.value ? " configEditorBooleanActive" : ""}`}
+                            disabled={loading}
+                            onClick={() => onToggleRoseBoolean(entry, true)}
+                          >
+                            true
+                          </button>
+                          <button
+                            type="button"
+                            className={`buttonSubtle${!entry.value ? " configEditorBooleanActive" : ""}`}
+                            disabled={loading}
+                            onClick={() => onToggleRoseBoolean(entry, false)}
+                          >
+                            false
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="profileCardEmpty">No boolean entries found.</p>
+                )}
+              </div>
+            )}
             <p className="settingsSectionLabel">TOML source</p>
             <textarea
               className="configEditorTextarea"
@@ -264,4 +425,70 @@ function renderTomlNode(value: TomlNode): ReactNode {
       ))}
     </ul>
   );
+}
+
+function extractIgnoreNames(file: ConfigEditorFileState | null | undefined): string[] {
+  const ignoreNode = file?.parsed?.ignore;
+  if (!Array.isArray(ignoreNode)) {
+    return [];
+  }
+
+  const names: string[] = [];
+  for (const item of ignoreNode) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      continue;
+    }
+    const entryName = (item as { [key: string]: TomlNode }).name;
+    if (typeof entryName === "string" && entryName.trim()) {
+      names.push(entryName.trim());
+    }
+  }
+  return names;
+}
+
+function extractBooleanEntriesFromTomlSource(content: string): TomlBooleanEntry[] {
+  const lines = content.split(/\r?\n/);
+  const entries: TomlBooleanEntry[] = [];
+  let currentContext = "root";
+  const arrayTableCounter = new Map<string, number>();
+
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith("#")) {
+      continue;
+    }
+
+    const arrayTableMatch = trimmed.match(/^\[\[([^\]]+)]]$/);
+    if (arrayTableMatch) {
+      const basePath = arrayTableMatch[1].trim();
+      const nextIndex = (arrayTableCounter.get(basePath) ?? 0) + 1;
+      arrayTableCounter.set(basePath, nextIndex);
+      currentContext = `${basePath}[${nextIndex}]`;
+      continue;
+    }
+
+    const tableMatch = trimmed.match(/^\[([^\]]+)]$/);
+    if (tableMatch) {
+      currentContext = tableMatch[1].trim();
+      continue;
+    }
+
+    const valueMatch = line.match(/^\s*([A-Za-z0-9_-]+)\s*=\s*(true|false)\s*(?:#.*)?$/);
+    if (!valueMatch) {
+      continue;
+    }
+
+    const key = valueMatch[1];
+    const value = valueMatch[2] === "true";
+    entries.push({
+      id: `${currentContext}.${key}.${index}`,
+      lineIndex: index,
+      context: currentContext,
+      key,
+      value
+    });
+  }
+
+  return entries;
 }

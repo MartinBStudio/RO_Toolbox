@@ -165,10 +165,7 @@ export function AppHeader({
 
         downloaded += value.byteLength;
 
-        if (total > 0) {
-          const pct = Math.min(100, Math.round((downloaded / total) * 100));
-          onBusyChange(true, `Downloading latest release... ${pct}%`);
-        } else {
+        if (total > 0 || downloaded > 0) {
           onBusyChange(true, "Downloading latest release...");
         }
       }

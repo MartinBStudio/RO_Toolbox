@@ -82,3 +82,8 @@ export type ConfigEditorStatus = {
   configDirExists: boolean;
   files: ConfigEditorFileState[];
 };
+
+export type IgnoreListState = {
+  names: string[];
+  file: ConfigEditorFileState;
+};
