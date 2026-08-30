@@ -262,15 +262,10 @@ public class CombatTextManagerService {
             }
         }
 
-        Path defaultProfile = RESOURCES_DIR.resolve(".default");
-        if (Files.exists(defaultProfile)) {
-            deleteDirectoryContents(defaultProfile);
-            Files.deleteIfExists(defaultProfile);
-            log("Deleted default profile dir: " + defaultProfile.toAbsolutePath());
-        }
     }
 
-    public void clearSelectedItemFolder() throws IOException {        Path itemFolder = getSelectedGameItemFolder();
+    public void clearSelectedItemFolder() throws IOException {
+        Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
 
         Path manifest = resolveManifestPath(itemFolder);

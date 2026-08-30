@@ -262,35 +262,35 @@ public class UserInterfaceManagerService {
                 }
             }
         }
-
-        Path defaultProfile = RESOURCES_DIR.resolve(".default");
-        if (Files.exists(defaultProfile)) {
-            deleteDirectoryContents(defaultProfile);
-            Files.deleteIfExists(defaultProfile);
-            log("Deleted default profile dir: " + defaultProfile.toAbsolutePath());
-        }
     }
 
     public void clearSelectedItemFolder() throws IOException {
         Path gameBase = getSelectedGameBase();
         if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) return;
 
+        // Always clear the installed manifest so the app no longer shows the profile as installed
+        deleteManifestFiles(gameBase, MANIFEST_FILE_NAME, LEGACY_MANIFEST_FILE_NAME);
+        setCurrentUserInterfaceProfile(null);
+
+        // Restore original files from .default if available
         Path defaultProfile = RESOURCES_DIR.resolve(".default");
-        // Only proceed if default profile exists (i.e., UI was actually installed)
         if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) return;
 
         List<Path> managedFiles = readDefaultFileList(defaultProfile.resolve("FILE_LIST.txt"));
-        if (managedFiles.isEmpty()) {
-            return;
-        }
-
         for (Path relativeFile : managedFiles) {
+            Path defaultFile = defaultProfile.resolve(relativeFile);
             Path target = resolveManagedFile(gameBase, relativeFile);
             if (Files.isDirectory(target)) {
                 continue;
             }
             Files.deleteIfExists(target);
-            log("Deleted managed file: " + target.toAbsolutePath());
+            if (Files.isRegularFile(defaultFile)) {
+                Files.createDirectories(target.getParent());
+                Files.copy(defaultFile, target, StandardCopyOption.REPLACE_EXISTING);
+                log("Restored default file: " + target.toAbsolutePath());
+            } else {
+                log("Deleted managed file (no default available): " + target.toAbsolutePath());
+            }
         }
     }
 

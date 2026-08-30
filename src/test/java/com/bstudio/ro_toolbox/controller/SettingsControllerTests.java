@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
@@ -79,5 +80,28 @@ class SettingsControllerTests {
         controller.factoryReset();
 
         verify(login).clearAccounts();
+    }
+
+    @Test
+    void readsReleaseNotesFromClasspathWhenWorkingDirectoryDoesNotContainFile(@TempDir Path tempDir) throws IOException {
+        SettingsController controller = new SettingsController(
+                mock(LootManagerService.class),
+                mock(CombatTextManagerService.class),
+                mock(UserInterfaceManagerService.class),
+                mock(LoginManagerService.class)
+        );
+
+        String previousUserDir = System.getProperty("user.dir");
+        System.setProperty("user.dir", tempDir.toString());
+        try {
+            SettingsController.ReleaseNotesResponse response = controller.getReleaseNotes();
+            assertFalse(response.content().isBlank());
+        } finally {
+            if (previousUserDir == null) {
+                System.clearProperty("user.dir");
+            } else {
+                System.setProperty("user.dir", previousUserDir);
+            }
+        }
     }
 }

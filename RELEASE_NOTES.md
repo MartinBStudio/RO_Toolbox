@@ -1,5 +1,12 @@
 # RO Toolbox – Release Notes
 
+## v0.3.1 – Bug Fix
+
+### 🐛 Bug Fixes
+- **User Interface restore on clear/factory reset**: Clearing or factory resetting the installed UI profile now correctly restores the original game UI files from the `.default` folder and removes the installed profile marker. Previously, the app still showed the UI as installed and the original files were not copied back, leaving the game UI in a broken state.
+
+---
+
 ## v0.3.0 – Login Manager & Quick Launch
 
 ### ✨ New Features
