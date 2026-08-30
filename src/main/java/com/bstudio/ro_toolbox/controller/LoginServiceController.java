@@ -1,11 +1,13 @@
 package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
+import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -26,6 +28,35 @@ public class LoginServiceController {
     @GetMapping("/quick")
     public List<LoginManagerService.LoginAccount> listQuickAccounts() throws IOException {
         return loginManagerService.listQuickAccounts();
+    }
+
+    @GetMapping("/export")
+    public LoginManagerService.ExportAccountsResponse exportAccounts() throws IOException {
+        return loginManagerService.exportAccounts();
+    }
+
+    @PostMapping("/import")
+    public ImportResponse importAccounts(@RequestBody LoginManagerService.ImportAccountsRequest request) throws IOException {
+        List<LoginManagerService.LoginAccount> imported = loginManagerService.importAccounts(request);
+        return new ImportResponse(imported.size(), "Accounts imported.");
+    }
+
+    @PostMapping("/export/save")
+    public MessageResponse saveExport(@RequestBody SaveExportRequest request) throws IOException {
+        if (request == null || request.filePath() == null || request.filePath().isBlank()) {
+            throw new IllegalArgumentException("Export file path is required.");
+        }
+        if (request.content() == null || request.content().isBlank()) {
+            throw new IllegalArgumentException("Export content is required.");
+        }
+
+        Path exportPath = Path.of(request.filePath().trim()).toAbsolutePath().normalize();
+        Path parent = exportPath.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+        Files.writeString(exportPath, request.content(), StandardCharsets.UTF_8);
+        return new MessageResponse("Accounts exported.");
     }
 
     @PostMapping("/{id}/launch")
@@ -106,17 +137,16 @@ public class LoginServiceController {
     public record MessageResponse(String message) {
     }
 
+    public record ImportResponse(int totalAccounts, String message) {
+    }
+
+    public record SaveExportRequest(String filePath, String content) {
+    }
+
     private void launchWindowsForeground(Path workingDirectory, String executablePath, String... arguments) throws IOException {
         String os = System.getProperty("os.name", "").toLowerCase();
         if (os.contains("win")) {
-            StringBuilder command = new StringBuilder();
-            command.append("start \"\" \"").append(executablePath).append("\"");
-            for (String argument : arguments) {
-                command.append(" \"").append(argument).append("\"");
-            }
-            new ProcessBuilder("cmd.exe", "/c", command.toString())
-                    .directory(workingDirectory.toFile())
-                    .start();
+            WindowsProcessLauncher.launchForeground(workingDirectory, executablePath, arguments);
             return;
         }
 

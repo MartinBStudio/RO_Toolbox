@@ -50,3 +50,31 @@ export function deleteLoginAccount(id: string) {
 export function quickLaunchLoginAccount(id: string) {
   return request<{ message: string }>(`/login/${id}/launch`, { method: "POST" });
 }
+
+export function exportLoginAccounts() {
+  return request<{ version: number; accounts: LoginAccount[] }>("/login/export");
+}
+
+export function importLoginAccounts(data: {
+  accounts: Array<{
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    displayInQuick?: boolean;
+    icon?: string;
+  }>;
+  replaceExisting?: boolean;
+}) {
+  return request<{ totalAccounts: number; message: string }>("/login/import", {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}
+
+export function saveLoginAccountsExportFile(data: { filePath: string; content: string }) {
+  return request<{ message: string }>("/login/export/save", {
+    method: "POST",
+    body: JSON.stringify(data)
+  });
+}

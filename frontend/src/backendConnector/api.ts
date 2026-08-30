@@ -50,6 +50,9 @@ export {
   createLoginAccount,
   updateLoginAccount,
   deleteLoginAccount,
-  quickLaunchLoginAccount
+  quickLaunchLoginAccount,
+  exportLoginAccounts,
+  importLoginAccounts,
+  saveLoginAccountsExportFile
 } from "./loginApi.ts";
 export type { LoginAccount } from "./loginApi.ts";

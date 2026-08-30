@@ -1,8 +1,10 @@
 package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
+import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,7 @@ public class SettingsController {
     private final LootManagerService lootManagerService;
     private final CombatTextManagerService combatTextManagerService;
     private final UserInterfaceManagerService userInterfaceManagerService;
+    private final LoginManagerService loginManagerService;
 
     @PostMapping("/game-folder")
     public SaveFolderResponse saveGameFolder(@RequestBody SaveFolderRequest request) throws IOException {
@@ -76,16 +79,6 @@ public class SettingsController {
 
     @PostMapping("/factory-reset")
     public MessageResponse factoryReset() throws IOException {
-        if (lootManagerService.getSelectedGameBase() != null) {
-            lootManagerService.clearSelectedItemFolder();
-        }
-        if (combatTextManagerService.getSelectedGameBase() != null) {
-            combatTextManagerService.clearSelectedItemFolder();
-        }
-        if (userInterfaceManagerService.getSelectedGameBase() != null) {
-            userInterfaceManagerService.clearSelectedItemFolder();
-        }
-
         lootManagerService.clearResources();
         combatTextManagerService.clearResources();
         userInterfaceManagerService.clearResources();
@@ -97,6 +90,7 @@ public class SettingsController {
         lootManagerService.clearAppConfig();
         combatTextManagerService.clearAppConfig();
         userInterfaceManagerService.clearAppConfig();
+        loginManagerService.clearAccounts();
 
         return new MessageResponse("Factory reset complete. RO_Toolbox app state was cleared.");
     }
@@ -186,14 +180,7 @@ public class SettingsController {
     private void launchWindowsForeground(Path workingDirectory, String executablePath, String... arguments) throws IOException {
         String os = System.getProperty("os.name", "").toLowerCase();
         if (os.contains("win")) {
-            StringBuilder command = new StringBuilder();
-            command.append("start \"\" \"").append(executablePath).append("\"");
-            for (String argument : arguments) {
-                command.append(" \"").append(argument).append("\"");
-            }
-            new ProcessBuilder("cmd.exe", "/c", command.toString())
-                    .directory(workingDirectory.toFile())
-                    .start();
+            WindowsProcessLauncher.launchForeground(workingDirectory, executablePath, arguments);
             return;
         }
 

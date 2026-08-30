@@ -1,35 +1,39 @@
 # RO Toolbox – Release Notes
 
-## v0.2.9 – Game folder validation, reset safety, debug controls, and release notes
+## v0.3.0 – Login Manager, Quick Launch, and major UX upgrades
 
-### 🔧 Game folder validation
-- Fixed game folder selection to require the actual ROSE install root containing `trose.exe`
-- Corrected nested install handling such as `D:\Games\ROSE Online\ROSE Online`
-- Ensured the selected game root is saved consistently across Loot, Combat Text, and User Interface managers
-- Updated folder validation and UX messages to reflect the real root requirement instead of outdated `3ddata` assumptions
+### 🔐 Login Manager (new service)
+- Added a full **Login Manager** service with local account CRUD
+- Accounts include: **name**, **email**, **password**, **displayInQuick**, and **icon**
+- Passwords are stored encrypted locally (not plaintext)
+- Added account-level quick toggle (star) for **Display in quick launch**
+- Delete actions now use the shared confirmation modal
 
-### 🧹 Factory reset and app safety
-- Added a reusable confirmation modal for destructive actions
-- Added a red **Factory reset** action under Settings
-- Reset now clears RO_Toolbox app data, downloaded resources, and local mod state without touching the real ROSE config files in the game install / `AppData\Rednim Games`
-- Removed the `.default` folder as the final reset cleanup step
-- After reset, the app automatically refreshes profile state and re-checks updates without needing a manual click
+### 🚀 Quick Launch improvements
+- Quick Launch now shows saved accounts marked for quick display
+- Clicking a quick account launches `trose.exe` with stored login parameters
+- Added a separate **Launch Rose Launcher** action for `rose-updater.exe`
+- Updated launch/open process handling on Windows for more reliable external app start behavior
 
-### 🧪 Debug controls and hidden admin actions
-- Debug mode now hides advanced folder-management actions such as browse/clear downloaded and browse/clear installed actions
-- Kept the debug toggle available from the settings panel for power users and troubleshooting
+### 📦 Login backup and restore
+- Added **Export** and **Import** buttons in Login Manager
+- Export now uses a native **Save As** flow (choose destination)
+- Exported password values are encrypted (`enc:`), not plaintext
+- Import supports restoring exported account backups back into local storage
 
-### ℹ️ Release notes in-app
-- Added a **What’s new** link in the footer that opens the release notes in an in-app modal
-- Release notes are read from the project `RELEASE_NOTES.md` file so updates stay easy to maintain
+### 🧹 Factory reset and state consistency
+- Factory reset now also clears saved login accounts (`accounts.properties`)
+- Reset flow keeps app-managed cleanup behavior and avoids `.default` dependency errors
+- After reset, UI account state is refreshed immediately so stale entries are not shown
 
-### ▶️ Quick launch and UX polish
-- Added a **Quick launch** section above the footer
-- Added **Play** to start `rose-updater.exe` from the selected game folder
-- Improved install-state UX and cleaned up loading/update messaging for a sharper experience
+### 🧭 App UX and layout polish
+- App now remembers the **last selected service** between launches
+- Sidebar service icons updated to match service purpose
+- Quick Launch visuals refined: compact account row, centered layout, horizontal scrolling for many accounts
+- Footer behavior improved to stay anchored with scrollable content area
 
-### ⚙️ Config editor enhancements
-- Added dedicated ignore-list management for `ignore.toml`
-- Added a **Boolean values manager** for `rose.toml` to quickly toggle all `true/false` values
-- Added search in the boolean manager to filter by section path, key, or value
-
+### ⚙️ Config Editor refinements
+- Added clearer service heading/description
+- Added **See files / Hide files** behavior so TOML source and parsed preview are optional
+- Ignore manager and boolean manager remain visible by default
+- Improved fullscreen alignment for parsed preview vs TOML source

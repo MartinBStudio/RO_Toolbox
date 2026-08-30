@@ -18,10 +18,12 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
@@ -50,6 +52,68 @@ public class LoginManagerService {
         return readAccounts().stream()
                 .filter(account -> Boolean.TRUE.equals(account.displayInQuick()))
                 .toList();
+    }
+
+    public ExportAccountsResponse exportAccounts() throws IOException {
+        return new ExportAccountsResponse(1, readAccountsForExport());
+    }
+
+    public List<LoginAccount> importAccounts(ImportAccountsRequest request) throws IOException {
+        if (request == null || request.accounts() == null) {
+            throw new IllegalArgumentException("accounts payload is required.");
+        }
+
+        boolean replaceExisting = request.replaceExisting() == null || request.replaceExisting();
+        List<LoginAccount> imported = new ArrayList<>();
+        Set<String> usedIds = new LinkedHashSet<>();
+
+        for (ImportLoginAccount entry : request.accounts()) {
+            if (entry == null) {
+                continue;
+            }
+            String preferredId = (entry.id() == null || entry.id().isBlank()) ? UUID.randomUUID().toString() : entry.id().trim();
+            String uniqueId = preferredId;
+            while (usedIds.contains(uniqueId)) {
+                uniqueId = UUID.randomUUID().toString();
+            }
+            usedIds.add(uniqueId);
+
+            imported.add(new LoginAccount(
+                    uniqueId,
+                    normalizeText(entry.name(), "name"),
+                    normalizeText(entry.email(), "email"),
+                    normalizeText(entry.password(), "password"),
+                    entry.displayInQuick() == null ? Boolean.TRUE : entry.displayInQuick(),
+                    normalizeIcon(entry.icon())
+            ));
+        }
+
+        if (replaceExisting) {
+            writeAccounts(imported);
+            return imported;
+        }
+
+        List<LoginAccount> existing = readAccounts();
+        Set<String> existingIds = new LinkedHashSet<>();
+        for (LoginAccount account : existing) {
+            existingIds.add(account.id());
+        }
+
+        List<LoginAccount> merged = new ArrayList<>(existing);
+        for (LoginAccount account : imported) {
+            String id = account.id();
+            while (existingIds.contains(id)) {
+                id = UUID.randomUUID().toString();
+            }
+            existingIds.add(id);
+            if (!id.equals(account.id())) {
+                merged.add(new LoginAccount(id, account.name(), account.email(), account.password(), account.displayInQuick(), account.icon()));
+            } else {
+                merged.add(account);
+            }
+        }
+        writeAccounts(merged);
+        return merged;
     }
 
     public LoginAccount createAccount(CreateAccountRequest request) throws IOException {
@@ -129,6 +193,10 @@ public class LoginManagerService {
         return accountsFile;
     }
 
+    public void clearAccounts() throws IOException {
+        Files.deleteIfExists(accountsFile);
+    }
+
     private List<LoginAccount> readAccounts() throws IOException {
         Files.createDirectories(configDir);
         if (!Files.exists(accountsFile) || Files.size(accountsFile) == 0) {
@@ -171,6 +239,54 @@ public class LoginManagerService {
                     name,
                     email,
                     resolvedPassword,
+                    displayValue == null ? Boolean.TRUE : Boolean.parseBoolean(displayValue),
+                    iconValue == null || iconValue.isBlank() ? "👤" : iconValue
+            ));
+        }
+        return accounts;
+    }
+
+    private List<LoginAccount> readAccountsForExport() throws IOException {
+        Files.createDirectories(configDir);
+        if (!Files.exists(accountsFile) || Files.size(accountsFile) == 0) {
+            return new ArrayList<>();
+        }
+
+        Properties props = new Properties();
+        try (InputStream input = Files.newInputStream(accountsFile)) {
+            props.load(input);
+        }
+
+        Map<String, Map<String, String>> grouped = new LinkedHashMap<>();
+        for (String key : props.stringPropertyNames()) {
+            if (!key.startsWith("account.")) {
+                continue;
+            }
+            int secondDot = key.indexOf('.', "account.".length());
+            if (secondDot < 0) {
+                continue;
+            }
+            String id = key.substring("account.".length(), secondDot);
+            String field = key.substring(secondDot + 1);
+            grouped.computeIfAbsent(id, ignored -> new LinkedHashMap<>()).put(field, props.getProperty(key));
+        }
+
+        List<LoginAccount> accounts = new ArrayList<>();
+        for (String id : new TreeSet<>(grouped.keySet())) {
+            Map<String, String> data = grouped.get(id);
+            String name = data.get("name");
+            String email = data.get("email");
+            String storedPassword = data.get("password");
+            if (name == null || email == null || storedPassword == null) {
+                continue;
+            }
+            String displayValue = data.get("displayInQuick");
+            String iconValue = data.get("icon");
+            accounts.add(new LoginAccount(
+                    id,
+                    name,
+                    email,
+                    encryptIfNeeded(storedPassword),
                     displayValue == null ? Boolean.TRUE : Boolean.parseBoolean(displayValue),
                     iconValue == null || iconValue.isBlank() ? "👤" : iconValue
             ));
@@ -306,5 +422,14 @@ public class LoginManagerService {
     }
 
     public record UpdateAccountRequest(String name, String email, String password, Boolean displayInQuick, String icon) {
+    }
+
+    public record ImportLoginAccount(String id, String name, String email, String password, Boolean displayInQuick, String icon) {
+    }
+
+    public record ImportAccountsRequest(List<ImportLoginAccount> accounts, Boolean replaceExisting) {
+    }
+
+    public record ExportAccountsResponse(int version, List<LoginAccount> accounts) {
     }
 }

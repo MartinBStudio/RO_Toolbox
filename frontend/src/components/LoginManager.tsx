@@ -1,9 +1,13 @@
-import { useEffect, useState } from "react";
-import type { FormEvent } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import {
   createLoginAccount,
   deleteLoginAccount,
+  exportLoginAccounts,
+  importLoginAccounts,
   listLoginAccounts,
+  saveLoginAccountsExportFile,
   updateLoginAccount,
   type LoginAccount
 } from "../backendConnector/loginApi.ts";
@@ -30,7 +34,13 @@ const EMPTY_FORM = {
   icon: "👤"
 };
 
-export function LoginManager({ onAccountsChanged }: { onAccountsChanged?: () => void | Promise<void> }) {
+export function LoginManager({
+  onAccountsChanged,
+  onMessage
+}: {
+  onAccountsChanged?: () => void | Promise<void>;
+  onMessage?: (message: string) => void;
+}) {
   const [accounts, setAccounts] = useState<LoginAccount[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -38,6 +48,7 @@ export function LoginManager({ onAccountsChanged }: { onAccountsChanged?: () => 
   const [deleteTarget, setDeleteTarget] = useState<LoginAccount | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     void loadAccounts();
@@ -138,6 +149,103 @@ export function LoginManager({ onAccountsChanged }: { onAccountsChanged?: () => 
     setFormOpen(true);
   }
 
+  function normalizeExportFileName() {
+    const now = new Date();
+    const pad = (value: number) => String(value).padStart(2, "0");
+    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+    return `ro-toolbox-accounts-${timestamp}.json`;
+  }
+
+  async function onExportAccounts() {
+    setBusy(true);
+    setError(null);
+    try {
+      const payload = await exportLoginAccounts();
+      const savePath = await saveDialog({
+        title: "Export login accounts",
+        defaultPath: normalizeExportFileName(),
+        filters: [{ name: "JSON", extensions: ["json"] }]
+      });
+      if (!savePath) {
+        return;
+      }
+      await saveLoginAccountsExportFile({
+        filePath: savePath,
+        content: JSON.stringify(payload, null, 2)
+      });
+      onMessage?.("Accounts exported.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to export accounts.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onImportAccounts(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+
+    const confirmed = window.confirm("Import accounts and replace current saved accounts?");
+    if (!confirmed) {
+      return;
+    }
+
+    setBusy(true);
+    setError(null);
+    try {
+      const content = await file.text();
+      const parsed = JSON.parse(content) as { accounts?: unknown };
+      if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.accounts)) {
+        throw new Error("Invalid backup file format.");
+      }
+      const accountsPayload = parsed.accounts.map((entry) => {
+        if (!entry || typeof entry !== "object") {
+          throw new Error("Invalid account entry in backup file.");
+        }
+        const account = entry as {
+          id?: unknown;
+          name?: unknown;
+          email?: unknown;
+          password?: unknown;
+          displayInQuick?: unknown;
+          icon?: unknown;
+        };
+        if (typeof account.name !== "string" || !account.name.trim()) {
+          throw new Error("Each imported account must have a name.");
+        }
+        if (typeof account.email !== "string" || !account.email.trim()) {
+          throw new Error("Each imported account must have an email.");
+        }
+        if (typeof account.password !== "string" || !account.password.trim()) {
+          throw new Error("Each imported account must have a password.");
+        }
+        return {
+          id: typeof account.id === "string" && account.id.trim() ? account.id.trim() : undefined,
+          name: account.name.trim(),
+          email: account.email.trim(),
+          password: account.password,
+          displayInQuick: typeof account.displayInQuick === "boolean" ? account.displayInQuick : true,
+          icon: typeof account.icon === "string" && account.icon.trim() ? account.icon.trim() : "👤"
+        };
+      });
+
+      await importLoginAccounts({
+        accounts: accountsPayload,
+        replaceExisting: true
+      });
+      await loadAccounts();
+      await onAccountsChanged?.();
+      onMessage?.("Accounts imported.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to import accounts.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <section className="loginManager">
       <div className="card serviceContentPanel">
@@ -146,19 +254,44 @@ export function LoginManager({ onAccountsChanged }: { onAccountsChanged?: () => 
             <p className="sectionTitle">Login manager</p>
             <p className="activeProfileMeta">Store multiple ROSE accounts locally.</p>
           </div>
-          <button
-            type="button"
-            className="iconBtn iconBtnSubtle loginAddButton"
-            onClick={openCreateForm}
-            disabled={busy}
-            aria-label="Add account"
-            title="Add account"
-          >
-            +
-          </button>
+          <div className="loginHeaderActions">
+            <button
+              type="button"
+              className="buttonSubtle"
+              onClick={onExportAccounts}
+              disabled={busy}
+            >
+              Export
+            </button>
+            <button
+              type="button"
+              className="buttonSubtle"
+              onClick={() => importInputRef.current?.click()}
+              disabled={busy}
+            >
+              Import
+            </button>
+            <button
+              type="button"
+              className="iconBtn iconBtnSubtle loginAddButton"
+              onClick={openCreateForm}
+              disabled={busy}
+              aria-label="Add account"
+              title="Add account"
+            >
+              +
+            </button>
+          </div>
         </div>
 
         {error ? <p className="formError">{error}</p> : null}
+        <input
+          ref={importInputRef}
+          type="file"
+          accept="application/json,.json"
+          onChange={onImportAccounts}
+          style={{ display: "none" }}
+        />
 
         <div className="loginList">
           {accounts.length === 0 ? (

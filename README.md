@@ -21,11 +21,32 @@ Desktop app for managing ROSE Online profile packs, combat text packs, and user 
 - Keep installed UI profiles separate from the game’s other data folders
 - Refresh downloaded resources and clear installed files when needed
 
+### Login Manager
+- Store and manage multiple ROSE Online game accounts locally
+- Each account stores name, email, password, and a custom icon
+- Passwords are encrypted in local storage (not plaintext)
+- Mark accounts for **Display in quick launch** with a star toggle
+- Export accounts to a backup file (encrypted passwords)
+- Import previously exported account backups
+
+### Quick Launch
+- Quick Launch section shows all accounts marked for quick display
+- Click an account icon to launch `trose.exe` with stored login credentials
+- Separate **Launch Rose Launcher** action to start `rose-updater.exe`
+- Compact, horizontally scrollable account layout for easy access
+
+### Config Editor
+- View and edit game TOML files (`rose.toml`, `ignore.toml`)
+- Ignore list manager to add/remove ignored entries
+- Boolean values manager with search to quickly toggle `true`/`false` settings
+- Optional TOML source and parsed preview display
+
 ### App UX
 - First-run setup modal to select your game folder
 - Settings modal to change, clear, or reset the app state
 - Auto-detection and validation of the game root using `trose.exe`
-- Factory reset option for clearing downloaded profiles and app config safely
+- Factory reset option for clearing downloaded profiles, app config, and saved accounts safely
+- App remembers the last selected service on next launch
 - Auto update checks after reset and other state changes
 
 ## Installation
@@ -37,11 +58,34 @@ Desktop app for managing ROSE Online profile packs, combat text packs, and user 
 
 ## How to Use
 
+### Basic Setup
 1. Open **Settings** and choose the game folder.
 2. Ensure the selected folder is the root folder that contains `trose.exe`.
-3. In **Loot Models**, **Combat Text**, or **User Interface**, check for updates or download resources.
-4. Select a profile and click **Install**.
-5. Restart the game client after installing a new profile.
+
+### Install Profile Packs
+1. In **Loot Models**, **Combat Text**, or **User Interface**, check for updates or download resources.
+2. Select a profile and click **Install**.
+3. Restart the game client after installing a new profile.
+
+### Quick Launch with Saved Accounts
+1. Open **Login Manager** and click **+** to add a new account.
+2. Enter account name, email, password, and select an icon.
+3. Toggle **Display in quick launch** to show the account in the quick launch section.
+4. Click an account icon in the **Quick Launch** section to launch ROSE with that account's credentials.
+5. Alternatively, click **Launch Rose Launcher** to start `rose-updater.exe`.
+
+### Backup and Restore Accounts
+1. In **Login Manager**, click **Export** to download a backup file.
+2. Choose where to save the backup (passwords are encrypted).
+3. To restore, click **Import**, select the backup file, and confirm to replace current accounts.
+
+### Edit Game Config
+1. Open **Config Editor**.
+2. Select a `.toml` file tab (e.g., `rose.toml` or `ignore.toml`).
+3. For `rose.toml`, use **Boolean values manager** to toggle settings.
+4. For `ignore.toml`, use **Ignore list manager** to add/remove entries.
+5. Click **See files** to view the raw TOML source and parsed preview.
+6. Click **Save** to write changes to disk.
 
 ## Configuration and reset behavior
 
@@ -50,9 +94,21 @@ The app stores its own settings under:
 - Windows: `%APPDATA%\RO_Toolbox\config\config.properties`
 - Other systems: `~/.ro_toolbox/config/config.properties`
 
+Saved accounts are stored alongside app config:
+
+- Windows: `%APPDATA%\RO_Toolbox\config\accounts.properties`
+- Other systems: `~/.ro_toolbox/config/accounts.properties`
+
 The selected game folder is treated as the installed game root; it must contain `trose.exe`.
 
-The app does not modify the real ROSE Online config files under the game’s own installation or `AppData\Rednim Games`. A **Factory reset** clears RO_Toolbox app data, downloaded resources, and local mod state, then removes the `.default` folder as the final cleanup step.
+The app does not modify the real ROSE Online config files under the game's own installation or `AppData\Rednim Games`. A **Factory reset** clears:
+- RO_Toolbox app data and settings
+- Downloaded profile resources
+- Saved accounts and login manager data
+- Local mod installation state
+- Selected game folder
+
+After reset, you will need to select your game folder again on next launch.
 
 ## Support
 

@@ -1,6 +1,7 @@
 package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
+import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
 import org.junit.jupiter.api.Test;
@@ -13,6 +14,7 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 class SettingsControllerTests {
 
@@ -56,12 +58,26 @@ class SettingsControllerTests {
         SettingsController controller = new SettingsController(
                 mock(LootManagerService.class),
                 mock(CombatTextManagerService.class),
-                mock(UserInterfaceManagerService.class)
+                mock(UserInterfaceManagerService.class),
+                mock(LoginManagerService.class)
         );
         IllegalStateException ex = assertThrows(IllegalStateException.class,
                 () -> controller.saveGameFolder(new SettingsController.SaveFolderRequest(root.toString(), false))
         );
 
         assertEquals("The selected folder is not valid. It must contain trose.exe.", ex.getMessage());
+    }
+
+    @Test
+    void factoryResetAlsoClearsSavedAccounts() throws IOException {
+        LootManagerService loot = mock(LootManagerService.class);
+        CombatTextManagerService combat = mock(CombatTextManagerService.class);
+        UserInterfaceManagerService ui = mock(UserInterfaceManagerService.class);
+        LoginManagerService login = mock(LoginManagerService.class);
+
+        SettingsController controller = new SettingsController(loot, combat, ui, login);
+        controller.factoryReset();
+
+        verify(login).clearAccounts();
     }
 }

@@ -60,6 +60,7 @@ function App() {
     const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
     const [releaseNotesContent, setReleaseNotesContent] = useState("");
     const [quickAccounts, setQuickAccounts] = useState<LoginAccount[]>([]);
+    const [factoryResetNonce, setFactoryResetNonce] = useState(0);
     const [servicePreferenceLoaded, setServicePreferenceLoaded] = useState(false);
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>(readInitialService);
 
@@ -129,6 +130,17 @@ function App() {
 
     useEffect(() => {
         void refreshQuickAccounts();
+    }, [backendReady]);
+
+    useEffect(() => {
+        const handleFactoryReset = () => {
+            void refreshQuickAccounts();
+            setFactoryResetNonce((value) => value + 1);
+        };
+        window.addEventListener("roToolbox:factory-reset", handleFactoryReset);
+        return () => {
+            window.removeEventListener("roToolbox:factory-reset", handleFactoryReset);
+        };
     }, [backendReady]);
 
     useEffect(() => {
@@ -309,7 +321,11 @@ function App() {
                                     </div>
                                 )}
                                 {selectedService === "login-manager" && (
-                                    <LoginManager onAccountsChanged={refreshQuickAccounts} />
+                                    <LoginManager
+                                        key={`login-manager-${factoryResetNonce}`}
+                                        onAccountsChanged={refreshQuickAccounts}
+                                        onMessage={setMessage}
+                                    />
                                 )}
                                 {selectedService === "config-editor" && (
                                     <ConfigEditorManager
