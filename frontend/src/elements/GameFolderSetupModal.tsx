@@ -29,21 +29,11 @@ export function GameFolderSetupModal({
       const result = await saveGameFolder(trimmedPath, false);
       await onStatusRefresh();
       if (!result.containsExpectedItemFolder) {
-        onMessage("Game folder saved (3ddata/item not found — install may not work correctly).");
+        onMessage("Game folder saved.");
       }
     } catch (err) {
       const text = toErrorMessage(err, "Request failed.");
-      if (text.includes("does not contain 3ddata/item")) {
-        const confirmed = window.confirm("The folder does not contain 3ddata/item. Save it anyway?");
-        if (!confirmed) {
-          onBusyChange(false);
-          return;
-        }
-        await saveGameFolder(trimmedPath, true);
-        await onStatusRefresh();
-      } else {
         onMessage(text);
-      }
     } finally {
       onBusyChange(false);
     }
@@ -66,7 +56,7 @@ export function GameFolderSetupModal({
         <h2 className="setupModalTitle">Select your game folder</h2>
         <p className="setupModalDesc">
           RO Toolbox needs to know where your ROSE Online is installed.
-          Point it to the root game folder (the one containing <code>3ddata</code>).
+          Select the game folder that contains <code>trose.exe</code>.
         </p>
         <div className="modalActions">
           <button className="buttonStrong" disabled={loading} onClick={onBrowseFolder}>

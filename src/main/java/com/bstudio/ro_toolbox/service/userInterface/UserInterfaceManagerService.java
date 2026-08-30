@@ -125,6 +125,13 @@ public class UserInterfaceManagerService {
         }
     }
 
+    public void clearAppConfig() throws IOException {
+        if (Files.exists(CONFIG_FILE)) {
+            Files.deleteIfExists(CONFIG_FILE);
+            log("Deleted app config: " + CONFIG_FILE.toAbsolutePath());
+        }
+    }
+
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
         if (repoUrl == null || repoUrl.isEmpty()) repoUrl = DEFAULT_REPO;
         if (!Files.exists(destDir)) Files.createDirectories(destDir);
@@ -254,6 +261,13 @@ public class UserInterfaceManagerService {
                     log("Deleted resource file: " + entry.toAbsolutePath());
                 }
             }
+        }
+
+        Path defaultProfile = RESOURCES_DIR.resolve(".default");
+        if (Files.exists(defaultProfile)) {
+            deleteDirectoryContents(defaultProfile);
+            Files.deleteIfExists(defaultProfile);
+            log("Deleted default profile dir: " + defaultProfile.toAbsolutePath());
         }
     }
 

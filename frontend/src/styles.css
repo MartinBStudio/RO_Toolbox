@@ -817,6 +817,51 @@ a {
   margin-top: 0.5rem;
 }
 
+.confirmationModal {
+  width: min(420px, 100%);
+  padding: 1rem 1rem 0.9rem;
+}
+
+.confirmationHeader {
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.confirmationTitleBlock {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+}
+
+.confirmationIcon {
+  width: 2rem;
+  height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(179, 53, 53, 0.12);
+  border: 1px solid rgba(179, 53, 53, 0.35);
+  color: #ff8d8d;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.confirmationMessage {
+  color: #b8c3d4;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin-bottom: 1rem;
+}
+
+.confirmationActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
 .howToUseModalCard {
   width: min(620px, 100%);
 }
