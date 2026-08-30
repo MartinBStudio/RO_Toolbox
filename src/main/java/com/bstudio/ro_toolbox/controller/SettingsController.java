@@ -9,6 +9,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -84,7 +86,7 @@ public class SettingsController {
         combatTextManagerService.clearSelectedItemFolder();
         userInterfaceManagerService.clearSelectedItemFolder();
 
-        // Step 2: Clear downloaded resources (including .default folder)
+        // Step 2: Clear downloaded resources (.default is preserved for recovery)
         lootManagerService.clearResources();
         combatTextManagerService.clearResources();
         userInterfaceManagerService.clearResources();
@@ -143,12 +145,26 @@ public class SettingsController {
 
     @GetMapping("/release-notes")
     public ReleaseNotesResponse getReleaseNotes() throws IOException {
-        Path releaseNotes = resolveReleaseNotesPath();
-        return new ReleaseNotesResponse(Files.readString(releaseNotes));
+        return new ReleaseNotesResponse(readReleaseNotesContent());
     }
 
     private String absoluteOrNull(Path path) {
         return path == null ? null : path.toAbsolutePath().normalize().toString();
+    }
+
+    private String readReleaseNotesContent() throws IOException {
+        Path releaseNotes = resolveReleaseNotesPath();
+        if (releaseNotes != null) {
+            return Files.readString(releaseNotes);
+        }
+
+        try (InputStream resourceStream = SettingsController.class.getClassLoader().getResourceAsStream("RELEASE_NOTES.md")) {
+            if (resourceStream != null) {
+                return new String(resourceStream.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        }
+
+        throw new IllegalStateException("RELEASE_NOTES.md was not found.");
     }
 
     private Path resolveReleaseNotesPath() {
@@ -165,7 +181,7 @@ public class SettingsController {
             }
         }
 
-        throw new IllegalStateException("RELEASE_NOTES.md was not found.");
+        return null;
     }
 
     public record SaveFolderRequest(String path, boolean forceSave) {

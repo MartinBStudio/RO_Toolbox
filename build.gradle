@@ -75,6 +75,7 @@ tasks.register('frontendBuild', Exec) {
 }
 
 tasks.named('processResources') {
+    from('RELEASE_NOTES.md')
     from('frontend/dist') {
         into 'static'
     }

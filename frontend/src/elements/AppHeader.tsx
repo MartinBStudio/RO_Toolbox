@@ -10,6 +10,7 @@ import {
   Cog6ToothIcon,
   QuestionMarkCircleIcon
 } from "@heroicons/react/24/outline";
+import roseLogo from "../assets/rose-logo-bg.webp";
 import { checkBackendUpdate, fetchLatestReleaseDownload } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
 
@@ -228,7 +229,7 @@ export function AppHeader({
     <header className="card">
       <div className="headerRow">
         <h1 className="headerTitle">
-          <img src="/src/assets/rose-logo-bg.webp" alt="ROSE" className="headerLogo" />
+          <img src={roseLogo} alt="ROSE" className="headerLogo" />
           Toolbox
         </h1>
         <div className="headerActions">

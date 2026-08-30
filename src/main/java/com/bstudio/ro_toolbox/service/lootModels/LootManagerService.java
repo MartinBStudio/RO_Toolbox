@@ -293,12 +293,6 @@ public class LootManagerService {
             }
         }
 
-        Path defaultProfile = RESOURCES_DIR.resolve(".default");
-        if (Files.exists(defaultProfile)) {
-            deleteDirectoryContents(defaultProfile);
-            Files.deleteIfExists(defaultProfile);
-            log("Deleted default profile dir: " + defaultProfile.toAbsolutePath());
-        }
     }
 
     public void clearSelectedItemFolder() throws IOException {
