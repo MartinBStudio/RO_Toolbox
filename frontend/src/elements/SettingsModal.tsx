@@ -64,7 +64,17 @@ export function SettingsModal({
     onClose();
     setDebugMode(false);
     window.localStorage.removeItem("roToolbox.debugMode");
-    await runAction(factoryReset, "Factory reset complete.");
+    onBusyChange(true);
+    try {
+      await factoryReset();
+      await onStatusRefresh();
+      onMessage("Factory reset complete.");
+      window.dispatchEvent(new Event("roToolbox:factory-reset"));
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Factory reset failed."));
+    } finally {
+      onBusyChange(false);
+    }
   }
 
   async function saveFolder(path: string) {

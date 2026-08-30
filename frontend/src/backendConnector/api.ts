@@ -1,5 +1,13 @@
 export { getStatus } from "./appApi.ts";
-export { saveGameFolder, clearGameFolder, factoryReset, quickLaunchGame } from "./settingsApi.ts";
+export {
+  saveGameFolder,
+  clearGameFolder,
+  factoryReset,
+  quickLaunchGame,
+  getReleaseNotes,
+  getSelectedServiceSetting,
+  saveSelectedServiceSetting
+} from "./settingsApi.ts";
 export {
   downloadProfiles,
   installProfile,
@@ -36,3 +44,15 @@ export {
   addIgnoreListEntry,
   deleteIgnoreListEntry
 } from "./configEditorApi.ts";
+export {
+  listLoginAccounts,
+  listQuickLoginAccounts,
+  createLoginAccount,
+  updateLoginAccount,
+  deleteLoginAccount,
+  quickLaunchLoginAccount,
+  exportLoginAccounts,
+  importLoginAccounts,
+  saveLoginAccountsExportFile
+} from "./loginApi.ts";
+export type { LoginAccount } from "./loginApi.ts";

@@ -4,10 +4,17 @@
   font-size: 14px;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
   background: #10131b;
   color: #dce4ef;
+  overflow: hidden;
 }
 
 .startingScreen {
@@ -29,14 +36,32 @@ body {
 .layout {
   position: relative;
   max-width: 1240px;
-  margin: 0.7rem auto;
-  padding: 0 0.65rem 0.5rem;
-  display: grid;
+  margin: 0.7rem auto 0;
+  padding: 0 0.65rem 0;
+  height: calc(100vh - 0.7rem);
+  max-height: calc(100vh - 0.7rem);
+  display: flex;
+  flex-direction: column;
   gap: 0.65rem;
+  overflow: hidden;
 }
 
 .layoutLoading > *:not(.loadingOverlay) {
   filter: blur(2px);
+}
+
+.appMainScroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.1rem;
+  position: relative;
+  z-index: 1;
+  margin-top: 0.9rem;
 }
 
 .appWorkspace {
@@ -44,7 +69,6 @@ body {
   grid-template-columns: 260px minmax(0, 1fr) !important;
   gap: 0.8rem;
   align-items: start;
-  overflow: hidden;
 }
 
 .appSidebar {
@@ -58,27 +82,72 @@ body {
   display: grid;
   gap: 0.8rem;
   min-width: 0;
-  overflow: hidden;
   align-self: start;
 }
 
 .quickLaunchCard {
+  display: none;
+}
+
+.quickAccountList {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
+  justify-content: center;
+  gap: 0.4rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 0.1rem;
+  scrollbar-width: thin;
+  flex: 1;
+  min-width: 0;
 }
 
-.quickLaunchPath {
-  margin-top: 0.18rem;
-  color: #8fa6c0;
-  font-size: 0.8rem;
-  font-family: "Consolas", "Courier New", monospace;
-  word-break: break-all;
+.quickAccountButton {
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 0.35rem 0.5rem;
+  border-color: #3e5a8f;
+  background: linear-gradient(180deg, #1e2a42 0%, #182538 100%);
+  color: #eaf1ff;
+  box-shadow: inset 0 0 0 1px rgba(111, 147, 216, 0.18);
+  flex-shrink: 0;
 }
 
-.quickLaunchButton {
-  min-width: 115px;
+.headerLaunchButton {
+  white-space: nowrap;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.55rem;
+  line-height: 1.1;
+}
+
+.quickAccountButton:hover:enabled {
+  border-color: #6aa0ff;
+  box-shadow: inset 0 0 0 1px rgba(126, 171, 255, 0.32);
+}
+
+.quickAccountIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  font-size: 1rem;
+  line-height: 1;
+  border-radius: 0.4rem;
+  background: rgba(130, 171, 255, 0.12);
+}
+
+.quickAccountName {
+  font-size: 0.7rem;
+  line-height: 1.2;
+  font-weight: 600;
+  text-align: left;
+  white-space: nowrap;
 }
 
 .serviceContentPanel {
@@ -106,12 +175,31 @@ body {
   padding: 0.7rem;
 }
 
+header.card {
+  position: relative;
+  overflow: visible;
+}
+
 .headerRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
   min-width: 0;
+}
+
+.headerQuickLaunch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0 0.3rem 0;
+  overflow: visible;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -1.5rem;
+  z-index: 10;
 }
 
 .headerRow > h1 {
@@ -121,6 +209,18 @@ body {
   line-height: 1.2;
   letter-spacing: 0.02em;
   font-weight: 700;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.headerLogo {
+  height: 1.6rem;
+  width: auto;
+  display: block;
+  opacity: 0.9;
 }
 
 .headerActions {
@@ -343,12 +443,38 @@ p {
 
 .appFooter {
   text-align: center;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.15rem;
+  margin-top: auto;
+  flex-shrink: 0;
+  background: transparent;
+  border: none;
 }
 
 .appFooter p {
   font-size: 0.82rem;
+}
+
+.appFooterLine {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+.footerLinkButton {
+  border: 0;
+  background: none;
+  color: #8fbcff;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+  line-height: inherit;
+}
+
+.footerLinkButton:hover:enabled {
+  color: #b6d2ff;
 }
 
 .installedProfileSummary {
@@ -406,6 +532,11 @@ select {
   min-width: 0;
   width: 100%;
   max-width: 100%;
+  cursor: pointer;
+}
+
+select:disabled {
+  cursor: not-allowed;
 }
 
 button {
@@ -445,6 +576,221 @@ button:disabled {
 .buttonSubtle:hover:enabled {
   background: #202c3f;
   border-color: #4b607f;
+}
+
+.loginManager {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.loginAddButton {
+  min-width: 2.1rem;
+  min-height: 2.1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.loginHeaderActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.loginModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 12, 18, 0.68);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.loginModal {
+  width: min(620px, 100%);
+  background: #141b2a;
+  border: 1px solid #2b3344;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 0.9rem;
+}
+
+.loginModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+.loginModalHeader h3 {
+  margin: 0;
+  color: #edf4ff;
+  font-size: 1rem;
+}
+
+.loginModalClose {
+  min-width: 2rem;
+  min-height: 2rem;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.loginForm {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid #2b3344;
+  border-radius: 8px;
+  background: #111725;
+  padding: 0.7rem;
+}
+
+.loginFields {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.loginStackedFields {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 0.2rem;
+  color: #b9c8dd;
+  font-size: 0.75rem;
+  min-width: 0;
+}
+
+.fieldGroup input,
+.fieldGroup select {
+  width: 100%;
+  min-height: 2.2rem;
+  padding-top: 0.38rem;
+  padding-bottom: 0.38rem;
+}
+
+.loginFullWidthField {
+  width: 100%;
+}
+
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #cfe0f3;
+  font-size: 0.86rem;
+  margin-top: 0.05rem;
+}
+
+.checkboxRow input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #56a2ff;
+}
+
+.formError {
+  color: #ffb4b4;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.loginList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.loginAccountItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border: 1px solid #2b3344;
+  border-radius: 8px;
+  background: #111725;
+  padding: 0.7rem;
+}
+
+.loginAccountSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.loginAvatar {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: #203052;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+}
+
+.loginAccountMeta {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+.loginAccountMeta strong {
+  color: #e8f0ff;
+}
+
+.loginAccountMeta span,
+.loginAccountMeta small {
+  color: #9fb2ca;
+  word-break: break-word;
+}
+
+.loginActions {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.loginQuickStarActive,
+.loginQuickStarInactive {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  border-width: 1px;
+}
+
+.loginQuickStarActive {
+  background: #ffcd4d;
+  border-color: #ffcd4d;
+  color: #1a1406;
+}
+
+.loginQuickStarInactive {
+  background: #1a2333;
+  border-color: #3a4a64;
+  color: #9bb3d9;
+}
+
+.loginModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.loginIconField select {
+  text-align: center;
+  font-size: 1.1rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.emptyState {
+  color: #8ea5c8;
+  font-style: italic;
 }
 
 .heroIcon {
@@ -544,6 +890,14 @@ button .heroIcon {
 .profilePickerRow > select {
   width: 100%;
   min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%238fa6c0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 12px 8px;
 }
 
 .profileCard {
@@ -687,6 +1041,30 @@ a {
   padding: 0.05rem 0.3rem;
   font-size: 0.82rem;
   color: #a8c4e0;
+}
+
+.releaseNotesModalCard {
+  width: min(860px, 100%);
+  max-height: min(80vh, 760px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.releaseNotesContent {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+  max-height: 100%;
+  padding: 0.75rem;
+  border: 1px solid #243040;
+  border-radius: 8px;
+  background: #0d1420;
+  color: #c7d4e8;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  font-family: "Consolas", "Courier New", monospace;
 }
 
 .modalBackdrop {
@@ -872,21 +1250,66 @@ a {
 }
 
 .howToUseTabs {
-  display: flex;
-  gap: 0.45rem;
-  flex-wrap: wrap;
+  display: none;
 }
 
 .howToUseTab {
-  background: #1a2333;
-  border-color: #3a4a64;
-  color: #dce4ef;
-  font-weight: 600;
+  display: none;
 }
 
 .howToUseTabActive {
-  background: #1b4b8d;
-  border-color: #3d75d7;
+  display: none;
+}
+
+.accordionItem {
+  border: 1px solid #2b3344;
+  border-radius: 8px;
+  background: #111725;
+  overflow: hidden;
+  display: grid;
+}
+
+.accordionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.65rem 0.7rem;
+  background: #1a2333;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: #dce4ef;
+  text-align: left;
+  min-height: 2.5rem;
+  transition: background 0.15s ease;
+}
+
+.accordionHeader:hover:enabled {
+  background: #202c3f;
+}
+
+.accordionLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+.accordionIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.2rem;
+  height: 1.2rem;
+  font-size: 0.7rem;
+  color: #8fa6c0;
+  flex-shrink: 0;
+}
+
+.accordionContent {
+  padding: 0.65rem 0.7rem;
+  border-top: 1px solid #2b3344;
+  display: grid;
+  gap: 0.4rem;
 }
 
 .howToUseIntro {
@@ -1027,11 +1450,17 @@ a {
   display: grid;
   gap: 0.65rem;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.configEditorBodySingle {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .configEditorPane {
   display: grid;
   gap: 0.35rem;
+  align-content: start;
 }
 
 .configEditorTextarea {
@@ -1168,7 +1597,8 @@ a {
   border-radius: 6px;
   background: #0d1420;
   padding: 0.5rem 0.65rem;
-  max-height: 430px;
+  min-height: 320px;
+  max-height: 520px;
   overflow: auto;
 }
 

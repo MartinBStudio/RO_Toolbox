@@ -38,7 +38,7 @@ export function LootManager({
   onStatusRefresh,
   onMessage
 }: LootManagerProps) {
-  const { backendReady } = useApplicationContext();
+  const { backendReady, debugMode } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
@@ -210,36 +210,40 @@ export function LootManager({
                 🔗
               </button>
             ) : null}
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle iconBtnDim"
-              disabled={loading}
-              onClick={() => runAction(openResourcesFolder)}
-              title="Browse downloaded"
-              aria-label="Browse downloaded"
-            >
-              <FolderOpenIcon className="heroIcon" />
-            </button>
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle iconBtnDim"
-              disabled={loading}
-              onClick={() => runAction(clearResources, "Downloaded resources cleared.")}
-              title="Clear downloaded"
-              aria-label="Clear downloaded"
-            >
-              <TrashIcon className="heroIcon" />
-            </button>
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle iconBtnDim"
-              disabled={loading}
-              onClick={() => runAction(openItemFolder)}
-              title="Browse installed"
-              aria-label="Browse installed"
-            >
-              <FolderIcon className="heroIcon" />
-            </button>
+            {debugMode ? (
+              <>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnSubtle iconBtnDim"
+                  disabled={loading}
+                  onClick={() => runAction(openResourcesFolder)}
+                  title="Browse downloaded"
+                  aria-label="Browse downloaded"
+                >
+                  <FolderOpenIcon className="heroIcon" />
+                </button>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnSubtle iconBtnDim"
+                  disabled={loading}
+                  onClick={() => runAction(clearResources, "Downloaded resources cleared.")}
+                  title="Clear downloaded"
+                  aria-label="Clear downloaded"
+                >
+                  <TrashIcon className="heroIcon" />
+                </button>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnSubtle iconBtnDim"
+                  disabled={loading}
+                  onClick={() => runAction(openItemFolder)}
+                  title="Browse installed"
+                  aria-label="Browse installed"
+                >
+                  <FolderIcon className="heroIcon" />
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               className="iconBtn iconBtnSubtle iconBtnDim"

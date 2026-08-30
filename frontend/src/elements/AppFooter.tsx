@@ -1,9 +1,14 @@
-export function AppFooter() {
+type AppFooterProps = {
+  loading: boolean;
+  onOpenWhatsNew: () => void;
+};
+
+export function AppFooter({ loading, onOpenWhatsNew }: AppFooterProps) {
   return (
     <footer className="card appFooter">
-      <p>
-        Created by BStudio •{" "}
-        <a href="https://github.com/MartinBStudio" target="_blank" rel="noreferrer">
+      <p className="appFooterLine">
+        Created by BStudio 2026 •{" "}
+        <a href="https://github.com/MartinBStudio/RO_Toolbox/releases" target="_blank" rel="noreferrer">
           GitHub
         </a>{" "}
         •{" "}
@@ -13,7 +18,16 @@ export function AppFooter() {
           rel="noreferrer"
         >
           Forum thread
-        </a>
+        </a>{" "}
+        •{" "}
+        <button
+          type="button"
+          className="footerLinkButton"
+          disabled={loading}
+          onClick={onOpenWhatsNew}
+        >
+          What's new
+        </button>
       </p>
     </footer>
   );

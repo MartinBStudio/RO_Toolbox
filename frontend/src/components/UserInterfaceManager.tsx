@@ -38,7 +38,7 @@ export function UserInterfaceManager({
   onStatusRefresh,
   onMessage
 }: UserInterfaceManagerProps) {
-  const { backendReady } = useApplicationContext();
+  const { backendReady, debugMode } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
@@ -213,36 +213,40 @@ export function UserInterfaceManager({
                 🔗
               </button>
             ) : null}
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle iconBtnDim"
-              disabled={loading}
-              onClick={() => runAction(openUserInterfaceResourcesFolder)}
-              title="Browse downloaded"
-              aria-label="Open downloaded"
-            >
-              <FolderOpenIcon className="heroIcon" />
-            </button>
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle iconBtnDim"
-              disabled={loading}
-              onClick={() => runAction(clearUserInterfaceResources, "Downloaded user interface resources cleared.")}
-              title="Clear downloaded"
-              aria-label="Clear downloaded"
-            >
-              <TrashIcon className="heroIcon" />
-            </button>
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle iconBtnDim"
-              disabled={loading}
-              onClick={() => runAction(openUserInterfaceItemFolder)}
-              title="Browse installed"
-              aria-label="Browse installed"
-            >
-              <FolderIcon className="heroIcon" />
-            </button>
+            {debugMode ? (
+              <>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnSubtle iconBtnDim"
+                  disabled={loading}
+                  onClick={() => runAction(openUserInterfaceResourcesFolder)}
+                  title="Browse downloaded"
+                  aria-label="Open downloaded"
+                >
+                  <FolderOpenIcon className="heroIcon" />
+                </button>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnSubtle iconBtnDim"
+                  disabled={loading}
+                  onClick={() => runAction(clearUserInterfaceResources, "Downloaded user interface resources cleared.")}
+                  title="Clear downloaded"
+                  aria-label="Clear downloaded"
+                >
+                  <TrashIcon className="heroIcon" />
+                </button>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnSubtle iconBtnDim"
+                  disabled={loading}
+                  onClick={() => runAction(openUserInterfaceItemFolder)}
+                  title="Browse installed"
+                  aria-label="Browse installed"
+                >
+                  <FolderIcon className="heroIcon" />
+                </button>
+              </>
+            ) : null}
             <button
               type="button"
               className="iconBtn iconBtnSubtle iconBtnDim"

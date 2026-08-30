@@ -1,6 +1,7 @@
 package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
+import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -101,6 +102,11 @@ public class LootServiceController {
 
     private void openInDesktop(Path path) {
         try {
+            String os = System.getProperty("os.name", "").toLowerCase();
+            if (os.contains("win")) {
+                openWithSystemCommand(path);
+                return;
+            }
             if (!Desktop.isDesktopSupported()) {
                 openWithSystemCommand(path);
                 return;
@@ -118,7 +124,7 @@ public class LootServiceController {
     private void openWithSystemCommand(Path path) throws IOException {
         String os = System.getProperty("os.name", "").toLowerCase();
         if (os.contains("win")) {
-            new ProcessBuilder("explorer.exe", path.toAbsolutePath().toString()).start();
+            WindowsProcessLauncher.openFolderForeground(path);
             return;
         }
         if (os.contains("mac")) {

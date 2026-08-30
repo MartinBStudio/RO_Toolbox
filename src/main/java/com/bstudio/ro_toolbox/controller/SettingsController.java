@@ -1,8 +1,10 @@
 package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
+import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -18,6 +20,7 @@ public class SettingsController {
     private final LootManagerService lootManagerService;
     private final CombatTextManagerService combatTextManagerService;
     private final UserInterfaceManagerService userInterfaceManagerService;
+    private final LoginManagerService loginManagerService;
 
     @PostMapping("/game-folder")
     public SaveFolderResponse saveGameFolder(@RequestBody SaveFolderRequest request) throws IOException {
@@ -76,20 +79,17 @@ public class SettingsController {
 
     @PostMapping("/factory-reset")
     public MessageResponse factoryReset() throws IOException {
-        if (lootManagerService.getSelectedGameBase() != null) {
-            lootManagerService.clearSelectedItemFolder();
-        }
-        if (combatTextManagerService.getSelectedGameBase() != null) {
-            combatTextManagerService.clearSelectedItemFolder();
-        }
-        if (userInterfaceManagerService.getSelectedGameBase() != null) {
-            userInterfaceManagerService.clearSelectedItemFolder();
-        }
+        // Step 1: Clear installed profiles from game folder
+        lootManagerService.clearSelectedItemFolder();
+        combatTextManagerService.clearSelectedItemFolder();
+        userInterfaceManagerService.clearSelectedItemFolder();
 
+        // Step 2: Clear downloaded resources (including .default folder)
         lootManagerService.clearResources();
         combatTextManagerService.clearResources();
         userInterfaceManagerService.clearResources();
 
+        // Step 3: Clear game folder selection and app config
         lootManagerService.clearSelectedGame();
         combatTextManagerService.clearSelectedGame();
         userInterfaceManagerService.clearSelectedGame();
@@ -97,6 +97,9 @@ public class SettingsController {
         lootManagerService.clearAppConfig();
         combatTextManagerService.clearAppConfig();
         userInterfaceManagerService.clearAppConfig();
+
+        // Step 4: Clear all saved accounts
+        loginManagerService.clearAccounts();
 
         return new MessageResponse("Factory reset complete. RO_Toolbox app state was cleared.");
     }
@@ -118,15 +121,51 @@ public class SettingsController {
             throw new IllegalStateException("rose-updater.exe was not found in the selected game folder.");
         }
 
-        new ProcessBuilder(executable.toAbsolutePath().toString())
-                .directory(gameBase.toFile())
-                .start();
+        launchWindowsForeground(gameBase, executable.toAbsolutePath().toString());
 
         return new MessageResponse("ROSE Online launched.");
     }
 
+    @GetMapping("/selected-service")
+    public SelectedServiceResponse getSelectedService() throws IOException {
+        return new SelectedServiceResponse(lootManagerService.getSelectedService());
+    }
+
+    @PostMapping("/selected-service")
+    public SelectedServiceResponse saveSelectedService(@RequestBody SelectedServiceRequest request) throws IOException {
+        if (request == null || request.serviceId() == null || request.serviceId().isBlank()) {
+            throw new IllegalArgumentException("Service id is required.");
+        }
+        String serviceId = request.serviceId().trim();
+        lootManagerService.saveSelectedService(serviceId);
+        return new SelectedServiceResponse(serviceId);
+    }
+
+    @GetMapping("/release-notes")
+    public ReleaseNotesResponse getReleaseNotes() throws IOException {
+        Path releaseNotes = resolveReleaseNotesPath();
+        return new ReleaseNotesResponse(Files.readString(releaseNotes));
+    }
+
     private String absoluteOrNull(Path path) {
         return path == null ? null : path.toAbsolutePath().normalize().toString();
+    }
+
+    private Path resolveReleaseNotesPath() {
+        Path workingDir = Path.of("").toAbsolutePath().normalize();
+        Path releaseNotes = workingDir.resolve("RELEASE_NOTES.md");
+        if (Files.isRegularFile(releaseNotes)) {
+            return releaseNotes;
+        }
+
+        if (workingDir.getParent() != null) {
+            Path parentReleaseNotes = workingDir.getParent().resolve("RELEASE_NOTES.md");
+            if (Files.isRegularFile(parentReleaseNotes)) {
+                return parentReleaseNotes;
+            }
+        }
+
+        throw new IllegalStateException("RELEASE_NOTES.md was not found.");
     }
 
     public record SaveFolderRequest(String path, boolean forceSave) {
@@ -136,5 +175,29 @@ public class SettingsController {
     }
 
     public record MessageResponse(String message) {
+    }
+
+    public record ReleaseNotesResponse(String content) {
+    }
+
+    public record SelectedServiceRequest(String serviceId) {
+    }
+
+    public record SelectedServiceResponse(String serviceId) {
+    }
+
+    private void launchWindowsForeground(Path workingDirectory, String executablePath, String... arguments) throws IOException {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        if (os.contains("win")) {
+            WindowsProcessLauncher.launchForeground(workingDirectory, executablePath, arguments);
+            return;
+        }
+
+        String[] directCommand = new String[arguments.length + 1];
+        directCommand[0] = executablePath;
+        System.arraycopy(arguments, 0, directCommand, 1, arguments.length);
+        new ProcessBuilder(directCommand)
+                .directory(workingDirectory.toFile())
+                .start();
     }
 }

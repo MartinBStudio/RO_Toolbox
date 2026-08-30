@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {LogicalSize, getCurrentWindow} from "@tauri-apps/api/window";
-import { SparklesIcon } from "@heroicons/react/24/outline";
+import { KeyIcon, SwatchIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import {AppHeader} from "./elements/AppHeader.tsx";
 import {AppFooter} from "./elements/AppFooter.tsx";
 import {LoadingOverlay} from "./elements/LoadingOverlay.tsx";
@@ -8,18 +8,47 @@ import {BackendReadyGate} from "./elements/BackendReadyGate.tsx";
 import {LootManager} from "./components/LootManager";
 import {CombatTextManager} from "./components/CombatTextManager";
 import {UserInterfaceManager} from "./components/UserInterfaceManager";
+import {LoginManager} from "./components/LoginManager.tsx";
 import {ConfigEditorManager} from "./components/ConfigEditorManager.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
 import {HowToUseModal} from "./elements/HowToUseModal.tsx";
+import {ReleaseNotesModal} from "./elements/ReleaseNotesModal.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
-import { quickLaunchGame } from "./backendConnector/api.ts";
+import {
+    getReleaseNotes,
+    getSelectedServiceSetting,
+    listQuickLoginAccounts,
+    quickLaunchGame,
+    quickLaunchLoginAccount,
+    saveSelectedServiceSetting,
+    type LoginAccount
+} from "./backendConnector/api.ts";
 
 const SERVICES = [
-    {id: "texture-replacer", title: "Texture replacer"},
-    {id: "config-editor", title: "Config editor"}
+    {id: "texture-replacer", title: "Texture replacer", icon: SwatchIcon},
+    {id: "login-manager", title: "Login manager", icon: KeyIcon},
+    {id: "config-editor", title: "Config editor", icon: WrenchScrewdriverIcon}
 ] as const;
+const SELECTED_SERVICE_STORAGE_KEY = "roToolbox.selectedService";
+const DEFAULT_SERVICE_ID = SERVICES[0].id;
+
+function isServiceId(value: string): value is (typeof SERVICES)[number]["id"] {
+    return SERVICES.some((service) => service.id === value);
+}
+
+function readInitialService() {
+    try {
+        const stored = window.localStorage.getItem(SELECTED_SERVICE_STORAGE_KEY);
+        if (stored && isServiceId(stored)) {
+            return stored;
+        }
+    } catch {
+        // Ignore storage failures and use default service.
+    }
+    return DEFAULT_SERVICE_ID;
+}
 
 function App() {
     const {backendReady, status, appVersion, refreshStatus} = useApplicationContext();
@@ -28,7 +57,12 @@ function App() {
     const [message, setMessage] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [howToUseOpen, setHowToUseOpen] = useState(false);
-    const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>("texture-replacer");
+    const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+    const [releaseNotesContent, setReleaseNotesContent] = useState("");
+    const [quickAccounts, setQuickAccounts] = useState<LoginAccount[]>([]);
+    const [factoryResetNonce, setFactoryResetNonce] = useState(0);
+    const [servicePreferenceLoaded, setServicePreferenceLoaded] = useState(false);
+    const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>(readInitialService);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
 
@@ -57,6 +91,58 @@ function App() {
         }
     }
 
+    async function onOpenWhatsNew() {
+        setLoading(true);
+        try {
+            const result = await getReleaseNotes();
+            setReleaseNotesContent(result.content ?? "");
+            setReleaseNotesOpen(true);
+        } catch (err) {
+            setMessage(toErrorMessage(err, "Failed to load release notes."));
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function refreshQuickAccounts() {
+        if (!backendReady) {
+            return;
+        }
+        try {
+            const accounts = await listQuickLoginAccounts();
+            setQuickAccounts(accounts);
+        } catch {
+            setQuickAccounts([]);
+        }
+    }
+
+    async function onQuickLaunchAccount(account: LoginAccount) {
+        setLoading(true);
+        try {
+            await quickLaunchLoginAccount(account.id);
+            setMessage(`ROSE Online launched for ${account.name}.`);
+        } catch (err) {
+            setMessage(toErrorMessage(err, `Failed to launch ROSE Online for ${account.name}.`));
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    useEffect(() => {
+        void refreshQuickAccounts();
+    }, [backendReady]);
+
+    useEffect(() => {
+        const handleFactoryReset = () => {
+            void refreshQuickAccounts();
+            setFactoryResetNonce((value) => value + 1);
+        };
+        window.addEventListener("roToolbox:factory-reset", handleFactoryReset);
+        return () => {
+            window.removeEventListener("roToolbox:factory-reset", handleFactoryReset);
+        };
+    }, [backendReady]);
+
     useEffect(() => {
         if (!message) {
             return;
@@ -64,6 +150,47 @@ function App() {
         const timer = window.setTimeout(() => setMessage(""), 5000);
         return () => window.clearTimeout(timer);
     }, [message]);
+
+    useEffect(() => {
+        try {
+            window.localStorage.setItem(SELECTED_SERVICE_STORAGE_KEY, selectedService);
+        } catch {
+            // Ignore storage failures and keep the in-memory selected service.
+        }
+    }, [selectedService]);
+
+    useEffect(() => {
+        if (!backendReady) {
+            setServicePreferenceLoaded(false);
+            return;
+        }
+
+        let cancelled = false;
+        getSelectedServiceSetting()
+            .then((response) => {
+                if (!cancelled && response.serviceId && isServiceId(response.serviceId)) {
+                    setSelectedService(response.serviceId);
+                }
+            })
+            .catch(() => undefined)
+            .finally(() => {
+                if (!cancelled) {
+                    setServicePreferenceLoaded(true);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [backendReady]);
+
+    useEffect(() => {
+        if (!backendReady || !servicePreferenceLoaded) {
+            return;
+        }
+        saveSelectedServiceSetting(selectedService).catch(() => undefined);
+    }, [backendReady, servicePreferenceLoaded, selectedService]);
+
     useEffect(() => {
         if (!backendReady) {
             return;
@@ -71,7 +198,7 @@ function App() {
 
         const appWindow = getCurrentWindow();
         let frameId = 0;
-        const minHeight = 350;
+        const minHeight = 430;
         const maxHeight = 760;
         const verticalPadding = 20;
 
@@ -111,84 +238,93 @@ function App() {
                     <AppHeader
                         onOpenSettings={() => setSettingsOpen(true)}
                         onOpenHowToUse={() => setHowToUseOpen(true)}
+                        onLaunchRose={onQuickLaunch}
                         onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                         onMessage={setMessage}
+                        onQuickLaunchAccount={onQuickLaunchAccount}
+                        quickAccounts={quickAccounts}
                         loading={loading}
+                        launchDisabled={!status?.selectedGameBase}
                         appVersion={appVersion ?? undefined}
                         backendVersion={status?.version}
                     />
-                    <div className="appWorkspace">
-                        <aside className="appSidebar">
-                            <div className="card sidebarPanel">
-                                <div className="serviceList">
-                                    {SERVICES.map((service) => (
-                                        <button
-                                            key={service.id}
-                                            type="button"
-                                            className={`serviceListItem${selectedService === service.id ? " serviceListItemActive" : ""}`}
-                                            onClick={() => setSelectedService(service.id)}
-                                        >
-                                            <span className="serviceListIcon" aria-hidden="true">
-                                                <SparklesIcon />
-                                            </span>
-                                            <span>{service.title}</span>
-                                        </button>
-                                    ))}
+                    <div className="appMainScroll">
+                        <div className="appWorkspace">
+                            <aside className="appSidebar">
+                                <div className="card sidebarPanel">
+                                    <div className="serviceList">
+                                        {SERVICES.map((service) => {
+                                            const ServiceIcon = service.icon;
+                                            return (
+                                                <button
+                                                    key={service.id}
+                                                    type="button"
+                                                    className={`serviceListItem${selectedService === service.id ? " serviceListItemActive" : ""}`}
+                                                    onClick={() => setSelectedService(service.id)}
+                                                >
+                                                    <span className="serviceListIcon" aria-hidden="true">
+                                                        <ServiceIcon />
+                                                    </span>
+                                                    <span>{service.title}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
                                 </div>
-                            </div>
-                        </aside>
+                            </aside>
 
-                        <section className="appContent">
-                            {selectedService === "texture-replacer" && (
-                                <div className="card serviceContentPanel">
-                                    <LootManager
-                                        status={status}
-                                        loading={loading}
-                                        onBusyChange={setLoading}
-                                        onStatusRefresh={refreshStatus}
+                            <section className="appContent">
+                                {selectedService === "texture-replacer" && (
+                                    <div className="card serviceContentPanel">
+                                        <div>
+                                            <p className="sectionTitle">Texture replacer</p>
+                                            <p className="activeProfileMeta">Manage loot, combat text, and user interface profile packs.</p>
+                                        </div>
+                                        <LootManager
+                                            status={status}
+                                            loading={loading}
+                                            onBusyChange={setLoading}
+                                            onStatusRefresh={refreshStatus}
+                                            onMessage={setMessage}
+                                        />
+                                        <CombatTextManager
+                                            status={status}
+                                            loading={loading}
+                                            onBusyChange={setLoading}
+                                            onStatusRefresh={refreshStatus}
+                                            onMessage={setMessage}
+                                        />
+                                        <UserInterfaceManager
+                                            status={status}
+                                            loading={loading}
+                                            onBusyChange={setLoading}
+                                            onStatusRefresh={refreshStatus}
+                                            onMessage={setMessage}
+                                        />
+                                    </div>
+                                )}
+                                {selectedService === "login-manager" && (
+                                    <LoginManager
+                                        key={`login-manager-${factoryResetNonce}`}
+                                        onAccountsChanged={refreshQuickAccounts}
                                         onMessage={setMessage}
                                     />
-                                    <CombatTextManager
-                                        status={status}
+                                )}
+                                {selectedService === "config-editor" && (
+                                    <ConfigEditorManager
                                         loading={loading}
                                         onBusyChange={setLoading}
-                                        onStatusRefresh={refreshStatus}
                                         onMessage={setMessage}
                                     />
-                                    <UserInterfaceManager
-                                        status={status}
-                                        loading={loading}
-                                        onBusyChange={setLoading}
-                                        onStatusRefresh={refreshStatus}
-                                        onMessage={setMessage}
-                                    />
-                                </div>
-                            )}
-                            {selectedService === "config-editor" && (
-                                <ConfigEditorManager
-                                    loading={loading}
-                                    onBusyChange={setLoading}
-                                    onMessage={setMessage}
-                                />
-                            )}
-                        </section>
-                    </div>
-                    <StatusMessage message={message}/>
-                    <section className="card quickLaunchCard">
-                        <div>
-                            <p className="sectionTitle">Quick launch</p>
-                            <p className="quickLaunchPath">{status?.selectedGameBase ?? "Set game folder in Settings first."}</p>
+                                )}
+                            </section>
                         </div>
-                        <button
-                            type="button"
-                            className="buttonStrong quickLaunchButton"
-                            disabled={loading || !status?.selectedGameBase}
-                            onClick={onQuickLaunch}
-                        >
-                            ▶ Play
-                        </button>
-                    </section>
-                    <AppFooter/>
+                        <StatusMessage message={message}/>
+                    </div>
+                    <AppFooter
+                        loading={loading}
+                        onOpenWhatsNew={onOpenWhatsNew}
+                    />
                     <SettingsModal
                         open={settingsOpen}
                         status={status}
@@ -201,6 +337,11 @@ function App() {
                     <HowToUseModal
                         open={howToUseOpen}
                         onClose={() => setHowToUseOpen(false)}
+                    />
+                    <ReleaseNotesModal
+                        open={releaseNotesOpen}
+                        content={releaseNotesContent}
+                        onClose={() => setReleaseNotesOpen(false)}
                     />
                     <LoadingOverlay visible={loading} label={loadingMessage}/>
                     {needsSetup && (
