@@ -1,6 +1,6 @@
 [package]
 name = "ro_toolbox_desktop"
-version = "0.2.7"
+version = "0.2.8"
 description = "RO Toolbox desktop shell"
 authors = ["BStudio"]
 edition = "2021"

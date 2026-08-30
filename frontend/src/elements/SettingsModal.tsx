@@ -1,7 +1,9 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
+import { useState } from "react";
 import type { AppStatus } from "../types.ts";
-import { clearGameFolder, saveGameFolder } from "../backendConnector/api.ts";
+import { clearGameFolder, factoryReset, saveGameFolder } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
+import { ConfirmationModal } from "./ConfirmationModal.tsx";
 
 type SettingsModalProps = {
   open: boolean;
@@ -23,6 +25,7 @@ export function SettingsModal({
   onMessage
 }: SettingsModalProps) {
   const { debugMode, setDebugMode } = useApplicationContext();
+  const [factoryResetOpen, setFactoryResetOpen] = useState(false);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -56,6 +59,14 @@ export function SettingsModal({
     await runAction(clearGameFolder, "Game folder cleared.");
   }
 
+  async function onFactoryResetConfirmed() {
+    setFactoryResetOpen(false);
+    onClose();
+    setDebugMode(false);
+    window.localStorage.removeItem("roToolbox.debugMode");
+    await runAction(factoryReset, "Factory reset complete.");
+  }
+
   async function saveFolder(path: string) {
     const trimmedPath = path.trim();
     if (!trimmedPath) return;
@@ -66,20 +77,12 @@ export function SettingsModal({
       onMessage(
         initialResult.containsExpectedItemFolder
           ? "Game folder saved."
-          : "Game folder saved (without 3ddata/item)."
+          : "Game folder saved. Some mod folders may need to be created in this installation."
       );
     } catch (err) {
       const text = err instanceof Error ? err.message : "Request failed.";
-      if (text.includes("does not contain 3ddata/item")) {
-        const confirmed = window.confirm("The folder does not contain 3ddata/item. Save it anyway?");
-        if (!confirmed) {
-          onMessage("Save cancelled.");
-          onBusyChange(false);
-          return;
-        }
-        await saveGameFolder(trimmedPath, true);
-        await onStatusRefresh();
-        onMessage("Game folder saved.");
+      if (text.includes("trose.exe") || text.includes("not valid")) {
+        onMessage("The selected folder is not valid. It must contain trose.exe.");
       } else {
         onMessage(text);
       }
@@ -152,6 +155,22 @@ export function SettingsModal({
             </label>
           </div>
         </div>
+
+        <div className="settingsSection settingsSectionSeparated">
+          <p className="settingsSectionLabel">Danger zone</p>
+          <button type="button" className="buttonDanger" disabled={loading} onClick={() => setFactoryResetOpen(true)}>
+            Factory reset
+          </button>
+        </div>
+
+        <ConfirmationModal
+          open={factoryResetOpen}
+          title="Factory reset"
+          message="This clears RO_Toolbox settings and installed mod data. Downloaded profiles and local app state will be removed, while the real ROSE Online config in AppData/Rednim Games remains untouched."
+          confirmLabel="Reset now"
+          onConfirm={onFactoryResetConfirmed}
+          onClose={() => setFactoryResetOpen(false)}
+        />
       </section>
     </div>
   );

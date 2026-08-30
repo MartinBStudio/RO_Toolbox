@@ -124,6 +124,13 @@ public class CombatTextManagerService {
         }
     }
 
+    public void clearAppConfig() throws IOException {
+        if (Files.exists(CONFIG_FILE)) {
+            Files.deleteIfExists(CONFIG_FILE);
+            log("Deleted app config: " + CONFIG_FILE.toAbsolutePath());
+        }
+    }
+
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
         if (repoUrl == null || repoUrl.isEmpty()) repoUrl = DEFAULT_REPO;
         if (!Files.exists(destDir)) Files.createDirectories(destDir);
@@ -236,10 +243,34 @@ public class CombatTextManagerService {
         }
     }
 
-    public void clearResources() throws IOException { deleteDirectoryContents(RESOURCES_DIR); }
+    public void clearResources() throws IOException {
+        if (!Files.exists(RESOURCES_DIR) || !Files.isDirectory(RESOURCES_DIR)) return;
+        try (var stream = Files.list(RESOURCES_DIR)) {
+            for (Path entry : (Iterable<Path>) stream::iterator) {
+                String name = entry.getFileName().toString();
+                if (".default".equals(name)) {
+                    continue;
+                }
+                if (Files.isDirectory(entry)) {
+                    deleteDirectoryContents(entry);
+                    Files.deleteIfExists(entry);
+                    log("Deleted profile dir: " + entry.toAbsolutePath());
+                } else {
+                    Files.deleteIfExists(entry);
+                    log("Deleted resource file: " + entry.toAbsolutePath());
+                }
+            }
+        }
 
-    public void clearSelectedItemFolder() throws IOException {
-        Path itemFolder = getSelectedGameItemFolder();
+        Path defaultProfile = RESOURCES_DIR.resolve(".default");
+        if (Files.exists(defaultProfile)) {
+            deleteDirectoryContents(defaultProfile);
+            Files.deleteIfExists(defaultProfile);
+            log("Deleted default profile dir: " + defaultProfile.toAbsolutePath());
+        }
+    }
+
+    public void clearSelectedItemFolder() throws IOException {        Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
 
         Path manifest = resolveManifestPath(itemFolder);

@@ -11,6 +11,10 @@ export function clearGameFolder() {
   return request<{ message: string }>("/settings/game-folder/clear", { method: "POST" });
 }
 
+export function factoryReset() {
+  return request<{ message: string }>("/settings/factory-reset", { method: "POST" });
+}
+
 export function quickLaunchGame() {
   return request<{ message: string }>("/settings/quick-launch", { method: "POST" });
 }

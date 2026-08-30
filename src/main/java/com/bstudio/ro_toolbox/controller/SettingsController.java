@@ -1,6 +1,8 @@
 package com.bstudio.ro_toolbox.controller;
 
+import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
+import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -14,6 +16,8 @@ import java.nio.file.Path;
 public class SettingsController {
 
     private final LootManagerService lootManagerService;
+    private final CombatTextManagerService combatTextManagerService;
+    private final UserInterfaceManagerService userInterfaceManagerService;
 
     @PostMapping("/game-folder")
     public SaveFolderResponse saveGameFolder(@RequestBody SaveFolderRequest request) throws IOException {
@@ -21,17 +25,20 @@ public class SettingsController {
             throw new IllegalArgumentException("Path is required.");
         }
         Path picked = Path.of(request.path().trim());
-        Path base = picked.endsWith(Path.of("3ddata", "item"))
-                ? picked.getParent() != null && picked.getParent().getParent() != null ? picked.getParent().getParent() : picked
-                : picked;
+        Path base = resolveGameBase(picked);
+
+        Path itemFolder = base.resolve(Path.of("3ddata", "item"));
+        Path troseExecutable = base.resolve("trose.exe");
+        boolean containsExpectedFolder = Files.exists(itemFolder) && Files.isDirectory(itemFolder);
+        boolean containsGameExecutable = Files.exists(troseExecutable) && Files.isRegularFile(troseExecutable);
+        if (!containsGameExecutable) {
+            throw new IllegalStateException("The selected folder is not valid. It must contain trose.exe.");
+        }
 
         Files.createDirectories(base);
         lootManagerService.saveSelectedGame(base);
-        Path itemFolder = base.resolve(Path.of("3ddata", "item"));
-        boolean containsExpectedFolder = Files.exists(itemFolder) && Files.isDirectory(itemFolder);
-        if (!containsExpectedFolder && !request.forceSave()) {
-            throw new IllegalStateException("The selected folder does not contain 3ddata/item. Confirm save explicitly to continue.");
-        }
+        combatTextManagerService.saveSelectedGame(base);
+        userInterfaceManagerService.saveSelectedGame(base);
 
         return new SaveFolderResponse(
                 absoluteOrNull(base),
@@ -40,10 +47,58 @@ public class SettingsController {
         );
     }
 
+    static Path resolveGameBase(Path picked) {
+        Path normalized = picked == null ? null : picked.toAbsolutePath().normalize();
+        if (normalized == null) {
+            return null;
+        }
+
+        if (Files.isRegularFile(normalized.resolve("trose.exe"))) {
+            return normalized;
+        }
+
+        for (Path candidate = normalized.getParent(); candidate != null; candidate = candidate.getParent()) {
+            if (Files.isRegularFile(candidate.resolve("trose.exe"))) {
+                return candidate;
+            }
+        }
+
+        return normalized;
+    }
+
     @PostMapping("/game-folder/clear")
     public MessageResponse clearGameFolder() {
         lootManagerService.clearSelectedGame();
+        combatTextManagerService.clearSelectedGame();
+        userInterfaceManagerService.clearSelectedGame();
         return new MessageResponse("Selected game folder cleared.");
+    }
+
+    @PostMapping("/factory-reset")
+    public MessageResponse factoryReset() throws IOException {
+        if (lootManagerService.getSelectedGameBase() != null) {
+            lootManagerService.clearSelectedItemFolder();
+        }
+        if (combatTextManagerService.getSelectedGameBase() != null) {
+            combatTextManagerService.clearSelectedItemFolder();
+        }
+        if (userInterfaceManagerService.getSelectedGameBase() != null) {
+            userInterfaceManagerService.clearSelectedItemFolder();
+        }
+
+        lootManagerService.clearResources();
+        combatTextManagerService.clearResources();
+        userInterfaceManagerService.clearResources();
+
+        lootManagerService.clearSelectedGame();
+        combatTextManagerService.clearSelectedGame();
+        userInterfaceManagerService.clearSelectedGame();
+
+        lootManagerService.clearAppConfig();
+        combatTextManagerService.clearAppConfig();
+        userInterfaceManagerService.clearAppConfig();
+
+        return new MessageResponse("Factory reset complete. RO_Toolbox app state was cleared.");
     }
 
     @PostMapping("/quick-launch")

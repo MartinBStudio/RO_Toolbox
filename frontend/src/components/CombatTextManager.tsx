@@ -73,8 +73,8 @@ export function CombatTextManager({
 
   useEffect(() => {
     if (!backendReady) return;
-    checkResourcesUpdate();
-  }, [backendReady]);
+    void checkResourcesUpdate();
+  }, [backendReady, status?.combatTextDownloadedProfiles]);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -153,7 +153,7 @@ export function CombatTextManager({
   async function onInstallProfile() {
     if (!selectedProfile) return;
     if (!status?.combatTextSelectedGameItemFolder) {
-      onMessage("Set game installation folder first (must point to a base containing 3ddata/item).");
+      onMessage("Set the game folder first. It must contain trose.exe.");
       return;
     }
     const confirmed = window.confirm(
@@ -167,7 +167,7 @@ export function CombatTextManager({
   }
 
   async function onClearInstalled() {
-    const confirmed = window.confirm("Clear all installed combat text models from 3ddata/item?");
+    const confirmed = window.confirm("Clear all installed combat text models from the selected game folder?");
     if (!confirmed) return;
     await runAction(clearCombatTextInstalled, "Installed combat text models cleared.");
   }
