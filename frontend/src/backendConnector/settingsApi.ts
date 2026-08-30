@@ -10,3 +10,7 @@ export function saveGameFolder(path: string, forceSave = false) {
 export function clearGameFolder() {
   return request<{ message: string }>("/settings/game-folder/clear", { method: "POST" });
 }
+
+export function quickLaunchGame() {
+  return request<{ message: string }>("/settings/quick-launch", { method: "POST" });
+}
