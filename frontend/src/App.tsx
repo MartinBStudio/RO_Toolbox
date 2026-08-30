@@ -8,6 +8,7 @@ import {BackendReadyGate} from "./elements/BackendReadyGate.tsx";
 import {LootManager} from "./components/LootManager";
 import {CombatTextManager} from "./components/CombatTextManager";
 import {UserInterfaceManager} from "./components/UserInterfaceManager";
+import {LoginManager} from "./components/LoginManager.tsx";
 import {ConfigEditorManager} from "./components/ConfigEditorManager.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
@@ -19,6 +20,7 @@ import { getReleaseNotes, quickLaunchGame } from "./backendConnector/api.ts";
 
 const SERVICES = [
     {id: "texture-replacer", title: "Texture replacer"},
+    {id: "login-manager", title: "Login manager"},
     {id: "config-editor", title: "Config editor"}
 ] as const;
 
@@ -179,6 +181,9 @@ function App() {
                                         onMessage={setMessage}
                                     />
                                 </div>
+                            )}
+                            {selectedService === "login-manager" && (
+                                <LoginManager />
                             )}
                             {selectedService === "config-editor" && (
                                 <ConfigEditorManager

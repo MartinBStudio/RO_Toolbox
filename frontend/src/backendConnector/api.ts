@@ -36,3 +36,10 @@ export {
   addIgnoreListEntry,
   deleteIgnoreListEntry
 } from "./configEditorApi.ts";
+export {
+  listLoginAccounts,
+  listQuickLoginAccounts,
+  createLoginAccount,
+  updateLoginAccount,
+  deleteLoginAccount
+} from "./loginApi.ts";

@@ -474,6 +474,215 @@ button:disabled {
   border-color: #4b607f;
 }
 
+.loginManager {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.loginAddButton {
+  min-width: 2.1rem;
+  min-height: 2.1rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.loginModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 12, 18, 0.68);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.loginModal {
+  width: min(620px, 100%);
+  background: #141b2a;
+  border: 1px solid #2b3344;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 0.9rem;
+}
+
+.loginModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 0.7rem;
+}
+
+.loginModalHeader h3 {
+  margin: 0;
+  color: #edf4ff;
+  font-size: 1rem;
+}
+
+.loginModalClose {
+  min-width: 2rem;
+  min-height: 2rem;
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.loginForm {
+  display: grid;
+  gap: 0.6rem;
+  border: 1px solid #2b3344;
+  border-radius: 8px;
+  background: #111725;
+  padding: 0.7rem;
+}
+
+.loginFields {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.loginStackedFields {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.fieldGroup {
+  display: grid;
+  gap: 0.2rem;
+  color: #b9c8dd;
+  font-size: 0.75rem;
+  min-width: 0;
+}
+
+.fieldGroup input,
+.fieldGroup select {
+  width: 100%;
+  min-height: 2.2rem;
+  padding-top: 0.38rem;
+  padding-bottom: 0.38rem;
+}
+
+.loginFullWidthField {
+  width: 100%;
+}
+
+.checkboxRow {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #cfe0f3;
+  font-size: 0.86rem;
+  margin-top: 0.05rem;
+}
+
+.checkboxRow input {
+  width: 1rem;
+  height: 1rem;
+  accent-color: #56a2ff;
+}
+
+.formError {
+  color: #ffb4b4;
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.loginList {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.loginAccountItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  border: 1px solid #2b3344;
+  border-radius: 8px;
+  background: #111725;
+  padding: 0.7rem;
+}
+
+.loginAccountSummary {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.loginAvatar {
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 50%;
+  background: #203052;
+  display: grid;
+  place-items: center;
+  font-size: 1.1rem;
+}
+
+.loginAccountMeta {
+  display: grid;
+  gap: 0.14rem;
+  min-width: 0;
+}
+
+.loginAccountMeta strong {
+  color: #e8f0ff;
+}
+
+.loginAccountMeta span,
+.loginAccountMeta small {
+  color: #9fb2ca;
+  word-break: break-word;
+}
+
+.loginActions {
+  flex-wrap: nowrap;
+  align-items: center;
+}
+
+.loginQuickStarActive,
+.loginQuickStarInactive {
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.2rem 0.45rem;
+  font-size: 1.1rem;
+  line-height: 1;
+  border-width: 1px;
+}
+
+.loginQuickStarActive {
+  background: #ffcd4d;
+  border-color: #ffcd4d;
+  color: #1a1406;
+}
+
+.loginQuickStarInactive {
+  background: #1a2333;
+  border-color: #3a4a64;
+  color: #9bb3d9;
+}
+
+.loginModalActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.loginIconField select {
+  text-align: center;
+  font-size: 1.1rem;
+  padding-left: 0.25rem;
+  padding-right: 0.25rem;
+}
+
+.emptyState {
+  color: #8ea5c8;
+  font-style: italic;
+}
+
 .heroIcon {
   width: 1rem;
   height: 1rem;
