@@ -276,13 +276,12 @@ public class UserInterfaceManagerService {
         if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) return;
 
         Path defaultProfile = RESOURCES_DIR.resolve(".default");
-        if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) {
-            throw new IllegalStateException("Default profile '.default' is required in downloaded user interface resources.");
-        }
+        // Only proceed if default profile exists (i.e., UI was actually installed)
+        if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) return;
 
         List<Path> managedFiles = readDefaultFileList(defaultProfile.resolve("FILE_LIST.txt"));
         if (managedFiles.isEmpty()) {
-            throw new IllegalStateException("Default profile FILE_LIST.txt is empty or missing.");
+            return;
         }
 
         for (Path relativeFile : managedFiles) {
@@ -292,29 +291,6 @@ public class UserInterfaceManagerService {
             }
             Files.deleteIfExists(target);
             log("Deleted managed file: " + target.toAbsolutePath());
-        }
-
-        for (Path relativeFile : managedFiles) {
-            Path source = resolveManagedFile(defaultProfile, relativeFile);
-            if (!Files.exists(source) || !Files.isRegularFile(source)) {
-                log("Skipping restore for missing default file listed in FILE_LIST.txt: " + relativeFile);
-                continue;
-            }
-            Path target = resolveManagedFile(gameBase, relativeFile);
-            Files.createDirectories(target.getParent());
-            Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
-            log("Restored default file: " + target.toAbsolutePath());
-        }
-
-        Path defaultManifest = resolveProfileManifestPath(defaultProfile);
-        Path installedManifest = resolveManifestPath(getSelectedGameItemFolder());
-        if (defaultManifest != null) {
-            Files.createDirectories(installedManifest.getParent());
-            Files.copy(defaultManifest, installedManifest, StandardCopyOption.REPLACE_EXISTING);
-            setCurrentUserInterfaceProfile(".default");
-        } else {
-            deleteManifestFiles(getSelectedGameItemFolder(), MANIFEST_FILE_NAME, LEGACY_MANIFEST_FILE_NAME);
-            setCurrentUserInterfaceProfile(null);
         }
     }
 

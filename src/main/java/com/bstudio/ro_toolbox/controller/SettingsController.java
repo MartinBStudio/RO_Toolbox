@@ -79,10 +79,17 @@ public class SettingsController {
 
     @PostMapping("/factory-reset")
     public MessageResponse factoryReset() throws IOException {
+        // Step 1: Clear installed profiles from game folder
+        lootManagerService.clearSelectedItemFolder();
+        combatTextManagerService.clearSelectedItemFolder();
+        userInterfaceManagerService.clearSelectedItemFolder();
+
+        // Step 2: Clear downloaded resources (including .default folder)
         lootManagerService.clearResources();
         combatTextManagerService.clearResources();
         userInterfaceManagerService.clearResources();
 
+        // Step 3: Clear game folder selection and app config
         lootManagerService.clearSelectedGame();
         combatTextManagerService.clearSelectedGame();
         userInterfaceManagerService.clearSelectedGame();
@@ -90,6 +97,8 @@ public class SettingsController {
         lootManagerService.clearAppConfig();
         combatTextManagerService.clearAppConfig();
         userInterfaceManagerService.clearAppConfig();
+
+        // Step 4: Clear all saved accounts
         loginManagerService.clearAccounts();
 
         return new MessageResponse("Factory reset complete. RO_Toolbox app state was cleared.");
