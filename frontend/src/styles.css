@@ -351,6 +351,28 @@ p {
   font-size: 0.82rem;
 }
 
+.appFooterLine {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+.footerLinkButton {
+  border: 0;
+  background: none;
+  color: #8fbcff;
+  padding: 0;
+  font: inherit;
+  text-decoration: underline;
+  line-height: inherit;
+}
+
+.footerLinkButton:hover:enabled {
+  color: #b6d2ff;
+}
+
 .installedProfileSummary {
   border: 1px solid #2b3344;
   border-radius: 8px;
@@ -406,6 +428,11 @@ select {
   min-width: 0;
   width: 100%;
   max-width: 100%;
+  cursor: pointer;
+}
+
+select:disabled {
+  cursor: not-allowed;
 }
 
 button {
@@ -544,6 +571,14 @@ button .heroIcon {
 .profilePickerRow > select {
   width: 100%;
   min-width: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%238fa6c0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 12px 8px;
 }
 
 .profileCard {
@@ -687,6 +722,30 @@ a {
   padding: 0.05rem 0.3rem;
   font-size: 0.82rem;
   color: #a8c4e0;
+}
+
+.releaseNotesModalCard {
+  width: min(860px, 100%);
+  max-height: min(80vh, 760px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.releaseNotesContent {
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: auto;
+  max-height: 100%;
+  padding: 0.75rem;
+  border: 1px solid #243040;
+  border-radius: 8px;
+  background: #0d1420;
+  color: #c7d4e8;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  font-family: "Consolas", "Courier New", monospace;
 }
 
 .modalBackdrop {

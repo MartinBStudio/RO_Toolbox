@@ -13,8 +13,9 @@ import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
 import {HowToUseModal} from "./elements/HowToUseModal.tsx";
+import {ReleaseNotesModal} from "./elements/ReleaseNotesModal.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
-import { quickLaunchGame } from "./backendConnector/api.ts";
+import { getReleaseNotes, quickLaunchGame } from "./backendConnector/api.ts";
 
 const SERVICES = [
     {id: "texture-replacer", title: "Texture replacer"},
@@ -28,6 +29,8 @@ function App() {
     const [message, setMessage] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [howToUseOpen, setHowToUseOpen] = useState(false);
+    const [releaseNotesOpen, setReleaseNotesOpen] = useState(false);
+    const [releaseNotesContent, setReleaseNotesContent] = useState("");
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>("texture-replacer");
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
@@ -52,6 +55,19 @@ function App() {
             setMessage("ROSE Online launched.");
         } catch (err) {
             setMessage(toErrorMessage(err, "Failed to launch ROSE Online."));
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    async function onOpenWhatsNew() {
+        setLoading(true);
+        try {
+            const result = await getReleaseNotes();
+            setReleaseNotesContent(result.content ?? "");
+            setReleaseNotesOpen(true);
+        } catch (err) {
+            setMessage(toErrorMessage(err, "Failed to load release notes."));
         } finally {
             setLoading(false);
         }
@@ -188,7 +204,10 @@ function App() {
                             ▶ Play
                         </button>
                     </section>
-                    <AppFooter/>
+                    <AppFooter
+                        loading={loading}
+                        onOpenWhatsNew={onOpenWhatsNew}
+                    />
                     <SettingsModal
                         open={settingsOpen}
                         status={status}
@@ -201,6 +220,11 @@ function App() {
                     <HowToUseModal
                         open={howToUseOpen}
                         onClose={() => setHowToUseOpen(false)}
+                    />
+                    <ReleaseNotesModal
+                        open={releaseNotesOpen}
+                        content={releaseNotesContent}
+                        onClose={() => setReleaseNotesOpen(false)}
                     />
                     <LoadingOverlay visible={loading} label={loadingMessage}/>
                     {needsSetup && (

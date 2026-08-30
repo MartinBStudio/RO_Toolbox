@@ -1,5 +1,5 @@
 export { getStatus } from "./appApi.ts";
-export { saveGameFolder, clearGameFolder, factoryReset, quickLaunchGame } from "./settingsApi.ts";
+export { saveGameFolder, clearGameFolder, factoryReset, quickLaunchGame, getReleaseNotes } from "./settingsApi.ts";
 export {
   downloadProfiles,
   installProfile,

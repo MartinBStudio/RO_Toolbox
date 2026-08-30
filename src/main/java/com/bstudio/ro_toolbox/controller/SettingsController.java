@@ -125,8 +125,31 @@ public class SettingsController {
         return new MessageResponse("ROSE Online launched.");
     }
 
+    @GetMapping("/release-notes")
+    public ReleaseNotesResponse getReleaseNotes() throws IOException {
+        Path releaseNotes = resolveReleaseNotesPath();
+        return new ReleaseNotesResponse(Files.readString(releaseNotes));
+    }
+
     private String absoluteOrNull(Path path) {
         return path == null ? null : path.toAbsolutePath().normalize().toString();
+    }
+
+    private Path resolveReleaseNotesPath() {
+        Path workingDir = Path.of("").toAbsolutePath().normalize();
+        Path releaseNotes = workingDir.resolve("RELEASE_NOTES.md");
+        if (Files.isRegularFile(releaseNotes)) {
+            return releaseNotes;
+        }
+
+        if (workingDir.getParent() != null) {
+            Path parentReleaseNotes = workingDir.getParent().resolve("RELEASE_NOTES.md");
+            if (Files.isRegularFile(parentReleaseNotes)) {
+                return parentReleaseNotes;
+            }
+        }
+
+        throw new IllegalStateException("RELEASE_NOTES.md was not found.");
     }
 
     public record SaveFolderRequest(String path, boolean forceSave) {
@@ -136,5 +159,8 @@ public class SettingsController {
     }
 
     public record MessageResponse(String message) {
+    }
+
+    public record ReleaseNotesResponse(String content) {
     }
 }

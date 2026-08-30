@@ -18,3 +18,7 @@ export function factoryReset() {
 export function quickLaunchGame() {
   return request<{ message: string }>("/settings/quick-launch", { method: "POST" });
 }
+
+export function getReleaseNotes() {
+  return request<{ content: string }>("/settings/release-notes");
+}
