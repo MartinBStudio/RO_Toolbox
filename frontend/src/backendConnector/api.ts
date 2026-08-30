@@ -1,5 +1,13 @@
 export { getStatus } from "./appApi.ts";
-export { saveGameFolder, clearGameFolder, factoryReset, quickLaunchGame, getReleaseNotes } from "./settingsApi.ts";
+export {
+  saveGameFolder,
+  clearGameFolder,
+  factoryReset,
+  quickLaunchGame,
+  getReleaseNotes,
+  getSelectedServiceSetting,
+  saveSelectedServiceSetting
+} from "./settingsApi.ts";
 export {
   downloadProfiles,
   installProfile,
@@ -41,5 +49,7 @@ export {
   listQuickLoginAccounts,
   createLoginAccount,
   updateLoginAccount,
-  deleteLoginAccount
+  deleteLoginAccount,
+  quickLaunchLoginAccount
 } from "./loginApi.ts";
+export type { LoginAccount } from "./loginApi.ts";

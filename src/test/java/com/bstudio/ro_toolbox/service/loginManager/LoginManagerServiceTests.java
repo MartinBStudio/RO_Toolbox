@@ -27,6 +27,7 @@ class LoginManagerServiceTests {
     @Test
     void createsUpdatesAndDeletesAccounts() throws IOException {
         LoginManagerService service = new LoginManagerService();
+        Files.deleteIfExists(service.getAccountsFile());
         try {
             LoginManagerService.LoginAccount first = service.createAccount(new LoginManagerService.CreateAccountRequest(
                     "Alpha",
@@ -46,6 +47,8 @@ class LoginManagerServiceTests {
             assertEquals(2, service.listAccounts().size());
             assertTrue(service.listQuickAccounts().stream().anyMatch(account -> account.id().equals(first.id())));
             assertFalse(service.listQuickAccounts().stream().anyMatch(account -> account.id().equals(second.id())));
+            assertTrue(Files.readString(service.getAccountsFile()).contains("enc"));
+            assertEquals("pass1", service.listAccounts().stream().filter(account -> account.id().equals(first.id())).findFirst().orElseThrow().password());
 
             LoginManagerService.LoginAccount updated = service.updateAccount(first.id(), new LoginManagerService.UpdateAccountRequest(
                     "Alpha Updated",
@@ -56,6 +59,7 @@ class LoginManagerServiceTests {
             ));
             assertEquals("Alpha Updated", updated.name());
             assertFalse(updated.displayInQuick());
+            assertEquals("new-pass", service.listAccounts().stream().filter(account -> account.id().equals(first.id())).findFirst().orElseThrow().password());
 
             LoginManagerService.LoginAccount deleted = service.deleteAccount(second.id());
             assertEquals("Beta", deleted.name());

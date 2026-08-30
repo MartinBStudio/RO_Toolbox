@@ -30,7 +30,7 @@ const EMPTY_FORM = {
   icon: "👤"
 };
 
-export function LoginManager() {
+export function LoginManager({ onAccountsChanged }: { onAccountsChanged?: () => void | Promise<void> }) {
   const [accounts, setAccounts] = useState<LoginAccount[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -75,6 +75,7 @@ export function LoginManager() {
         await createLoginAccount(form);
       }
       await loadAccounts();
+      await onAccountsChanged?.();
       resetForm();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to save account.");
@@ -93,6 +94,7 @@ export function LoginManager() {
     try {
       await deleteLoginAccount(deleteTarget.id);
       await loadAccounts();
+      await onAccountsChanged?.();
       if (editingId === deleteTarget.id) {
         resetForm();
       }
@@ -116,6 +118,7 @@ export function LoginManager() {
         icon: account.icon || "👤"
       });
       await loadAccounts();
+      await onAccountsChanged?.();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update quick launch state.");
     } finally {

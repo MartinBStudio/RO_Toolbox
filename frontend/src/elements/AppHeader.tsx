@@ -16,9 +16,11 @@ import { useApplicationContext } from "../context/ApplicationContext.tsx";
 type AppHeaderProps = {
   onOpenSettings: () => void;
   onOpenHowToUse: () => void;
+  onLaunchRose: () => void;
   onBusyChange: (busy: boolean, message?: string) => void;
   onMessage: (message: string) => void;
   loading?: boolean;
+  launchDisabled?: boolean;
   backendVersion?: string;
   appVersion?: string;
 };
@@ -26,9 +28,11 @@ type AppHeaderProps = {
 export function AppHeader({
   onOpenSettings,
   onOpenHowToUse,
+  onLaunchRose,
   onBusyChange,
   onMessage,
   loading = false,
+  launchDisabled = false,
   backendVersion,
   appVersion
 }: AppHeaderProps) {
@@ -222,6 +226,14 @@ export function AppHeader({
         <h1>RO Toolbox</h1>
         <div className="headerActions">
           <span className="versionMeta">App v{appVersion ?? "..."} | Backend v{backendVersion ?? "..."}</span>
+          <button
+            type="button"
+            className="buttonSubtle headerLaunchButton"
+            disabled={loading || launchDisabled}
+            onClick={onLaunchRose}
+          >
+            Launch Rose Launcher
+          </button>
           <button
             type="button"
             className={`settingsCog updateCog${updateAvailable ? " updateAvailable" : ""}`}

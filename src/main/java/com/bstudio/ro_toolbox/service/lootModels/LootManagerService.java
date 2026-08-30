@@ -133,6 +133,35 @@ public class LootManagerService {
         }
     }
 
+    public String getSelectedService() throws IOException {
+        if (!Files.exists(CONFIG_FILE)) {
+            return null;
+        }
+        Properties prop = new Properties();
+        try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+            prop.load(in);
+        }
+        String selectedService = prop.getProperty("selectedService");
+        return (selectedService == null || selectedService.isBlank()) ? null : selectedService.trim();
+    }
+
+    public void saveSelectedService(String serviceId) throws IOException {
+        if (serviceId == null || serviceId.isBlank()) {
+            throw new IllegalArgumentException("Service id is required.");
+        }
+        Files.createDirectories(CONFIG_DIR);
+        Properties prop = new Properties();
+        if (Files.exists(CONFIG_FILE)) {
+            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+                prop.load(in);
+            }
+        }
+        prop.setProperty("selectedService", serviceId.trim());
+        try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
+            prop.store(out, "RO LootManager config");
+        }
+    }
+
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
         if (repoUrl == null || repoUrl.isEmpty()) repoUrl = DEFAULT_REPO;
         if (!Files.exists(destDir)) Files.createDirectories(destDir);

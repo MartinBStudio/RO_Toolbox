@@ -125,6 +125,21 @@ public class SettingsController {
         return new MessageResponse("ROSE Online launched.");
     }
 
+    @GetMapping("/selected-service")
+    public SelectedServiceResponse getSelectedService() throws IOException {
+        return new SelectedServiceResponse(lootManagerService.getSelectedService());
+    }
+
+    @PostMapping("/selected-service")
+    public SelectedServiceResponse saveSelectedService(@RequestBody SelectedServiceRequest request) throws IOException {
+        if (request == null || request.serviceId() == null || request.serviceId().isBlank()) {
+            throw new IllegalArgumentException("Service id is required.");
+        }
+        String serviceId = request.serviceId().trim();
+        lootManagerService.saveSelectedService(serviceId);
+        return new SelectedServiceResponse(serviceId);
+    }
+
     @GetMapping("/release-notes")
     public ReleaseNotesResponse getReleaseNotes() throws IOException {
         Path releaseNotes = resolveReleaseNotesPath();
@@ -162,5 +177,11 @@ public class SettingsController {
     }
 
     public record ReleaseNotesResponse(String content) {
+    }
+
+    public record SelectedServiceRequest(String serviceId) {
+    }
+
+    public record SelectedServiceResponse(String serviceId) {
     }
 }

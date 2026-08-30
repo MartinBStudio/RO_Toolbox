@@ -2,12 +2,21 @@ package com.bstudio.ro_toolbox.service.loginManager;
 
 import org.springframework.stereotype.Service;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.SecureRandom;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +30,8 @@ public class LoginManagerService {
     private static final Path APP_DATA_ROOT = resolveAppDataRoot();
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
     private static final Path ACCOUNTS_FILE = CONFIG_DIR.resolve("accounts.properties");
+    private static final String ENCRYPTION_PREFIX = "enc:";
+    private static final String ENCRYPTION_SECRET = "RO_Toolbox::login-vault::v1::" + System.getProperty("user.home", "") + "::" + System.getProperty("user.name", "");
 
     public List<LoginAccount> listAccounts() throws IOException {
         return readAccounts();
@@ -145,11 +156,12 @@ public class LoginManagerService {
             }
             String displayValue = data.get("displayInQuick");
             String iconValue = data.get("icon");
+            String resolvedPassword = decryptIfNeeded(password);
             accounts.add(new LoginAccount(
                     id,
                     name,
                     email,
-                    password,
+                    resolvedPassword,
                     displayValue == null ? Boolean.TRUE : Boolean.parseBoolean(displayValue),
                     iconValue == null || iconValue.isBlank() ? "👤" : iconValue
             ));
@@ -164,7 +176,7 @@ public class LoginManagerService {
             String prefix = "account." + account.id() + ".";
             props.setProperty(prefix + "name", account.name());
             props.setProperty(prefix + "email", account.email());
-            props.setProperty(prefix + "password", account.password());
+            props.setProperty(prefix + "password", encryptIfNeeded(account.password()));
             props.setProperty(prefix + "displayInQuick", String.valueOf(Boolean.TRUE.equals(account.displayInQuick())));
             props.setProperty(prefix + "icon", account.icon());
         }
@@ -186,6 +198,73 @@ public class LoginManagerService {
             return "👤";
         }
         return icon.trim();
+    }
+
+    private String encryptIfNeeded(String value) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
+        if (value.startsWith(ENCRYPTION_PREFIX)) {
+            return value;
+        }
+        try {
+            return ENCRYPTION_PREFIX + encrypt(value);
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Unable to encrypt password for local storage.", e);
+        }
+    }
+
+    private String decryptIfNeeded(String value) {
+        if (value == null) {
+            return null;
+        }
+        if (!value.startsWith(ENCRYPTION_PREFIX)) {
+            return value;
+        }
+        try {
+            return decrypt(value.substring(ENCRYPTION_PREFIX.length()));
+        } catch (GeneralSecurityException e) {
+            throw new IllegalStateException("Unable to decrypt saved password.", e);
+        }
+    }
+
+    private String encrypt(String rawValue) throws GeneralSecurityException {
+        byte[] iv = new byte[12];
+        new SecureRandom().nextBytes(iv);
+        byte[] keyBytes = deriveKey();
+        SecretKey key = new SecretKeySpec(keyBytes, "AES");
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        GCMParameterSpec spec = new GCMParameterSpec(128, iv);
+        cipher.init(Cipher.ENCRYPT_MODE, key, spec);
+        byte[] encrypted = cipher.doFinal(rawValue.getBytes(StandardCharsets.UTF_8));
+        byte[] combined = new byte[iv.length + encrypted.length];
+        System.arraycopy(iv, 0, combined, 0, iv.length);
+        System.arraycopy(encrypted, 0, combined, iv.length, encrypted.length);
+        return Base64.getEncoder().encodeToString(combined);
+    }
+
+    private String decrypt(String encodedValue) throws GeneralSecurityException {
+        byte[] combined = Base64.getDecoder().decode(encodedValue);
+        if (combined.length <= 12) {
+            throw new IllegalStateException("Encrypted payload is invalid.");
+        }
+        byte[] iv = new byte[12];
+        byte[] encrypted = new byte[combined.length - 12];
+        System.arraycopy(combined, 0, iv, 0, 12);
+        System.arraycopy(combined, 12, encrypted, 0, encrypted.length);
+
+        Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+        cipher.init(Cipher.DECRYPT_MODE, new SecretKeySpec(deriveKey(), "AES"), new GCMParameterSpec(128, iv));
+        byte[] plaintext = cipher.doFinal(encrypted);
+        return new String(plaintext, StandardCharsets.UTF_8);
+    }
+
+    private byte[] deriveKey() throws GeneralSecurityException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        byte[] material = digest.digest(ENCRYPTION_SECRET.getBytes(StandardCharsets.UTF_8));
+        byte[] key = new byte[16];
+        System.arraycopy(material, 0, key, 0, key.length);
+        return key;
     }
 
     private static Path resolveAppDataRoot() {

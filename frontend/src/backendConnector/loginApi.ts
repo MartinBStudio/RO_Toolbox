@@ -46,3 +46,7 @@ export function updateLoginAccount(id: string, data: {
 export function deleteLoginAccount(id: string) {
   return request<LoginAccount>(`/login/${id}`, { method: "DELETE" });
 }
+
+export function quickLaunchLoginAccount(id: string) {
+  return request<{ message: string }>(`/login/${id}/launch`, { method: "POST" });
+}

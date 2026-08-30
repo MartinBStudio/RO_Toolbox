@@ -22,3 +22,14 @@ export function quickLaunchGame() {
 export function getReleaseNotes() {
   return request<{ content: string }>("/settings/release-notes");
 }
+
+export function getSelectedServiceSetting() {
+  return request<{ serviceId: string | null }>("/settings/selected-service");
+}
+
+export function saveSelectedServiceSetting(serviceId: string) {
+  return request<{ serviceId: string }>("/settings/selected-service", {
+    method: "POST",
+    body: JSON.stringify({ serviceId })
+  });
+}
