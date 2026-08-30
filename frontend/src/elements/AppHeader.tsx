@@ -19,6 +19,8 @@ type AppHeaderProps = {
   onLaunchRose: () => void;
   onBusyChange: (busy: boolean, message?: string) => void;
   onMessage: (message: string) => void;
+  onQuickLaunchAccount?: (account: any) => void;
+  quickAccounts?: any[];
   loading?: boolean;
   launchDisabled?: boolean;
   backendVersion?: string;
@@ -31,6 +33,8 @@ export function AppHeader({
   onLaunchRose,
   onBusyChange,
   onMessage,
+  onQuickLaunchAccount,
+  quickAccounts = [],
   loading = false,
   launchDisabled = false,
   backendVersion,
@@ -223,7 +227,10 @@ export function AppHeader({
   return (
     <header className="card">
       <div className="headerRow">
-        <h1>RO Toolbox</h1>
+        <h1 className="headerTitle">
+          <img src="/src/assets/rose-logo-bg.webp" alt="ROSE" className="headerLogo" />
+          Toolbox
+        </h1>
         <div className="headerActions">
           <span className="versionMeta">App v{appVersion ?? "..."} | Backend v{backendVersion ?? "..."}</span>
           <button
@@ -274,6 +281,23 @@ export function AppHeader({
           </button>
         </div>
       </div>
+      {quickAccounts.length > 0 && (
+        <div className="headerQuickLaunch">
+          {quickAccounts.map((account) => (
+            <button
+              key={account.id}
+              type="button"
+              className="quickAccountButton"
+              onClick={() => onQuickLaunchAccount?.(account)}
+              disabled={loading || launchDisabled}
+              title={`Launch ${account.name}`}
+            >
+              <span className="quickAccountIcon" aria-hidden="true">{account.icon || "👤"}</span>
+              <span className="quickAccountName">{account.name}</span>
+            </button>
+          ))}
+        </div>
+      )}
     </header>
   );
 }

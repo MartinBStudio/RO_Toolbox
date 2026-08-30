@@ -241,31 +241,14 @@ function App() {
                         onLaunchRose={onQuickLaunch}
                         onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                         onMessage={setMessage}
+                        onQuickLaunchAccount={onQuickLaunchAccount}
+                        quickAccounts={quickAccounts}
                         loading={loading}
                         launchDisabled={!status?.selectedGameBase}
                         appVersion={appVersion ?? undefined}
                         backendVersion={status?.version}
                     />
                     <div className="appMainScroll">
-                        {quickAccounts.length > 0 && (
-                            <section className="card quickLaunchCard">
-                                <div className="quickAccountList" aria-label="Quick launch accounts">
-                                    {quickAccounts.map((account) => (
-                                        <button
-                                            key={account.id}
-                                            type="button"
-                                            className="quickAccountButton"
-                                            onClick={() => onQuickLaunchAccount(account)}
-                                            disabled={loading || !status?.selectedGameBase}
-                                            title={`Launch ${account.name}`}
-                                        >
-                                            <span className="quickAccountIcon" aria-hidden="true">{account.icon || "👤"}</span>
-                                            <span className="quickAccountName">{account.name}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </section>
-                        )}
                         <div className="appWorkspace">
                             <aside className="appSidebar">
                                 <div className="card sidebarPanel">

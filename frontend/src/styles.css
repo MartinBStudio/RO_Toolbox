@@ -36,10 +36,10 @@ body {
 .layout {
   position: relative;
   max-width: 1240px;
-  margin: 0.7rem auto;
-  padding: 0 0.65rem 0.2rem;
-  height: calc(100vh - 1.4rem);
-  max-height: calc(100vh - 1.4rem);
+  margin: 0.7rem auto 0;
+  padding: 0 0.65rem 0;
+  height: calc(100vh - 0.7rem);
+  max-height: calc(100vh - 0.7rem);
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -59,7 +59,9 @@ body {
   overflow-y: auto;
   overflow-x: hidden;
   padding-right: 0.1rem;
-  scrollbar-gutter: stable;
+  position: relative;
+  z-index: 1;
+  margin-top: 0.9rem;
 }
 
 .appWorkspace {
@@ -84,9 +86,7 @@ body {
 }
 
 .quickLaunchCard {
-  display: grid;
-  gap: 0.35rem;
-  padding: 0.5rem 0.6rem;
+  display: none;
 }
 
 .quickAccountList {
@@ -95,8 +95,11 @@ body {
   justify-content: center;
   gap: 0.4rem;
   overflow-x: auto;
+  overflow-y: hidden;
   padding-bottom: 0.1rem;
   scrollbar-width: thin;
+  flex: 1;
+  min-width: 0;
 }
 
 .quickAccountButton {
@@ -172,12 +175,31 @@ body {
   padding: 0.7rem;
 }
 
+header.card {
+  position: relative;
+  overflow: visible;
+}
+
 .headerRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.6rem;
   min-width: 0;
+}
+
+.headerQuickLaunch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0 0.3rem 0;
+  overflow: visible;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: -1.5rem;
+  z-index: 10;
 }
 
 .headerRow > h1 {
@@ -187,6 +209,18 @@ body {
   line-height: 1.2;
   letter-spacing: 0.02em;
   font-weight: 700;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.headerLogo {
+  height: 1.6rem;
+  width: auto;
+  display: block;
+  opacity: 0.9;
 }
 
 .headerActions {
@@ -413,6 +447,8 @@ p {
   padding-bottom: 0.15rem;
   margin-top: auto;
   flex-shrink: 0;
+  background: transparent;
+  border: none;
 }
 
 .appFooter p {

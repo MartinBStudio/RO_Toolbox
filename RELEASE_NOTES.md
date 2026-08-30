@@ -12,3 +12,6 @@
 - Factory reset now clears saved accounts
 - Better app stability and cleaner UI organization
 - How to use guide updated with Login Manager and Quick Launch instructions
+- ROSE Online themed visual design with dark backgrounds and red accents
+- Official ROSE logo integrated into app header
+- Quick Launch buttons positioned on header for easy access
