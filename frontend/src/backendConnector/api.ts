@@ -28,4 +28,11 @@ export {
   checkUserInterfaceResourcesUpdate
 } from "./userInterfaceApi.ts";
 export { checkBackendUpdate, fetchLatestReleaseDownload } from "./updateApi.ts";
-export { getConfigEditorStatus, saveConfigEditorFile, openConfigEditorFolder } from "./configEditorApi.ts";
+export {
+  getConfigEditorStatus,
+  saveConfigEditorFile,
+  openConfigEditorFolder,
+  getIgnoreList,
+  addIgnoreListEntry,
+  deleteIgnoreListEntry
+} from "./configEditorApi.ts";

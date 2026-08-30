@@ -32,6 +32,27 @@ public class ConfigEditorController {
         return configEditorService.save(fileId, request.content());
     }
 
+    @GetMapping("/ignore")
+    public ConfigEditorService.IgnoreListState readIgnoreList() throws IOException {
+        return configEditorService.readIgnoreList();
+    }
+
+    @PostMapping("/ignore")
+    public ConfigEditorService.IgnoreListState addIgnoreEntry(@RequestBody IgnoreEntryRequest request) throws IOException {
+        if (request == null || request.name() == null) {
+            throw new IllegalArgumentException("name is required.");
+        }
+        return configEditorService.addIgnoreName(request.name());
+    }
+
+    @DeleteMapping("/ignore")
+    public ConfigEditorService.IgnoreListState deleteIgnoreEntry(@RequestBody IgnoreEntryRequest request) throws IOException {
+        if (request == null || request.name() == null) {
+            throw new IllegalArgumentException("name is required.");
+        }
+        return configEditorService.deleteIgnoreName(request.name());
+    }
+
     @PostMapping("/folders/open")
     public MessageResponse openConfigFolder() throws IOException {
         Path configDir = configEditorService.getConfigDir();
@@ -70,6 +91,9 @@ public class ConfigEditorController {
     }
 
     public record SaveFileRequest(String content) {
+    }
+
+    public record IgnoreEntryRequest(String name) {
     }
 
     public record MessageResponse(String message) {
