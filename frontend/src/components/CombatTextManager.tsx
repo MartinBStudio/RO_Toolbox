@@ -21,7 +21,7 @@ import {
   openCombatTextResourcesFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
-import { buildProfileMeta, formatManifestVersion, resolveProfileName } from "../formatting.ts";
+import { buildProfileMeta, formatManifestVersion, isProfileAlreadyInstalled, resolveProfileName } from "../formatting.ts";
 
 type CombatTextManagerProps = {
   status: AppStatus | null;
@@ -55,10 +55,8 @@ export function CombatTextManager({
   });
   const installedProfileUrl = status?.combatTextInstalledProfile?.url ?? null;
   const activeProfileName = resolveProfileName(status?.combatTextInstalledProfile?.name, "No active profile");
-  const activeProfileMeta = buildProfileMeta({
-    version: status?.combatTextInstalledProfile?.version,
-    author: status?.combatTextInstalledProfile?.author
-  });
+  const activeProfileAuthor = status?.combatTextInstalledProfile?.author ? `by ${status.combatTextInstalledProfile.author}` : null;
+  const activeProfileVersion = formatManifestVersion(status?.combatTextInstalledProfile?.version);
 
   useEffect(() => {
     if (availableProfiles.length === 0) {
@@ -186,6 +184,9 @@ export function CombatTextManager({
     ? `Download combat text update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
     : "Check for combat text updates";
   const hasProfiles = (status?.combatTextDownloadedProfiles.length ?? 0) > 0;
+  const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.combatTextInstalledProfile);
+  const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
+  const installButtonDisabled = loading || !canInstall || selectedProfileAlreadyInstalled;
 
   return (
     <section className="lootManager">
@@ -194,7 +195,9 @@ export function CombatTextManager({
           <div>
             <p className="sectionTitle">Combat text</p>
             <p className="activeProfileMeta">
-              Active profile: <span className="activeProfileValue">{activeProfileName}{activeProfileMeta ? ` • ${activeProfileMeta}` : ""}</span>
+              Active profile: <span className="activeProfileValue">{activeProfileName}</span>
+              {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
+              {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
             </p>
           </div>
           <div className="headerActions">
@@ -318,15 +321,18 @@ export function CombatTextManager({
                   {selectedProfileData.description ? (
                     <p className="profileCardDesc">{selectedProfileData.description}</p>
                   ) : null}
-                  <button className="buttonStrong profileInstallBtn" disabled={loading || !canInstall} onClick={onInstallProfile}>
-                    Install
+                  {selectedProfileAlreadyInstalled ? (
+                    <p className="profileCardInstalled">Already installed</p>
+                  ) : null}
+                  <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                    {installButtonLabel}
                   </button>
                 </div>
               ) : (
                 <>
                   <p className="profileCardEmpty">No profile selected</p>
-                  <button className="buttonStrong profileInstallBtn" disabled={loading || !canInstall} onClick={onInstallProfile}>
-                    Install
+                  <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                    {installButtonLabel}
                   </button>
                 </>
               )}

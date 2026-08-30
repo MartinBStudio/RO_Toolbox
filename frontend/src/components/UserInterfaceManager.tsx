@@ -21,7 +21,7 @@ import {
   openUserInterfaceResourcesFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
-import { buildProfileMeta, formatManifestVersion, resolveProfileName } from "../formatting.ts";
+import { buildProfileMeta, formatManifestVersion, isProfileAlreadyInstalled, resolveProfileName } from "../formatting.ts";
 
 type UserInterfaceManagerProps = {
   status: AppStatus | null;
@@ -55,10 +55,8 @@ export function UserInterfaceManager({
   });
   const installedProfileUrl = status?.userInterfaceInstalledProfile?.url ?? null;
   const activeProfileName = resolveProfileName(status?.userInterfaceInstalledProfile?.name, "No active profile");
-  const activeProfileMeta = buildProfileMeta({
-    version: status?.userInterfaceInstalledProfile?.version,
-    author: status?.userInterfaceInstalledProfile?.author
-  });
+  const activeProfileAuthor = status?.userInterfaceInstalledProfile?.author ? `by ${status.userInterfaceInstalledProfile.author}` : null;
+  const activeProfileVersion = formatManifestVersion(status?.userInterfaceInstalledProfile?.version);
 
   useEffect(() => {
     if (availableProfiles.length === 0) {
@@ -186,6 +184,9 @@ export function UserInterfaceManager({
     ? `Download user interface update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
     : "Check for user interface updates";
   const hasProfiles = (status?.userInterfaceDownloadedProfiles.length ?? 0) > 0;
+  const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.userInterfaceInstalledProfile);
+  const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
+  const installButtonDisabled = loading || !canInstall || selectedProfileAlreadyInstalled;
 
   return (
     <section className="lootManager">
@@ -194,7 +195,9 @@ export function UserInterfaceManager({
           <div>
             <p className="sectionTitle">User interface</p>
             <p className="activeProfileMeta">
-              Active profile: <span className="activeProfileValue">{activeProfileName}{activeProfileMeta ? ` • ${activeProfileMeta}` : ""}</span>
+              Active profile: <span className="activeProfileValue">{activeProfileName}</span>
+              {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
+              {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
             </p>
           </div>
           <div className="headerActions">
@@ -318,15 +321,18 @@ export function UserInterfaceManager({
                   {selectedProfileData.description ? (
                     <p className="profileCardDesc">{selectedProfileData.description}</p>
                   ) : null}
-                  <button className="buttonStrong profileInstallBtn" disabled={loading || !canInstall} onClick={onInstallProfile}>
-                    Install
+                  {selectedProfileAlreadyInstalled ? (
+                    <p className="profileCardInstalled">Already installed</p>
+                  ) : null}
+                  <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                    {installButtonLabel}
                   </button>
                 </div>
               ) : (
                 <>
                   <p className="profileCardEmpty">No profile selected</p>
-                  <button className="buttonStrong profileInstallBtn" disabled={loading || !canInstall} onClick={onInstallProfile}>
-                    Install
+                  <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                    {installButtonLabel}
                   </button>
                 </>
               )}
