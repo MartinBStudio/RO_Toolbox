@@ -1,9 +1,11 @@
 package com.bstudio.ro_toolbox.service.loginManager;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -25,8 +27,8 @@ class LoginManagerServiceTests {
     }
 
     @Test
-    void createsUpdatesAndDeletesAccounts() throws IOException {
-        LoginManagerService service = new LoginManagerService();
+    void createsUpdatesAndDeletesAccounts(@TempDir Path tempDir) throws IOException {
+        LoginManagerService service = new LoginManagerService(tempDir);
         Files.deleteIfExists(service.getAccountsFile());
         try {
             LoginManagerService.LoginAccount first = service.createAccount(new LoginManagerService.CreateAccountRequest(

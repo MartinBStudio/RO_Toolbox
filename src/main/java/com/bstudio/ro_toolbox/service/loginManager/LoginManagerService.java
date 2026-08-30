@@ -27,11 +27,20 @@ import java.util.UUID;
 
 @Service
 public class LoginManagerService {
-    private static final Path APP_DATA_ROOT = resolveAppDataRoot();
-    private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
-    private static final Path ACCOUNTS_FILE = CONFIG_DIR.resolve("accounts.properties");
     private static final String ENCRYPTION_PREFIX = "enc:";
     private static final String ENCRYPTION_SECRET = "RO_Toolbox::login-vault::v1::" + System.getProperty("user.home", "") + "::" + System.getProperty("user.name", "");
+    private final Path configDir;
+    private final Path accountsFile;
+
+    public LoginManagerService() {
+        this(resolveAppDataRoot());
+    }
+
+    LoginManagerService(Path appDataRoot) {
+        Path root = appDataRoot == null ? resolveAppDataRoot() : appDataRoot;
+        this.configDir = root.resolve("config");
+        this.accountsFile = this.configDir.resolve("accounts.properties");
+    }
 
     public List<LoginAccount> listAccounts() throws IOException {
         return readAccounts();
@@ -117,17 +126,17 @@ public class LoginManagerService {
     }
 
     public Path getAccountsFile() {
-        return ACCOUNTS_FILE;
+        return accountsFile;
     }
 
     private List<LoginAccount> readAccounts() throws IOException {
-        Files.createDirectories(CONFIG_DIR);
-        if (!Files.exists(ACCOUNTS_FILE) || Files.size(ACCOUNTS_FILE) == 0) {
+        Files.createDirectories(configDir);
+        if (!Files.exists(accountsFile) || Files.size(accountsFile) == 0) {
             return new ArrayList<>();
         }
 
         Properties props = new Properties();
-        try (InputStream input = Files.newInputStream(ACCOUNTS_FILE)) {
+        try (InputStream input = Files.newInputStream(accountsFile)) {
             props.load(input);
         }
 
@@ -170,7 +179,7 @@ public class LoginManagerService {
     }
 
     private void writeAccounts(List<LoginAccount> accounts) throws IOException {
-        Files.createDirectories(CONFIG_DIR);
+        Files.createDirectories(configDir);
         Properties props = new Properties();
         for (LoginAccount account : accounts) {
             String prefix = "account." + account.id() + ".";
@@ -181,7 +190,7 @@ public class LoginManagerService {
             props.setProperty(prefix + "icon", account.icon());
         }
 
-        try (OutputStream output = Files.newOutputStream(ACCOUNTS_FILE)) {
+        try (OutputStream output = Files.newOutputStream(accountsFile)) {
             props.store(output, "RO_Toolbox login accounts");
         }
     }

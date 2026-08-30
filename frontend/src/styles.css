@@ -4,10 +4,17 @@
   font-size: 14px;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 body {
   margin: 0;
   background: #10131b;
   color: #dce4ef;
+  overflow: hidden;
 }
 
 .startingScreen {
@@ -30,13 +37,28 @@ body {
   position: relative;
   max-width: 1240px;
   margin: 0.7rem auto;
-  padding: 0 0.65rem 0.5rem;
-  display: grid;
+  padding: 0 0.65rem 0.2rem;
+  height: calc(100vh - 1.4rem);
+  max-height: calc(100vh - 1.4rem);
+  display: flex;
+  flex-direction: column;
   gap: 0.65rem;
+  overflow: hidden;
 }
 
 .layoutLoading > *:not(.loadingOverlay) {
   filter: blur(2px);
+}
+
+.appMainScroll {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.1rem;
 }
 
 .appWorkspace {
@@ -44,7 +66,6 @@ body {
   grid-template-columns: 260px minmax(0, 1fr) !important;
   gap: 0.8rem;
   align-items: start;
-  overflow: hidden;
 }
 
 .appSidebar {
@@ -58,7 +79,6 @@ body {
   display: grid;
   gap: 0.8rem;
   min-width: 0;
-  overflow: hidden;
   align-self: start;
 }
 
@@ -388,8 +408,10 @@ p {
 
 .appFooter {
   text-align: center;
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding-top: 0.35rem;
+  padding-bottom: 0.15rem;
+  margin-top: auto;
+  flex-shrink: 0;
 }
 
 .appFooter p {
@@ -1340,11 +1362,17 @@ a {
   display: grid;
   gap: 0.65rem;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+
+.configEditorBodySingle {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .configEditorPane {
   display: grid;
   gap: 0.35rem;
+  align-content: start;
 }
 
 .configEditorTextarea {
@@ -1481,7 +1509,8 @@ a {
   border-radius: 6px;
   background: #0d1420;
   padding: 0.5rem 0.65rem;
-  max-height: 430px;
+  min-height: 320px;
+  max-height: 520px;
   overflow: auto;
 }
 

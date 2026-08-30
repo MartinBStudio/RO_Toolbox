@@ -186,7 +186,7 @@ function App() {
 
         const appWindow = getCurrentWindow();
         let frameId = 0;
-        const minHeight = 350;
+        const minHeight = 430;
         const maxHeight = 760;
         const verticalPadding = 20;
 
@@ -234,88 +234,94 @@ function App() {
                         appVersion={appVersion ?? undefined}
                         backendVersion={status?.version}
                     />
-                    {quickAccounts.length > 0 && (
-                        <section className="card quickLaunchCard">
-                            <div className="quickAccountList" aria-label="Quick launch accounts">
-                                {quickAccounts.map((account) => (
-                                    <button
-                                        key={account.id}
-                                        type="button"
-                                        className="quickAccountButton"
-                                        onClick={() => onQuickLaunchAccount(account)}
-                                        disabled={loading || !status?.selectedGameBase}
-                                        title={`Launch ${account.name}`}
-                                    >
-                                        <span className="quickAccountIcon" aria-hidden="true">{account.icon || "👤"}</span>
-                                        <span className="quickAccountName">{account.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-                    <div className="appWorkspace">
-                        <aside className="appSidebar">
-                            <div className="card sidebarPanel">
-                                <div className="serviceList">
-                                    {SERVICES.map((service) => {
-                                        const ServiceIcon = service.icon;
-                                        return (
-                                            <button
-                                                key={service.id}
-                                                type="button"
-                                                className={`serviceListItem${selectedService === service.id ? " serviceListItemActive" : ""}`}
-                                                onClick={() => setSelectedService(service.id)}
-                                            >
-                                                <span className="serviceListIcon" aria-hidden="true">
-                                                    <ServiceIcon />
-                                                </span>
-                                                <span>{service.title}</span>
-                                            </button>
-                                        );
-                                    })}
+                    <div className="appMainScroll">
+                        {quickAccounts.length > 0 && (
+                            <section className="card quickLaunchCard">
+                                <div className="quickAccountList" aria-label="Quick launch accounts">
+                                    {quickAccounts.map((account) => (
+                                        <button
+                                            key={account.id}
+                                            type="button"
+                                            className="quickAccountButton"
+                                            onClick={() => onQuickLaunchAccount(account)}
+                                            disabled={loading || !status?.selectedGameBase}
+                                            title={`Launch ${account.name}`}
+                                        >
+                                            <span className="quickAccountIcon" aria-hidden="true">{account.icon || "👤"}</span>
+                                            <span className="quickAccountName">{account.name}</span>
+                                        </button>
+                                    ))}
                                 </div>
-                            </div>
-                        </aside>
+                            </section>
+                        )}
+                        <div className="appWorkspace">
+                            <aside className="appSidebar">
+                                <div className="card sidebarPanel">
+                                    <div className="serviceList">
+                                        {SERVICES.map((service) => {
+                                            const ServiceIcon = service.icon;
+                                            return (
+                                                <button
+                                                    key={service.id}
+                                                    type="button"
+                                                    className={`serviceListItem${selectedService === service.id ? " serviceListItemActive" : ""}`}
+                                                    onClick={() => setSelectedService(service.id)}
+                                                >
+                                                    <span className="serviceListIcon" aria-hidden="true">
+                                                        <ServiceIcon />
+                                                    </span>
+                                                    <span>{service.title}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </aside>
 
-                        <section className="appContent">
-                            {selectedService === "texture-replacer" && (
-                                <div className="card serviceContentPanel">
-                                    <LootManager
-                                        status={status}
+                            <section className="appContent">
+                                {selectedService === "texture-replacer" && (
+                                    <div className="card serviceContentPanel">
+                                        <div>
+                                            <p className="sectionTitle">Texture replacer</p>
+                                            <p className="activeProfileMeta">Manage loot, combat text, and user interface profile packs.</p>
+                                        </div>
+                                        <LootManager
+                                            status={status}
+                                            loading={loading}
+                                            onBusyChange={setLoading}
+                                            onStatusRefresh={refreshStatus}
+                                            onMessage={setMessage}
+                                        />
+                                        <CombatTextManager
+                                            status={status}
+                                            loading={loading}
+                                            onBusyChange={setLoading}
+                                            onStatusRefresh={refreshStatus}
+                                            onMessage={setMessage}
+                                        />
+                                        <UserInterfaceManager
+                                            status={status}
+                                            loading={loading}
+                                            onBusyChange={setLoading}
+                                            onStatusRefresh={refreshStatus}
+                                            onMessage={setMessage}
+                                        />
+                                    </div>
+                                )}
+                                {selectedService === "login-manager" && (
+                                    <LoginManager onAccountsChanged={refreshQuickAccounts} />
+                                )}
+                                {selectedService === "config-editor" && (
+                                    <ConfigEditorManager
                                         loading={loading}
                                         onBusyChange={setLoading}
-                                        onStatusRefresh={refreshStatus}
                                         onMessage={setMessage}
                                     />
-                                    <CombatTextManager
-                                        status={status}
-                                        loading={loading}
-                                        onBusyChange={setLoading}
-                                        onStatusRefresh={refreshStatus}
-                                        onMessage={setMessage}
-                                    />
-                                    <UserInterfaceManager
-                                        status={status}
-                                        loading={loading}
-                                        onBusyChange={setLoading}
-                                        onStatusRefresh={refreshStatus}
-                                        onMessage={setMessage}
-                                    />
-                                </div>
-                            )}
-                            {selectedService === "login-manager" && (
-                                <LoginManager onAccountsChanged={refreshQuickAccounts} />
-                            )}
-                            {selectedService === "config-editor" && (
-                                <ConfigEditorManager
-                                    loading={loading}
-                                    onBusyChange={setLoading}
-                                    onMessage={setMessage}
-                                />
-                            )}
-                        </section>
+                                )}
+                            </section>
+                        </div>
+                        <StatusMessage message={message}/>
                     </div>
-                    <StatusMessage message={message}/>
                     <AppFooter
                         loading={loading}
                         onOpenWhatsNew={onOpenWhatsNew}

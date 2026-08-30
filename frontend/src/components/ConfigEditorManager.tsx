@@ -29,6 +29,7 @@ const FILE_ORDER: Array<ConfigEditorFileState["id"]> = ["ignore", "rose"];
 export function ConfigEditorManager({ loading, onBusyChange, onMessage }: ConfigEditorManagerProps) {
   const [status, setStatus] = useState<ConfigEditorStatus | null>(null);
   const [selectedFileId, setSelectedFileId] = useState<ConfigEditorFileState["id"]>("ignore");
+  const [showFileEditor, setShowFileEditor] = useState(false);
   const [editorContent, setEditorContent] = useState("");
   const [editorDirty, setEditorDirty] = useState(false);
   const [ignoreNames, setIgnoreNames] = useState<string[]>([]);
@@ -249,6 +250,8 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
     <section className="card configEditor">
       <div className="configEditorHeader">
         <div>
+          <p className="sectionTitle">Config editor</p>
+          <p className="activeProfileMeta">Edit game TOML files with parsed preview and quick boolean controls.</p>
           <p className="configEditorWarning">Warning: edit these files only when the ROSE client is closed.</p>
           <p className="configEditorPath">{status?.configDir ?? "%APPDATA%\\Rednim Games\\ROSE Online\\config"}</p>
         </div>
@@ -272,6 +275,14 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
             aria-label="Reload files"
           >
             <ArrowPathIcon className="heroIcon" />
+          </button>
+          <button
+            type="button"
+            className="buttonSubtle"
+            disabled={loading}
+            onClick={() => setShowFileEditor((value) => !value)}
+          >
+            {showFileEditor ? "Hide files" : "See files"}
           </button>
           <button type="button" className="buttonStrong" disabled={loading || !selectedFile || !editorDirty} onClick={onSave}>
             Save
@@ -300,7 +311,7 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
       </div>
 
       {selectedFile ? (
-        <div className="configEditorBody">
+        <div className={`configEditorBody${showFileEditor ? "" : " configEditorBodySingle"}`}>
           <div className="configEditorPane">
             {selectedFile.id === "ignore" && (
               <div className="configEditorIgnorePanel">
@@ -379,29 +390,35 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
                 )}
               </div>
             )}
-            <p className="settingsSectionLabel">TOML source</p>
-            <textarea
-              className="configEditorTextarea"
-              value={editorContent}
-              onChange={(event) => {
-                setEditorContent(event.target.value);
-                setEditorDirty(true);
-              }}
-              placeholder="File is missing. Add TOML content and save to create it."
-              spellCheck={false}
-            />
-            <p className="configEditorMeta">{selectedFile.filePath}</p>
+            {showFileEditor ? (
+              <>
+                <p className="settingsSectionLabel">TOML source</p>
+                <textarea
+                  className="configEditorTextarea"
+                  value={editorContent}
+                  onChange={(event) => {
+                    setEditorContent(event.target.value);
+                    setEditorDirty(true);
+                  }}
+                  placeholder="File is missing. Add TOML content and save to create it."
+                  spellCheck={false}
+                />
+                <p className="configEditorMeta">{selectedFile.filePath}</p>
+              </>
+            ) : null}
           </div>
-          <div className="configEditorPane">
-            <p className="settingsSectionLabel">Parsed preview</p>
-            {hasParseError ? (
-              <p className="configEditorError">{selectedFile.parseError}</p>
-            ) : selectedFile.parsed ? (
-              <TomlPreview value={selectedFile.parsed} />
-            ) : (
-              <p className="profileCardEmpty">No data to preview.</p>
-            )}
-          </div>
+          {showFileEditor ? (
+            <div className="configEditorPane">
+              <p className="settingsSectionLabel">Parsed preview</p>
+              {hasParseError ? (
+                <p className="configEditorError">{selectedFile.parseError}</p>
+              ) : selectedFile.parsed ? (
+                <TomlPreview value={selectedFile.parsed} />
+              ) : (
+                <p className="profileCardEmpty">No data to preview.</p>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : (
         <p className="profileCardEmpty">No config file metadata loaded.</p>

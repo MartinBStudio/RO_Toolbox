@@ -41,7 +41,8 @@ public class LoginServiceController {
             throw new IllegalStateException("ROSE executable was not found in the selected game folder.");
         }
 
-        String[] command = new String[]{
+        launchWindowsForeground(
+                selectedGame,
                 executable.toAbsolutePath().toString(),
                 "--login",
                 "--server",
@@ -50,11 +51,7 @@ public class LoginServiceController {
                 account.email(),
                 "--password",
                 account.password()
-        };
-
-        new ProcessBuilder(command)
-                .directory(selectedGame.toFile())
-                .start();
+        );
 
         return new MessageResponse("Launching ROSE Online for " + account.name() + ".");
     }
@@ -107,5 +104,27 @@ public class LoginServiceController {
     }
 
     public record MessageResponse(String message) {
+    }
+
+    private void launchWindowsForeground(Path workingDirectory, String executablePath, String... arguments) throws IOException {
+        String os = System.getProperty("os.name", "").toLowerCase();
+        if (os.contains("win")) {
+            StringBuilder command = new StringBuilder();
+            command.append("start \"\" \"").append(executablePath).append("\"");
+            for (String argument : arguments) {
+                command.append(" \"").append(argument).append("\"");
+            }
+            new ProcessBuilder("cmd.exe", "/c", command.toString())
+                    .directory(workingDirectory.toFile())
+                    .start();
+            return;
+        }
+
+        String[] directCommand = new String[arguments.length + 1];
+        directCommand[0] = executablePath;
+        System.arraycopy(arguments, 0, directCommand, 1, arguments.length);
+        new ProcessBuilder(directCommand)
+                .directory(workingDirectory.toFile())
+                .start();
     }
 }
