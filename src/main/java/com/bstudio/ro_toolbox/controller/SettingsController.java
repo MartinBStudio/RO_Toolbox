@@ -46,6 +46,30 @@ public class SettingsController {
         return new MessageResponse("Selected game folder cleared.");
     }
 
+    @PostMapping("/quick-launch")
+    public MessageResponse quickLaunch() throws IOException {
+        Path gameBase = lootManagerService.getSelectedGameBase();
+        if (gameBase == null) {
+            throw new IllegalStateException("No game installation folder is selected.");
+        }
+
+        String os = System.getProperty("os.name", "").toLowerCase();
+        if (!os.contains("win")) {
+            throw new IllegalStateException("Quick launch is supported only on Windows.");
+        }
+
+        Path executable = gameBase.resolve("rose-updater.exe");
+        if (!Files.exists(executable) || !Files.isRegularFile(executable)) {
+            throw new IllegalStateException("rose-updater.exe was not found in the selected game folder.");
+        }
+
+        new ProcessBuilder(executable.toAbsolutePath().toString())
+                .directory(gameBase.toFile())
+                .start();
+
+        return new MessageResponse("ROSE Online launched.");
+    }
+
     private String absoluteOrNull(Path path) {
         return path == null ? null : path.toAbsolutePath().normalize().toString();
     }

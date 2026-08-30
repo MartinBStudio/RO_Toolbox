@@ -33,6 +33,7 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
   const [editorDirty, setEditorDirty] = useState(false);
   const [ignoreNames, setIgnoreNames] = useState<string[]>([]);
   const [newIgnoreName, setNewIgnoreName] = useState("");
+  const [booleanSearch, setBooleanSearch] = useState("");
 
   const selectedFile = useMemo(
     () => status?.files.find((file) => file.id === selectedFileId) ?? null,
@@ -45,6 +46,16 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
     }
     return extractBooleanEntriesFromTomlSource(editorContent);
   }, [selectedFile?.id, editorContent]);
+
+  const filteredRoseBooleanEntries = useMemo(() => {
+    const query = booleanSearch.trim().toLowerCase();
+    if (!query) {
+      return roseBooleanEntries;
+    }
+    return roseBooleanEntries.filter((entry) =>
+      `${entry.context}.${entry.key} ${entry.value ? "true" : "false"}`.toLowerCase().includes(query)
+    );
+  }, [roseBooleanEntries, booleanSearch]);
 
   useEffect(() => {
     loadStatus(false).catch((err) => {
@@ -66,6 +77,12 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
     const ignoreFile = status?.files.find((file) => file.id === "ignore");
     setIgnoreNames(extractIgnoreNames(ignoreFile));
   }, [status]);
+
+  useEffect(() => {
+    if (selectedFileId !== "rose") {
+      setBooleanSearch("");
+    }
+  }, [selectedFileId]);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -319,9 +336,16 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
             {selectedFile.id === "rose" && (
               <div className="configEditorBooleanPanel">
                 <p className="settingsSectionLabel">Boolean values manager</p>
-                {roseBooleanEntries.length > 0 ? (
+                <input
+                  type="text"
+                  value={booleanSearch}
+                  onChange={(event) => setBooleanSearch(event.target.value)}
+                  placeholder="Search by section, key or value"
+                  disabled={loading}
+                />
+                {filteredRoseBooleanEntries.length > 0 ? (
                   <ul className="configEditorBooleanList">
-                    {roseBooleanEntries.map((entry) => (
+                    {filteredRoseBooleanEntries.map((entry) => (
                       <li key={entry.id} className="configEditorBooleanItem">
                         <div className="configEditorBooleanMeta">
                           <span className="configEditorBooleanPath">{entry.context}</span>
@@ -349,7 +373,9 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
                     ))}
                   </ul>
                 ) : (
-                  <p className="profileCardEmpty">No boolean entries found.</p>
+                  <p className="profileCardEmpty">
+                    {roseBooleanEntries.length === 0 ? "No boolean entries found." : "No boolean entries match your search."}
+                  </p>
                 )}
               </div>
             )}

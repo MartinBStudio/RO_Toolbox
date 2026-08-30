@@ -62,6 +62,25 @@ body {
   align-self: start;
 }
 
+.quickLaunchCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.quickLaunchPath {
+  margin-top: 0.18rem;
+  color: #8fa6c0;
+  font-size: 0.8rem;
+  font-family: "Consolas", "Courier New", monospace;
+  word-break: break-all;
+}
+
+.quickLaunchButton {
+  min-width: 115px;
+}
+
 .serviceContentPanel {
   display: grid;
   gap: 0.8rem;

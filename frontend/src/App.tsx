@@ -14,6 +14,7 @@ import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
 import {HowToUseModal} from "./elements/HowToUseModal.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
+import { quickLaunchGame } from "./backendConnector/api.ts";
 
 const SERVICES = [
     {id: "texture-replacer", title: "Texture replacer"},
@@ -30,6 +31,31 @@ function App() {
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>("texture-replacer");
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
+
+    function toErrorMessage(err: unknown, fallback: string) {
+        if (err instanceof Error && err.message) {
+            return err.message;
+        }
+        if (typeof err === "string" && err.trim()) {
+            return err;
+        }
+        if (err && typeof err === "object" && "message" in err && typeof err.message === "string") {
+            return err.message;
+        }
+        return fallback;
+    }
+
+    async function onQuickLaunch() {
+        setLoading(true);
+        try {
+            await quickLaunchGame();
+            setMessage("ROSE Online launched.");
+        } catch (err) {
+            setMessage(toErrorMessage(err, "Failed to launch ROSE Online."));
+        } finally {
+            setLoading(false);
+        }
+    }
 
     useEffect(() => {
         if (!message) {
@@ -148,6 +174,20 @@ function App() {
                         </section>
                     </div>
                     <StatusMessage message={message}/>
+                    <section className="card quickLaunchCard">
+                        <div>
+                            <p className="sectionTitle">Quick launch</p>
+                            <p className="quickLaunchPath">{status?.selectedGameBase ?? "Set game folder in Settings first."}</p>
+                        </div>
+                        <button
+                            type="button"
+                            className="buttonStrong quickLaunchButton"
+                            disabled={loading || !status?.selectedGameBase}
+                            onClick={onQuickLaunch}
+                        >
+                            ▶ Play
+                        </button>
+                    </section>
                     <AppFooter/>
                     <SettingsModal
                         open={settingsOpen}
