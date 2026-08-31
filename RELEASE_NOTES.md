@@ -1,5 +1,24 @@
 # RO Toolbox – Release Notes
 
+## v0.3.3 – Bug Fix
+
+### 🐛 Bug Fixes
+- **UI resources update not detected**: Fixed the user interface resource update check always reporting "up to date" even when a newer version was available in the remote repository. The update check was looking for the wrong manifest file.
+
+---
+
+## v0.3.2 – Launcher Fix & Preview Support
+
+### 🐛 Bug Fixes
+- **Launcher not opening from the header**: Fixed the Windows launch logic so the app now starts `rose-updater.exe` reliably from the selected game folder.
+- **Resource preview support**: Added support for profile resource folders containing a hidden `.preview` directory, while still excluding those files from being copied into the game installation.
+
+### ✨ Improvements
+- Downloaded profile metadata can now include preview image thumbnails for loot, combat text, and UI profiles.
+- Preview images render in the profile card and can be opened fullscreen when clicked.
+
+---
+
 ## v0.3.1 – Bug Fix
 
 ### 🐛 Bug Fixes

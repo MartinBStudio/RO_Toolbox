@@ -70,6 +70,35 @@ class SettingsControllerTests {
     }
 
     @Test
+    void resolvesQuickLaunchExecutablePreferringUpdaterBeforeTrose(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("ROSE Online");
+        Files.createDirectories(root);
+        Files.createFile(root.resolve("rose-updater.exe"));
+        Files.createFile(root.resolve("trose.exe"));
+
+        assertEquals(root.resolve("rose-updater.exe"), SettingsController.resolveQuickLaunchExecutable(root));
+    }
+
+    @Test
+    void fallsBackToTroseExecutableWhenUpdaterIsMissing(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("ROSE Online");
+        Files.createDirectories(root);
+        Files.createFile(root.resolve("trose.exe"));
+
+        assertEquals(root.resolve("trose.exe"), SettingsController.resolveQuickLaunchExecutable(root));
+    }
+
+    @Test
+    void findsLauncherExecutableInNestedFolderWhenRootIsNotExact(@TempDir Path tempDir) throws IOException {
+        Path root = tempDir.resolve("ROSE Online");
+        Path nested = root.resolve("launcher");
+        Files.createDirectories(nested);
+        Files.createFile(nested.resolve("rose-updater.exe"));
+
+        assertEquals(nested.resolve("rose-updater.exe"), SettingsController.resolveQuickLaunchExecutable(root));
+    }
+
+    @Test
     void factoryResetAlsoClearsSavedAccounts() throws IOException {
         LootManagerService loot = mock(LootManagerService.class);
         CombatTextManagerService combat = mock(CombatTextManagerService.class);

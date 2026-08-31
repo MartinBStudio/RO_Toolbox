@@ -2,44 +2,42 @@ package com.bstudio.ro_toolbox.util;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 public final class WindowsProcessLauncher {
     private WindowsProcessLauncher() {
     }
 
     public static void launchForeground(Path workingDirectory, String executablePath, String... arguments) throws IOException {
-        StringBuilder argsExpression = new StringBuilder("@(");
+        List<String> command = new ArrayList<>();
+        command.add("cmd.exe");
+        command.add("/c");
+        command.add("start");
+        command.add("");
+        command.add(executablePath);
         if (arguments != null) {
-            for (int i = 0; i < arguments.length; i++) {
-                if (i > 0) {
-                    argsExpression.append(",");
-                }
-                argsExpression.append("'").append(psQuote(arguments[i])).append("'");
+            for (String argument : arguments) {
+                command.add(argument);
             }
         }
-        argsExpression.append(")");
 
-        String script =
-                "$p=Start-Process -FilePath '" + psQuote(executablePath) + "'" +
-                        " -WorkingDirectory '" + psQuote(workingDirectory.toAbsolutePath().toString()) + "'" +
-                        " -ArgumentList " + argsExpression +
-                        " -WindowStyle Normal -PassThru;" +
-                        "Start-Sleep -Milliseconds 260;" +
-                        "try{(New-Object -ComObject WScript.Shell).AppActivate($p.Id)|Out-Null}catch{}";
-
-        new ProcessBuilder("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script).start();
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.directory(workingDirectory.toAbsolutePath().normalize().toFile());
+        processBuilder.start();
     }
 
     public static void openFolderForeground(Path folderPath) throws IOException {
-        String script =
-                "$p=Start-Process -FilePath explorer.exe -ArgumentList '" + psQuote(folderPath.toAbsolutePath().toString()) + "'" +
-                        " -WindowStyle Normal -PassThru;" +
-                        "Start-Sleep -Milliseconds 160;" +
-                        "try{(New-Object -ComObject WScript.Shell).AppActivate($p.Id)|Out-Null}catch{}";
-        new ProcessBuilder("powershell.exe", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", script).start();
-    }
+        List<String> command = new ArrayList<>();
+        command.add("cmd.exe");
+        command.add("/c");
+        command.add("start");
+        command.add("");
+        command.add("explorer.exe");
+        command.add(folderPath.toAbsolutePath().normalize().toString());
 
-    private static String psQuote(String value) {
-        return value == null ? "" : value.replace("'", "''");
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+        processBuilder.directory(folderPath.toAbsolutePath().normalize().getParent().toFile());
+        processBuilder.start();
     }
 }

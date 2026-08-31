@@ -118,14 +118,52 @@ public class SettingsController {
             throw new IllegalStateException("Quick launch is supported only on Windows.");
         }
 
-        Path executable = gameBase.resolve("rose-updater.exe");
-        if (!Files.exists(executable) || !Files.isRegularFile(executable)) {
-            throw new IllegalStateException("rose-updater.exe was not found in the selected game folder.");
+        Path executable = resolveQuickLaunchExecutable(gameBase);
+        if (executable == null) {
+            throw new IllegalStateException("No launchable ROSE executable was found in the selected game folder.");
         }
 
         launchWindowsForeground(gameBase, executable.toAbsolutePath().toString());
 
         return new MessageResponse("ROSE Online launched.");
+    }
+
+    static Path resolveQuickLaunchExecutable(Path gameBase) {
+        if (gameBase == null) {
+            return null;
+        }
+
+        Path normalized = gameBase.toAbsolutePath().normalize();
+        Path updater = normalized.resolve("rose-updater.exe");
+        if (Files.isRegularFile(updater)) {
+            return updater;
+        }
+
+        Path trose = normalized.resolve("trose.exe");
+        if (Files.isRegularFile(trose)) {
+            return trose;
+        }
+
+        for (Path candidate = normalized; candidate != null; candidate = candidate.getParent()) {
+            for (String exeName : new String[]{"rose-updater.exe", "trose.exe"}) {
+                Path direct = candidate.resolve(exeName);
+                if (Files.isRegularFile(direct)) {
+                    return direct;
+                }
+            }
+        }
+
+        try (var stream = Files.walk(normalized, 3)) {
+            return stream
+                    .filter(Files::isRegularFile)
+                    .filter(path -> path.getFileName() != null)
+                    .filter(path -> path.getFileName().toString().equalsIgnoreCase("rose-updater.exe")
+                            || path.getFileName().toString().equalsIgnoreCase("trose.exe"))
+                    .findFirst()
+                    .orElse(null);
+        } catch (IOException ignored) {
+            return null;
+        }
     }
 
     @GetMapping("/selected-service")

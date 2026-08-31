@@ -240,7 +240,7 @@ export function AppHeader({
             disabled={loading || launchDisabled}
             onClick={onLaunchRose}
           >
-            Launch Rose Launcher
+            Rose Launcher
           </button>
           <button
             type="button"

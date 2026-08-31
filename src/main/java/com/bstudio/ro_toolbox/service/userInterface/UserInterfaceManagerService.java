@@ -735,7 +735,9 @@ public class UserInterfaceManagerService {
     }
 
     public ResourcesUpdateCheckResult checkResourcesUpdate() {
-        Path localManifest = RESOURCES_DIR.resolve("manifest.json");
+        Path localManifest = Files.exists(RESOURCES_DIR.resolve(MANIFEST_FILE_NAME))
+                ? RESOURCES_DIR.resolve(MANIFEST_FILE_NAME)
+                : RESOURCES_DIR.resolve(LEGACY_MANIFEST_FILE_NAME);
         boolean localExists = Files.exists(localManifest) && Files.isRegularFile(localManifest);
         String localVersion = localExists ? readManifestVersion(localManifest) : "none";
 
