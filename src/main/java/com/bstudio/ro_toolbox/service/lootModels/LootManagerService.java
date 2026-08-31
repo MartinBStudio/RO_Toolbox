@@ -705,7 +705,9 @@ public class LootManagerService {
     }
 
     public ResourcesUpdateCheckResult checkResourcesUpdate() {
-        Path localManifest = RESOURCES_DIR.resolve("manifest.json");
+        Path localManifest = Files.exists(RESOURCES_DIR.resolve(MANIFEST_FILE_NAME))
+                ? RESOURCES_DIR.resolve(MANIFEST_FILE_NAME)
+                : RESOURCES_DIR.resolve(LEGACY_MANIFEST_FILE_NAME);
         boolean localExists = Files.exists(localManifest) && Files.isRegularFile(localManifest);
         String localVersion = localExists ? readManifestVersion(localManifest) : "none";
 
@@ -715,8 +717,10 @@ public class LootManagerService {
         String rawBase = repoUrl
                 .replace("https://github.com/", "https://raw.githubusercontent.com/");
 
+        String bestRemoteVersion = null;
+        long cacheBust = System.currentTimeMillis();
         for (String branch : branches) {
-            String remoteUrl = rawBase + "/" + branch + "/manifest.json";
+            String remoteUrl = rawBase + "/" + branch + "/manifest.json?cb=" + cacheBust;
             try {
                 InputStream in = openUrlStream(remoteUrl);
                 if (in == null) continue;
@@ -728,14 +732,19 @@ public class LootManagerService {
                         .compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
                         .matcher(content);
                 String remoteVersion = matcher.find() ? matcher.group(1).trim() : "0.0.0";
-                boolean updateAvailable = !localExists || normalizeVersion(remoteVersion) > normalizeVersion(localVersion);
-                String message = updateAvailable
-                        ? "New resources available: v" + remoteVersion + (localExists ? " (local: v" + localVersion + ")" : " (not downloaded)")
-                        : "Resources are up to date (v" + localVersion + ").";
-                return new ResourcesUpdateCheckResult(localVersion, remoteVersion, localExists, updateAvailable, true, message);
+                if (bestRemoteVersion == null || normalizeVersion(remoteVersion) > normalizeVersion(bestRemoteVersion)) {
+                    bestRemoteVersion = remoteVersion;
+                }
             } catch (Exception e) {
                 log("Remote manifest check failed for branch " + branch + ": " + e.getMessage());
             }
+        }
+        if (bestRemoteVersion != null) {
+            boolean updateAvailable = !localExists || normalizeVersion(bestRemoteVersion) > normalizeVersion(localVersion);
+            String message = updateAvailable
+                    ? "New resources available: v" + bestRemoteVersion + (localExists ? " (local: v" + localVersion + ")" : " (not downloaded)")
+                    : "Resources are up to date (v" + localVersion + ").";
+            return new ResourcesUpdateCheckResult(localVersion, bestRemoteVersion, localExists, updateAvailable, true, message);
         }
         return new ResourcesUpdateCheckResult(localVersion, "unknown", localExists, false, false,
                 "Unable to check remote manifest.");

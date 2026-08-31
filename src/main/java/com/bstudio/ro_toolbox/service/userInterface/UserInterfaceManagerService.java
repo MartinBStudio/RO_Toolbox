@@ -748,8 +748,9 @@ public class UserInterfaceManagerService {
                 .replace("https://github.com/", "https://raw.githubusercontent.com/");
 
         String bestRemoteVersion = null;
+        long cacheBust = System.currentTimeMillis();
         for (String branch : branches) {
-            String remoteUrl = rawBase + "/" + branch + "/manifest.json?cb=" + System.currentTimeMillis();
+            String remoteUrl = rawBase + "/" + branch + "/manifest.json?cb=" + cacheBust;
             try {
                 InputStream in = openUrlStream(remoteUrl);
                 if (in == null) continue;
