@@ -9,9 +9,12 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.zip.ZipEntry;
@@ -182,7 +185,10 @@ public class UserInterfaceManagerService {
                 String name = entry.getName();
                 String[] parts = name.split("/", 2);
                 String relative = parts.length == 2 ? parts[1] : (parts.length == 1 ? parts[0] : "");
-                if (relative.isEmpty()) { zis.closeEntry(); continue; }
+                if (relative.isEmpty()) {
+                    zis.closeEntry();
+                    continue;
+                }
                 Path outPath = destDir.resolve(relative);
                 if (entry.isDirectory()) {
                     Files.createDirectories(outPath);
@@ -198,6 +204,46 @@ public class UserInterfaceManagerService {
                 zis.closeEntry();
             }
         }
+    }
+
+    public void copyDirectoryContents(Path src, Path dst) throws IOException {
+        if (!Files.exists(src) || !Files.isDirectory(src)) return;
+        try (java.util.stream.Stream<Path> stream = Files.walk(src)) {
+            stream.filter(sourcePath -> !isHiddenPathInTree(src, sourcePath))
+                    .forEach(sourcePath -> {
+                        try {
+                            Path rel = src.relativize(sourcePath);
+                            Path targetPath = dst.resolve(rel);
+                            if (Files.isDirectory(sourcePath)) {
+                                Files.createDirectories(targetPath);
+                            } else {
+                                Files.createDirectories(targetPath.getParent());
+                                Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                                log("Copied: " + targetPath.toAbsolutePath());
+                            }
+                        } catch (IOException e) {
+                            throw new UncheckedIOException(e);
+                        }
+                    });
+        } catch (UncheckedIOException e) {
+            throw e.getCause();
+        }
+    }
+
+    private boolean isHiddenPathInTree(Path root, Path path) {
+        if (path == null || root == null) {
+            return false;
+        }
+        Path relative = root.relativize(path).normalize();
+        if (relative.toString().isEmpty()) {
+            return false;
+        }
+        for (Path segment : relative) {
+            if (segment.toString().startsWith(".")) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public void deleteDirectoryContents(Path dir) throws IOException {
@@ -219,29 +265,6 @@ public class UserInterfaceManagerService {
                 return java.nio.file.FileVisitResult.CONTINUE;
             }
         });
-    }
-
-    public void copyDirectoryContents(Path src, Path dst) throws IOException {
-        if (!Files.exists(src) || !Files.isDirectory(src)) return;
-        try (java.util.stream.Stream<Path> stream = Files.walk(src)) {
-            stream.forEach(sourcePath -> {
-                try {
-                    Path rel = src.relativize(sourcePath);
-                    Path targetPath = dst.resolve(rel);
-                    if (Files.isDirectory(sourcePath)) {
-                        Files.createDirectories(targetPath);
-                    } else {
-                        Files.createDirectories(targetPath.getParent());
-                        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                        log("Copied: " + targetPath.toAbsolutePath());
-                    }
-                } catch (IOException e) {
-                    throw new UncheckedIOException(e);
-                }
-            });
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
-        }
     }
 
     public void clearResources() throws IOException {
@@ -378,8 +401,67 @@ public class UserInterfaceManagerService {
             String createdAt,
             String version,
             long normalizedVersion,
-            Path source
+            Path source,
+            List<String> previewImages
     ) {
+        public AvailableProfile(
+                String id,
+                String name,
+                String author,
+                String description,
+                String url,
+                String createdAt,
+                String version,
+                long normalizedVersion,
+                Path source
+        ) {
+            this(id, name, author, description, url, createdAt, version, normalizedVersion, source, List.of());
+        }
+    }
+
+    public List<String> loadPreviewImages(Path profileDir) {
+        Path previewDir = profileDir == null ? null : profileDir.resolve(".preview");
+        if (previewDir == null || !Files.isDirectory(previewDir)) {
+            return List.of();
+        }
+        try (var stream = Files.walk(previewDir)) {
+            return stream.filter(Files::isRegularFile)
+                    .filter(this::isSupportedPreviewImage)
+                    .sorted(Comparator.comparing(path -> path.getFileName().toString(), String.CASE_INSENSITIVE_ORDER))
+                    .map(this::toDataUrl)
+                    .filter(Objects::nonNull)
+                    .toList();
+        } catch (IOException e) {
+            log("Failed to load preview images from " + previewDir.toAbsolutePath() + ": " + e.getMessage());
+            return List.of();
+        }
+    }
+
+    private boolean isSupportedPreviewImage(Path file) {
+        if (file == null || !Files.isRegularFile(file)) {
+            return false;
+        }
+        String name = file.getFileName().toString().toLowerCase();
+        return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif") || name.endsWith(".webp");
+    }
+
+    private String toDataUrl(Path file) {
+        try (InputStream in = Files.newInputStream(file)) {
+            byte[] bytes = in.readAllBytes();
+            String mimeType = Files.probeContentType(file);
+            if (mimeType == null) {
+                String name = file.getFileName().toString().toLowerCase();
+                if (name.endsWith(".png")) mimeType = "image/png";
+                else if (name.endsWith(".jpg") || name.endsWith(".jpeg")) mimeType = "image/jpeg";
+                else if (name.endsWith(".gif")) mimeType = "image/gif";
+                else if (name.endsWith(".webp")) mimeType = "image/webp";
+                else return null;
+            }
+            return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
+        } catch (IOException e) {
+            log("Failed to encode preview image " + file.toAbsolutePath() + ": " + e.getMessage());
+            return null;
+        }
     }
 
     public List<String> listDownloadedProfiles() {
@@ -432,7 +514,8 @@ public class UserInterfaceManagerService {
                                 readManifestCreatedAt(manifest),
                                 readManifestVersion(manifest),
                                 normalizeVersion(readManifestVersion(manifest)),
-                                p
+                                p,
+                                loadPreviewImages(p)
                         ));
                     }
                 }

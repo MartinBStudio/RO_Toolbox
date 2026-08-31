@@ -199,7 +199,7 @@ header.card {
   left: 50%;
   transform: translateX(-50%);
   bottom: -1.5rem;
-  z-index: 10;
+  z-index: 1;
 }
 
 .headerRow > h1 {

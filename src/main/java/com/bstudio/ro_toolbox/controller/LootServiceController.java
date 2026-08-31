@@ -36,7 +36,8 @@ public class LootServiceController {
                                 profile.description(),
                                 profile.url(),
                                 profile.createdAt(),
-                                profile.version()
+                                profile.version(),
+                                profile.previewImages()
                         ))
                         .toList()
         );
@@ -143,7 +144,7 @@ public class LootServiceController {
     public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
     }
 
-    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version) {
+    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> previewImages) {
     }
 
     public record LootStatusResponse(

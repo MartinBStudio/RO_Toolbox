@@ -68,7 +68,7 @@ export function HowToUseModal({ open, onClose }: HowToUseModalProps) {
                           <li>In Login Manager, click <strong>+</strong> to create a new account with name, email, password, and icon.</li>
                           <li>Toggle <strong>Display in quick launch</strong> to show the account in the Quick Launch section.</li>
                           <li>In the <strong>Quick Launch</strong> section, click any account icon to launch ROSE with those credentials.</li>
-                          <li>Use <strong>Launch Rose Launcher</strong> to start the updater instead of the game client.</li>
+                          <li>Use <strong>Rose Launcher</strong> to start the updater instead of the game client.</li>
                         </ol>
                         <p className="howToUseTip">
                           Tip: Passwords are encrypted locally and never stored in plaintext.

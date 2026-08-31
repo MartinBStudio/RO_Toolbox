@@ -15,6 +15,7 @@ export type AvailableProfile = {
   url: string | null;
   createdAt: string | null;
   version: string | null;
+  previewImages: string[];
 };
 
 export type AppStatus = {

@@ -41,12 +41,14 @@ export function CombatTextManager({
   const { backendReady, debugMode } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
+  const [expandedPreview, setExpandedPreview] = useState<string | null>(null);
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const availableProfiles = status?.combatTextAvailableProfiles ?? [];
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
+  const selectedProfilePreviewImages = selectedProfileData?.previewImages ?? [];
   const selectedProfileMeta = buildProfileMeta({
     version: selectedProfileData?.version,
     author: selectedProfileData?.author,
@@ -75,6 +77,10 @@ export function CombatTextManager({
     if (!backendReady) return;
     void checkResourcesUpdate();
   }, [backendReady, status?.combatTextDownloadedProfiles]);
+
+  useEffect(() => {
+    setExpandedPreview(null);
+  }, [selectedProfile]);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -189,8 +195,39 @@ export function CombatTextManager({
   const installButtonDisabled = loading || !canInstall || selectedProfileAlreadyInstalled;
 
   return (
-    <section className="lootManager">
-      <div className="lootAccordion">
+    <>
+      {expandedPreview ? (
+        <div
+          onClick={() => setExpandedPreview(null)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 2147483647,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(0, 0, 0, 0.78)",
+            padding: 24,
+            isolation: "isolate"
+          }}
+        >
+          <img
+            src={expandedPreview}
+            alt="Expanded preview"
+            onClick={(event) => event.stopPropagation()}
+            style={{
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              borderRadius: 12,
+              boxShadow: "0 20px 50px rgba(0,0,0,0.45)",
+              border: "1px solid rgba(255,255,255,0.2)",
+              background: "rgba(255,255,255,0.04)"
+            }}
+          />
+        </div>
+      ) : null}
+      <section className="lootManager">
+        <div className="lootAccordion">
         <div className="accordionHeader">
           <div>
             <p className="sectionTitle">Combat text</p>
@@ -322,6 +359,27 @@ export function CombatTextManager({
                       </button>
                     ) : null}
                   </div>
+                  {selectedProfilePreviewImages.length > 0 ? (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12, marginBottom: 12 }}>
+                      {selectedProfilePreviewImages.map((image, index) => (
+                        <img
+                          key={`${selectedProfileData.id}-preview-${index}`}
+                          src={image}
+                          alt={`${resolveProfileName(selectedProfileData.name, selectedProfileData.id)} preview ${index + 1}`}
+                          onClick={() => setExpandedPreview(image)}
+                          style={{
+                            width: 120,
+                            height: 90,
+                            objectFit: "cover",
+                            borderRadius: 6,
+                            border: "1px solid rgba(255,255,255,0.15)",
+                            background: "rgba(255,255,255,0.03)",
+                            cursor: "pointer"
+                          }}
+                        />
+                      ))}
+                    </div>
+                  ) : null}
                   {selectedProfileData.description ? (
                     <p className="profileCardDesc">{selectedProfileData.description}</p>
                   ) : null}
@@ -343,7 +401,8 @@ export function CombatTextManager({
             </div>
           </div>
         ) : null}
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 }
