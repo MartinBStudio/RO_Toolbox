@@ -14,10 +14,10 @@
       {
         "title": "RO Toolbox",
         "label": "main",
-        "width": 900,
-        "height": 520,
-        "minWidth": 860,
-        "minHeight": 420
+        "width": 350,
+        "height": 70,
+        "minWidth": 320,
+        "minHeight": 70
       }
     ],
     "security": {
