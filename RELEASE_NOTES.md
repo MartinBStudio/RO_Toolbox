@@ -1,5 +1,14 @@
 # RO Toolbox – Release Notes
 
+## v0.3.4 – Profile Picker Improvements
+
+### ✨ Improvements
+- **Grouped profile variants**: Profile lists for loot, combat text, and user interface now group variants by shared keywords (for example, `Crimson` with `Small`, `Large`, `XXL`, `Critical only`) to keep long lists easier to browse.
+- **Scrollable profile dropdown**: The profile picker now uses a fixed-height dropdown with vertical scrolling when many profiles are available.
+- **Consistent profile capitalization**: Profile names shown in the picker now always start with a capital letter for cleaner, consistent labeling.
+
+---
+
 ## v0.3.3 – Bug Fix
 
 ### 🐛 Bug Fixes
