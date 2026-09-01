@@ -33,3 +33,14 @@ export function saveSelectedServiceSetting(serviceId: string) {
     body: JSON.stringify({ serviceId })
   });
 }
+
+export function getQuickLaunchOnlyModeSetting() {
+  return request<{ enabled: boolean }>("/settings/quick-launch-only-mode");
+}
+
+export function saveQuickLaunchOnlyModeSetting(enabled: boolean) {
+  return request<{ enabled: boolean }>("/settings/quick-launch-only-mode", {
+    method: "POST",
+    body: JSON.stringify({ enabled })
+  });
+}

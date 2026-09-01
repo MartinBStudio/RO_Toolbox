@@ -6,7 +6,9 @@ export {
   quickLaunchGame,
   getReleaseNotes,
   getSelectedServiceSetting,
-  saveSelectedServiceSetting
+  saveSelectedServiceSetting,
+  getQuickLaunchOnlyModeSetting,
+  saveQuickLaunchOnlyModeSetting
 } from "./settingsApi.ts";
 export {
   downloadProfiles,

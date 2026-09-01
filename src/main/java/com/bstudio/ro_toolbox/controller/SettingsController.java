@@ -181,6 +181,20 @@ public class SettingsController {
         return new SelectedServiceResponse(serviceId);
     }
 
+    @GetMapping("/quick-launch-only-mode")
+    public QuickLaunchOnlyModeResponse getQuickLaunchOnlyMode() throws IOException {
+        return new QuickLaunchOnlyModeResponse(lootManagerService.getQuickLaunchOnlyMode());
+    }
+
+    @PostMapping("/quick-launch-only-mode")
+    public QuickLaunchOnlyModeResponse saveQuickLaunchOnlyMode(@RequestBody QuickLaunchOnlyModeRequest request) throws IOException {
+        if (request == null) {
+            throw new IllegalArgumentException("Mode value is required.");
+        }
+        lootManagerService.saveQuickLaunchOnlyMode(request.enabled());
+        return new QuickLaunchOnlyModeResponse(request.enabled());
+    }
+
     @GetMapping("/release-notes")
     public ReleaseNotesResponse getReleaseNotes() throws IOException {
         return new ReleaseNotesResponse(readReleaseNotesContent());
@@ -238,6 +252,12 @@ public class SettingsController {
     }
 
     public record SelectedServiceResponse(String serviceId) {
+    }
+
+    public record QuickLaunchOnlyModeRequest(boolean enabled) {
+    }
+
+    public record QuickLaunchOnlyModeResponse(boolean enabled) {
     }
 
     private void launchWindowsForeground(Path workingDirectory, String executablePath, String... arguments) throws IOException {
