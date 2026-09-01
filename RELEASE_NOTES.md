@@ -1,6 +1,6 @@
 # RO Toolbox – Release Notes
 
-## v0.3.4 – Quick Launch Only Mode
+## v0.3.5 – Quick Launch Only Mode
 
 ### ✨ New Features
 - **Quick Launch Only mode**: When at least one quick-launch account exists, you can switch to a compact mode that shows only quick-launch buttons.
