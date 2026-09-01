@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getVersion as getAppVersion } from "@tauri-apps/api/app";
-import { getStatus } from "../backendConnector/api.ts";
+import { getQuickLaunchOnlyModeSetting, getStatus, saveQuickLaunchOnlyModeSetting } from "../backendConnector/api.ts";
 import type { AppStatus } from "../types";
 
 const DEBUG_MODE_STORAGE_KEY = "roToolbox.debugMode";
@@ -12,6 +12,8 @@ type ApplicationContextValue = {
   startupError: string | null;
   debugMode: boolean;
   setDebugMode: (enabled: boolean) => void;
+  quickLaunchOnlyMode: boolean;
+  setQuickLaunchOnlyMode: (enabled: boolean) => Promise<void>;
   refreshStatus: () => Promise<void>;
 };
 
@@ -27,6 +29,7 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const [startupError, setStartupError] = useState<string | null>(null);
   const [debugMode, setDebugMode] = useState(false);
+  const [quickLaunchOnlyMode, setQuickLaunchOnlyModeState] = useState(false);
 
   const refreshStatus = useCallback(async () => {
     setStatus(await getStatus());
@@ -53,6 +56,29 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
       .then((version) => setAppVersion(version))
       .catch(() => setAppVersion(null));
   }, []);
+
+  const setQuickLaunchOnlyMode = useCallback(async (enabled: boolean) => {
+    await saveQuickLaunchOnlyModeSetting(enabled);
+    setQuickLaunchOnlyModeState(enabled);
+  }, []);
+
+  useEffect(() => {
+    if (!backendReady) {
+      setQuickLaunchOnlyModeState(false);
+      return;
+    }
+    let cancelled = false;
+    getQuickLaunchOnlyModeSetting()
+      .then((result) => {
+        if (!cancelled) {
+          setQuickLaunchOnlyModeState(Boolean(result.enabled));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [backendReady]);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,9 +115,11 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
       startupError,
       debugMode,
       setDebugMode,
+      quickLaunchOnlyMode,
+      setQuickLaunchOnlyMode,
       refreshStatus
     }),
-    [appVersion, backendReady, debugMode, refreshStatus, startupError, status]
+    [appVersion, backendReady, debugMode, quickLaunchOnlyMode, refreshStatus, setQuickLaunchOnlyMode, startupError, status]
   );
 
   return <ApplicationContext.Provider value={value}>{children}</ApplicationContext.Provider>;

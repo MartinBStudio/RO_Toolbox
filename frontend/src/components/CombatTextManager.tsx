@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   ArrowDownTrayIcon,
@@ -21,7 +21,14 @@ import {
   openCombatTextResourcesFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
-import { buildProfileMeta, formatManifestVersion, isProfileAlreadyInstalled, resolveProfileName } from "../formatting.ts";
+import {
+  buildProfileMeta,
+  buildProfileOptionGroups,
+  formatManifestVersion,
+  isProfileAlreadyInstalled,
+  resolveProfileName
+} from "../formatting.ts";
+import { ProfileDropdown } from "./ProfileDropdown.tsx";
 
 type CombatTextManagerProps = {
   status: AppStatus | null;
@@ -46,6 +53,10 @@ export function CombatTextManager({
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const availableProfiles = status?.combatTextAvailableProfiles ?? [];
+  const profileOptionGroups = useMemo(
+    () => buildProfileOptionGroups(availableProfiles),
+    [availableProfiles]
+  );
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
   const selectedProfilePreviewImages = selectedProfileData?.previewImages ?? [];
@@ -323,18 +334,12 @@ export function CombatTextManager({
           <div className="accordionBody">
             <div className="accordionSection">
               <div className="profilePickerRow">
-                <select
+                <ProfileDropdown
+                  groups={profileOptionGroups}
                   disabled={loading || availableProfiles.length === 0}
                   value={selectedProfile}
-                  onChange={(event) => setSelectedProfile(event.target.value)}
-                >
-                  {availableProfiles.map((profile) => (
-                    <option key={profile.id} value={profile.id}>
-                      {resolveProfileName(profile.name, profile.id)}
-                      {profile.version ? ` (${formatManifestVersion(profile.version)})` : ""}
-                    </option>
-                  ))}
-                </select>
+                  onChange={setSelectedProfile}
+                />
               </div>
               {selectedProfileData ? (
                 <div className="profileCard">

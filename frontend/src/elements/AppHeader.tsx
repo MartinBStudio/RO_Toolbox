@@ -26,6 +26,9 @@ type AppHeaderProps = {
   launchDisabled?: boolean;
   backendVersion?: string;
   appVersion?: string;
+  quickLaunchOnlyMode?: boolean;
+  canToggleQuickLaunchOnlyMode?: boolean;
+  onToggleQuickLaunchOnlyMode?: () => void;
 };
 
 export function AppHeader({
@@ -39,7 +42,10 @@ export function AppHeader({
   loading = false,
   launchDisabled = false,
   backendVersion,
-  appVersion
+  appVersion,
+  quickLaunchOnlyMode = false,
+  canToggleQuickLaunchOnlyMode = false,
+  onToggleQuickLaunchOnlyMode
 }: AppHeaderProps) {
   const { backendReady, debugMode } = useApplicationContext();
   const [updateChecking, setUpdateChecking] = useState(false);
@@ -297,6 +303,17 @@ export function AppHeader({
               <span className="quickAccountName">{account.name}</span>
             </button>
           ))}
+          {canToggleQuickLaunchOnlyMode && (
+            <button
+              type="button"
+              className="buttonSubtle quickModeToggleButton"
+              onClick={onToggleQuickLaunchOnlyMode}
+              disabled={loading}
+              title={quickLaunchOnlyMode ? "Switch back to full mode" : "Show only quick launch buttons"}
+            >
+              {quickLaunchOnlyMode ? "Full mode" : "Quick mode"}
+            </button>
+          )}
         </div>
       )}
     </header>

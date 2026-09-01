@@ -165,6 +165,31 @@ public class LootManagerService {
         }
     }
 
+    public boolean getQuickLaunchOnlyMode() throws IOException {
+        if (!Files.exists(CONFIG_FILE)) {
+            return false;
+        }
+        Properties prop = new Properties();
+        try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+            prop.load(in);
+        }
+        return Boolean.parseBoolean(prop.getProperty("quickLaunchOnlyMode", "false").trim());
+    }
+
+    public void saveQuickLaunchOnlyMode(boolean enabled) throws IOException {
+        Files.createDirectories(CONFIG_DIR);
+        Properties prop = new Properties();
+        if (Files.exists(CONFIG_FILE)) {
+            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+                prop.load(in);
+            }
+        }
+        prop.setProperty("quickLaunchOnlyMode", String.valueOf(enabled));
+        try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
+            prop.store(out, "RO LootManager config");
+        }
+    }
+
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
         if (repoUrl == null || repoUrl.isEmpty()) repoUrl = DEFAULT_REPO;
         if (!Files.exists(destDir)) Files.createDirectories(destDir);

@@ -14,8 +14,10 @@ import java.nio.file.Path;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 class SettingsControllerTests {
 
@@ -132,5 +134,38 @@ class SettingsControllerTests {
                 System.setProperty("user.dir", previousUserDir);
             }
         }
+    }
+
+    @Test
+    void savesQuickLaunchOnlyModeSetting() throws IOException {
+        LootManagerService loot = mock(LootManagerService.class);
+        SettingsController controller = new SettingsController(
+                loot,
+                mock(CombatTextManagerService.class),
+                mock(UserInterfaceManagerService.class),
+                mock(LoginManagerService.class)
+        );
+
+        SettingsController.QuickLaunchOnlyModeResponse response =
+                controller.saveQuickLaunchOnlyMode(new SettingsController.QuickLaunchOnlyModeRequest(true));
+
+        verify(loot).saveQuickLaunchOnlyMode(true);
+        assertTrue(response.enabled());
+    }
+
+    @Test
+    void readsQuickLaunchOnlyModeSetting() throws IOException {
+        LootManagerService loot = mock(LootManagerService.class);
+        when(loot.getQuickLaunchOnlyMode()).thenReturn(true);
+        SettingsController controller = new SettingsController(
+                loot,
+                mock(CombatTextManagerService.class),
+                mock(UserInterfaceManagerService.class),
+                mock(LoginManagerService.class)
+        );
+
+        SettingsController.QuickLaunchOnlyModeResponse response = controller.getQuickLaunchOnlyMode();
+
+        assertTrue(response.enabled());
     }
 }

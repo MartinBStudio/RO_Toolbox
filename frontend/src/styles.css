@@ -202,6 +202,81 @@ header.card {
   z-index: 1;
 }
 
+.quickModeToggleButton {
+  white-space: nowrap;
+  font-size: 0.68rem;
+  padding: 0.28rem 0.5rem;
+}
+
+.layoutQuickLaunchOnly {
+  max-width: 430px;
+  margin: 0.35rem auto;
+  height: calc(100vh - 0.7rem);
+  max-height: calc(100vh - 0.7rem);
+  gap: 0.4rem;
+}
+
+.layoutQuickLaunchOnly .appMainScroll {
+  margin-top: 0;
+  overflow: hidden;
+}
+
+.quickLaunchOnlyPanel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 0;
+  padding: 0.45rem;
+  box-sizing: border-box;
+}
+
+.quickLaunchOnlyContent {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  width: 100%;
+  min-height: 0;
+}
+
+.layoutQuickLaunchOnly .quickLaunchOnlyPanel .sectionTitle {
+  font-size: 0.84rem;
+}
+
+.quickLaunchOnlyScroller {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  width: 100%;
+  min-width: 0;
+}
+
+.quickLaunchOnlyActions {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.35rem;
+  width: max-content;
+  min-width: 100%;
+  justify-content: center;
+  align-items: center;
+  padding-bottom: 0.1rem;
+}
+
+.layoutQuickLaunchOnly .quickAccountButton {
+  padding: 0.28rem 0.42rem;
+}
+
+.layoutQuickLaunchOnly .quickAccountName {
+  font-size: 0.66rem;
+}
+
+.quickLaunchOnlyExitButton {
+  justify-self: end;
+  font-size: 0.64rem;
+  padding: 0.24rem 0.45rem;
+}
+
 .headerRow > h1 {
   margin: 0;
   flex-shrink: 0;
@@ -898,6 +973,84 @@ button .heroIcon {
   background-repeat: no-repeat;
   background-position: right 0.65rem center;
   background-size: 12px 8px;
+}
+
+.profileDropdown {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.profileDropdownTrigger {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 2rem;
+  background: #111725;
+  border: 1px solid #364258;
+  color: #dce4ef;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%238fa6c0' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.65rem center;
+  background-size: 12px 8px;
+}
+
+.profileDropdownMenu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  border: 1px solid #364258;
+  border-radius: 7px;
+  background: #111725;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.4);
+  z-index: 30;
+  max-height: 260px;
+  overflow-y: auto;
+  padding: 0.25rem;
+}
+
+.profileDropdownGroup {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.profileDropdownGroup + .profileDropdownGroup {
+  margin-top: 0.2rem;
+  border-top: 1px solid #273347;
+  padding-top: 0.2rem;
+}
+
+.profileDropdownGroupLabel {
+  color: #7f96b3;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.35rem 0.1rem;
+}
+
+.profileDropdownOption {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: #dce4ef;
+  padding: 0.35rem 0.45rem;
+}
+
+.profileDropdownOption:hover:enabled {
+  background: #1b2536;
+}
+
+.profileDropdownOption.isSelected {
+  background: #233652;
+  color: #e7f0ff;
 }
 
 .profileCard {

@@ -1,5 +1,4 @@
 import {useEffect, useState} from "react";
-import {LogicalSize, getCurrentWindow} from "@tauri-apps/api/window";
 import { KeyIcon, SwatchIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import {AppHeader} from "./elements/AppHeader.tsx";
 import {AppFooter} from "./elements/AppFooter.tsx";
@@ -15,7 +14,9 @@ import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
 import {HowToUseModal} from "./elements/HowToUseModal.tsx";
 import {ReleaseNotesModal} from "./elements/ReleaseNotesModal.tsx";
+import {QuickLaunchModePanel} from "./components/QuickLaunchModePanel.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
+import {useWindowMode} from "./hooks/useWindowMode.ts";
 import {
     getReleaseNotes,
     getSelectedServiceSetting,
@@ -51,7 +52,7 @@ function readInitialService() {
 }
 
 function App() {
-    const {backendReady, status, appVersion, refreshStatus} = useApplicationContext();
+    const {backendReady, status, appVersion, refreshStatus, quickLaunchOnlyMode, setQuickLaunchOnlyMode} = useApplicationContext();
     const [loading, setLoading] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState<string | undefined>(undefined);
     const [message, setMessage] = useState("");
@@ -65,6 +66,10 @@ function App() {
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>(readInitialService);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
+    const hasQuickLaunchProfiles = quickAccounts.length > 0;
+    const quickLaunchOnlyActive = quickLaunchOnlyMode && hasQuickLaunchProfiles;
+
+    useWindowMode(backendReady, quickLaunchOnlyActive);
 
     function toErrorMessage(err: unknown, fallback: string) {
         if (err instanceof Error && err.message) {
@@ -128,6 +133,22 @@ function App() {
         }
     }
 
+    async function onEnterQuickLaunchOnlyMode() {
+        try {
+            await setQuickLaunchOnlyMode(true);
+        } catch (err) {
+            setMessage(toErrorMessage(err, "Failed to enable quick launch mode."));
+        }
+    }
+
+    async function onExitQuickLaunchOnlyMode() {
+        try {
+            await setQuickLaunchOnlyMode(false);
+        } catch (err) {
+            setMessage(toErrorMessage(err, "Failed to disable quick launch mode."));
+        }
+    }
+
     useEffect(() => {
         void refreshQuickAccounts();
     }, [backendReady]);
@@ -136,6 +157,7 @@ function App() {
         const handleFactoryReset = () => {
             void refreshQuickAccounts();
             setFactoryResetNonce((value) => value + 1);
+            void setQuickLaunchOnlyMode(false);
         };
         window.addEventListener("roToolbox:factory-reset", handleFactoryReset);
         return () => {
@@ -191,140 +213,117 @@ function App() {
         saveSelectedServiceSetting(selectedService).catch(() => undefined);
     }, [backendReady, servicePreferenceLoaded, selectedService]);
 
-    useEffect(() => {
-        if (!backendReady) {
-            return;
-        }
-
-        const appWindow = getCurrentWindow();
-        let frameId = 0;
-        const minHeight = 430;
-        const maxHeight = 760;
-        const verticalPadding = 20;
-
-        const syncHeight = async () => {
-            const contentHeight = Math.ceil(document.documentElement.scrollHeight + verticalPadding);
-            const targetHeight = Math.max(minHeight, Math.min(maxHeight, contentHeight));
-            const currentSize = await appWindow.innerSize();
-            if (Math.abs(currentSize.height - targetHeight) > 2) {
-                await appWindow.setSize(new LogicalSize(currentSize.width, targetHeight));
-            }
-        };
-
-        const observer = new ResizeObserver(() => {
-            if (frameId) {
-                window.cancelAnimationFrame(frameId);
-            }
-            frameId = window.requestAnimationFrame(() => {
-                syncHeight().catch(() => undefined);
-            });
-        });
-
-        observer.observe(document.documentElement);
-        syncHeight().catch(() => undefined);
-
-        return () => {
-            observer.disconnect();
-            if (frameId) {
-                window.cancelAnimationFrame(frameId);
-            }
-        };
-    }, [backendReady]);
-
     return (
-        <main className={`layout${loading ? " layoutLoading" : ""}`}>
+        <main className={`layout${loading ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
             <BackendReadyGate onStartupError={setMessage}>
                 <>
-                    <AppHeader
-                        onOpenSettings={() => setSettingsOpen(true)}
-                        onOpenHowToUse={() => setHowToUseOpen(true)}
-                        onLaunchRose={onQuickLaunch}
-                        onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
-                        onMessage={setMessage}
-                        onQuickLaunchAccount={onQuickLaunchAccount}
-                        quickAccounts={quickAccounts}
-                        loading={loading}
-                        launchDisabled={!status?.selectedGameBase}
-                        appVersion={appVersion ?? undefined}
-                        backendVersion={status?.version}
-                    />
+                    {!quickLaunchOnlyActive && (
+                        <AppHeader
+                            onOpenSettings={() => setSettingsOpen(true)}
+                            onOpenHowToUse={() => setHowToUseOpen(true)}
+                            onLaunchRose={onQuickLaunch}
+                            onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
+                            onMessage={setMessage}
+                            onQuickLaunchAccount={onQuickLaunchAccount}
+                            quickAccounts={quickAccounts}
+                            loading={loading}
+                            launchDisabled={!status?.selectedGameBase}
+                            appVersion={appVersion ?? undefined}
+                            backendVersion={status?.version}
+                            quickLaunchOnlyMode={quickLaunchOnlyActive}
+                            canToggleQuickLaunchOnlyMode={hasQuickLaunchProfiles}
+                            onToggleQuickLaunchOnlyMode={onEnterQuickLaunchOnlyMode}
+                        />
+                    )}
                     <div className="appMainScroll">
-                        <div className="appWorkspace">
-                            <aside className="appSidebar">
-                                <div className="card sidebarPanel">
-                                    <div className="serviceList">
-                                        {SERVICES.map((service) => {
-                                            const ServiceIcon = service.icon;
-                                            return (
-                                                <button
-                                                    key={service.id}
-                                                    type="button"
-                                                    className={`serviceListItem${selectedService === service.id ? " serviceListItemActive" : ""}`}
-                                                    onClick={() => setSelectedService(service.id)}
-                                                >
-                                                    <span className="serviceListIcon" aria-hidden="true">
-                                                        <ServiceIcon />
-                                                    </span>
-                                                    <span>{service.title}</span>
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            </aside>
-
-                            <section className="appContent">
-                                {selectedService === "texture-replacer" && (
-                                    <div className="card serviceContentPanel">
-                                        <div>
-                                            <p className="sectionTitle">Texture replacer</p>
-                                            <p className="activeProfileMeta">Manage loot, combat text, and user interface profile packs.</p>
+                        {quickLaunchOnlyActive ? (
+                            <QuickLaunchModePanel
+                                accounts={quickAccounts}
+                                loading={loading}
+                                launchDisabled={!status?.selectedGameBase}
+                                onLaunchAccount={onQuickLaunchAccount}
+                                onExit={onExitQuickLaunchOnlyMode}
+                            />
+                        ) : (
+                            <div className="appWorkspace">
+                                <aside className="appSidebar">
+                                    <div className="card sidebarPanel">
+                                        <div className="serviceList">
+                                            {SERVICES.map((service) => {
+                                                const ServiceIcon = service.icon;
+                                                return (
+                                                    <button
+                                                        key={service.id}
+                                                        type="button"
+                                                        className={`serviceListItem${selectedService === service.id ? " serviceListItemActive" : ""}`}
+                                                        onClick={() => setSelectedService(service.id)}
+                                                    >
+                                                        <span className="serviceListIcon" aria-hidden="true">
+                                                            <ServiceIcon />
+                                                        </span>
+                                                        <span>{service.title}</span>
+                                                    </button>
+                                                );
+                                            })}
                                         </div>
-                                        <LootManager
-                                            status={status}
-                                            loading={loading}
-                                            onBusyChange={setLoading}
-                                            onStatusRefresh={refreshStatus}
-                                            onMessage={setMessage}
-                                        />
-                                        <CombatTextManager
-                                            status={status}
-                                            loading={loading}
-                                            onBusyChange={setLoading}
-                                            onStatusRefresh={refreshStatus}
-                                            onMessage={setMessage}
-                                        />
-                                        <UserInterfaceManager
-                                            status={status}
-                                            loading={loading}
-                                            onBusyChange={setLoading}
-                                            onStatusRefresh={refreshStatus}
-                                            onMessage={setMessage}
-                                        />
                                     </div>
-                                )}
-                                {selectedService === "login-manager" && (
-                                    <LoginManager
-                                        key={`login-manager-${factoryResetNonce}`}
-                                        onAccountsChanged={refreshQuickAccounts}
-                                        onMessage={setMessage}
-                                    />
-                                )}
-                                {selectedService === "config-editor" && (
-                                    <ConfigEditorManager
-                                        loading={loading}
-                                        onBusyChange={setLoading}
-                                        onMessage={setMessage}
-                                    />
-                                )}
-                            </section>
-                        </div>
-                        <StatusMessage message={message}/>
+                                </aside>
+
+                                <section className="appContent">
+                                    {selectedService === "texture-replacer" && (
+                                        <div className="card serviceContentPanel">
+                                            <div>
+                                                <p className="sectionTitle">Texture replacer</p>
+                                                <p className="activeProfileMeta">Manage loot, combat text, and user interface profile packs.</p>
+                                            </div>
+                                            <LootManager
+                                                status={status}
+                                                loading={loading}
+                                                onBusyChange={setLoading}
+                                                onStatusRefresh={refreshStatus}
+                                                onMessage={setMessage}
+                                            />
+                                            <CombatTextManager
+                                                status={status}
+                                                loading={loading}
+                                                onBusyChange={setLoading}
+                                                onStatusRefresh={refreshStatus}
+                                                onMessage={setMessage}
+                                            />
+                                            <UserInterfaceManager
+                                                status={status}
+                                                loading={loading}
+                                                onBusyChange={setLoading}
+                                                onStatusRefresh={refreshStatus}
+                                                onMessage={setMessage}
+                                            />
+                                        </div>
+                                    )}
+                                    {selectedService === "login-manager" && (
+                                        <LoginManager
+                                            key={`login-manager-${factoryResetNonce}`}
+                                            onAccountsChanged={refreshQuickAccounts}
+                                            onMessage={setMessage}
+                                        />
+                                    )}
+                                    {selectedService === "config-editor" && (
+                                        <ConfigEditorManager
+                                            loading={loading}
+                                            onBusyChange={setLoading}
+                                            onMessage={setMessage}
+                                        />
+                                    )}
+                                </section>
+                            </div>
+                        )}
+                        {!quickLaunchOnlyActive && <StatusMessage message={message}/>}
                     </div>
-                    <AppFooter
-                        loading={loading}
-                        onOpenWhatsNew={onOpenWhatsNew}
-                    />
+                    {!quickLaunchOnlyActive && (
+                        <AppFooter
+                            loading={loading}
+                            onOpenWhatsNew={onOpenWhatsNew}
+                        />
+                    )}
                     <SettingsModal
                         open={settingsOpen}
                         status={status}
