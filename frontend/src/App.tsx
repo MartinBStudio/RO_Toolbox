@@ -64,12 +64,20 @@ function App() {
     const [factoryResetNonce, setFactoryResetNonce] = useState(0);
     const [servicePreferenceLoaded, setServicePreferenceLoaded] = useState(false);
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>(readInitialService);
+    const [minimumStartupDisplayReached, setMinimumStartupDisplayReached] = useState(false);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
     const hasQuickLaunchProfiles = quickAccounts.length > 0;
     const quickLaunchOnlyActive = quickLaunchOnlyMode && hasQuickLaunchProfiles;
 
-    useWindowMode(backendReady, quickLaunchOnlyActive);
+    useEffect(() => {
+        const timer = window.setTimeout(() => setMinimumStartupDisplayReached(true), 2000);
+        return () => window.clearTimeout(timer);
+    }, []);
+
+    const showStartupScreen = !backendReady || !minimumStartupDisplayReached;
+
+    useWindowMode(backendReady && minimumStartupDisplayReached, quickLaunchOnlyActive);
 
     function toErrorMessage(err: unknown, fallback: string) {
         if (err instanceof Error && err.message) {
@@ -215,7 +223,7 @@ function App() {
 
     return (
         <main className={`layout${loading ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
-            <BackendReadyGate onStartupError={setMessage}>
+            <BackendReadyGate onStartupError={setMessage} showStartupScreen={showStartupScreen}>
                 <>
                     {!quickLaunchOnlyActive && (
                         <AppHeader

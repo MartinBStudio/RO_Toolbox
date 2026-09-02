@@ -36,6 +36,8 @@ export function useWindowMode(enabled: boolean, quickModeActive: boolean) {
           await appWindow.unmaximize();
         }
         await appWindow.setResizable(true);
+        await appWindow.setMaximizable(false);
+        await appWindow.setMinimizable(false);
         await appWindow.setMaxSize(null);
         await appWindow.setMinSize(new LogicalSize(QUICK_MODE_MIN_WINDOW_WIDTH, QUICK_MODE_MIN_WINDOW_HEIGHT));
         await appWindow.setSize(new LogicalSize(QUICK_MODE_WINDOW_WIDTH, QUICK_MODE_WINDOW_HEIGHT));
@@ -59,6 +61,8 @@ export function useWindowMode(enabled: boolean, quickModeActive: boolean) {
         await appWindow.setSize(new LogicalSize(QUICK_MODE_WINDOW_WIDTH, QUICK_MODE_WINDOW_HEIGHT));
         await appWindow.setMaxSize(new LogicalSize(QUICK_MODE_WINDOW_WIDTH, QUICK_MODE_WINDOW_HEIGHT));
         await appWindow.setResizable(false);
+        await appWindow.setMaximizable(false);
+        await appWindow.setMinimizable(false);
         appliedWindowModeRef.current = "small";
       })().catch(() => undefined);
       return;
@@ -69,6 +73,8 @@ export function useWindowMode(enabled: boolean, quickModeActive: boolean) {
     }
     (async () => {
       await appWindow.setResizable(true);
+      await appWindow.setMaximizable(true);
+      await appWindow.setMinimizable(true);
       await appWindow.setMaxSize(null);
       await appWindow.setMinSize(new LogicalSize(DEFAULT_MIN_WINDOW_WIDTH, DEFAULT_MIN_WINDOW_HEIGHT));
       await appWindow.setSize(new LogicalSize(DEFAULT_WINDOW_WIDTH, DEFAULT_WINDOW_HEIGHT));
