@@ -1,10 +1,11 @@
 # RO Toolbox – Release Notes
 
-## v0.3.5 – Quick Launch Only Mode
+## v0.3.6 – UX Polish
 
-### ✨ New Features
-- **Quick Launch Only mode**: When at least one quick-launch account exists, you can switch to a compact mode that shows only quick-launch buttons.
-- **One-click return to full app**: Compact mode includes a minimal **Full mode** button to restore the normal interface.
-- **Mode preference persists** between app launches and is saved in the app config file.
+### ✨ Improvements
+- Refined the startup screen with centered branding and a cleaner loading state.
+- Simplified startup window chrome for a more focused first-launch experience.
+- Tuned the startup window size and layout for better visual balance.
 
 ---
+
