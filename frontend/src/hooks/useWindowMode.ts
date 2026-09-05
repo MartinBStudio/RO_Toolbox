@@ -37,7 +37,7 @@ export function useWindowMode(enabled: boolean, quickModeActive: boolean) {
         }
         await appWindow.setResizable(true);
         await appWindow.setMaximizable(false);
-        await appWindow.setMinimizable(false);
+        await appWindow.setMinimizable(true);
         await appWindow.setMaxSize(null);
         await appWindow.setMinSize(new LogicalSize(QUICK_MODE_MIN_WINDOW_WIDTH, QUICK_MODE_MIN_WINDOW_HEIGHT));
         await appWindow.setSize(new LogicalSize(QUICK_MODE_WINDOW_WIDTH, QUICK_MODE_WINDOW_HEIGHT));
@@ -62,7 +62,7 @@ export function useWindowMode(enabled: boolean, quickModeActive: boolean) {
         await appWindow.setMaxSize(new LogicalSize(QUICK_MODE_WINDOW_WIDTH, QUICK_MODE_WINDOW_HEIGHT));
         await appWindow.setResizable(false);
         await appWindow.setMaximizable(false);
-        await appWindow.setMinimizable(false);
+        await appWindow.setMinimizable(true);
         appliedWindowModeRef.current = "small";
       })().catch(() => undefined);
       return;

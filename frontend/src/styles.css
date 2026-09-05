@@ -409,6 +409,34 @@ p {
   gap: 0.45rem;
 }
 
+.lootWarningBanner {
+  border: 1px solid #5a6479;
+  background: rgba(25, 34, 50, 0.55);
+  color: #aebcd2;
+  border-radius: 7px;
+  padding: 0.32rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.lootWarningFixButton {
+  flex-shrink: 0;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.76rem;
+  background: #0b7a5a;
+  border-color: #21a67f;
+  color: #eaf8f2;
+}
+
+.lootWarningFixButton:hover:enabled {
+  background: #2f8f69;
+  border-color: #69d0a6;
+}
+
 .accordionHeader {
   display: flex;
   align-items: flex-start;
@@ -1277,6 +1305,14 @@ button .heroIcon {
   padding-top: 0.25rem;
 }
 
+.includedPackagesAccordion {
+  margin: 0.2rem 0;
+}
+
+.includedPackagesHeader {
+  min-height: 2.2rem;
+}
+
 .profileCardPreviewGrid {
   display: flex;
   flex-wrap: wrap;
@@ -1420,7 +1456,7 @@ button .heroIcon {
   height: 0.18rem;
   background: #6d98ea;
   transform-origin: left center;
-  animation: statusToastProgress 5s linear forwards;
+  animation: statusToastProgress 2.5s linear forwards;
 }
 
 .statusToastSuccess .statusToastProgress {

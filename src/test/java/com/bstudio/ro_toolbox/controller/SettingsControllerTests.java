@@ -168,4 +168,37 @@ class SettingsControllerTests {
 
         assertTrue(response.enabled());
     }
+
+    @Test
+    void savesIgnoreConfigWarningsSetting() throws IOException {
+        LootManagerService loot = mock(LootManagerService.class);
+        SettingsController controller = new SettingsController(
+                loot,
+                mock(CombatTextManagerService.class),
+                mock(UserInterfaceManagerService.class),
+                mock(LoginManagerService.class)
+        );
+
+        SettingsController.IgnoreConfigWarningsResponse response =
+                controller.saveIgnoreConfigWarnings(new SettingsController.IgnoreConfigWarningsRequest(true));
+
+        verify(loot).saveIgnoreConfigWarnings(true);
+        assertTrue(response.enabled());
+    }
+
+    @Test
+    void readsIgnoreConfigWarningsSetting() throws IOException {
+        LootManagerService loot = mock(LootManagerService.class);
+        when(loot.getIgnoreConfigWarnings()).thenReturn(true);
+        SettingsController controller = new SettingsController(
+                loot,
+                mock(CombatTextManagerService.class),
+                mock(UserInterfaceManagerService.class),
+                mock(LoginManagerService.class)
+        );
+
+        SettingsController.IgnoreConfigWarningsResponse response = controller.getIgnoreConfigWarnings();
+
+        assertTrue(response.enabled());
+    }
 }

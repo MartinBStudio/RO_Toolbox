@@ -17,10 +17,12 @@ import {
   clearInstalled,
   clearResources,
   downloadProfiles,
+  getRoseConfigState,
   installProfile,
   manageInstalledProfile,
   openItemFolder,
-  openResourcesFolder
+  openResourcesFolder,
+  setRoseShowDroppedItemName
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
 import {
@@ -50,13 +52,14 @@ export function LootManager({
   onStatusRefresh,
   onMessage
 }: LootManagerProps) {
-  const { backendReady, debugMode } = useApplicationContext();
+  const { backendReady, debugMode, ignoreConfigWarnings } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [expandedPreview, setExpandedPreview] = useState<string | null>(null);
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
+  const [showDroppedItemNameEnabled, setShowDroppedItemNameEnabled] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
   const availableProfiles = status?.availableProfiles ?? [];
@@ -77,6 +80,9 @@ export function LootManager({
   const activeProfileName = resolveProfileName(status?.installedProfile?.name, "No active package");
   const activeProfileAuthor = status?.installedProfile?.author ? `by ${status.installedProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.installedProfile?.version);
+  const installedProfileNameNormalized = status?.installedProfile?.name?.trim().toLowerCase() ?? "";
+  const showDropNameWarningForProfile = installedProfileNameNormalized === "farming meta"
+    || installedProfileNameNormalized === "prison farm";
 
   useEffect(() => {
     if (availableProfiles.length === 0) {
@@ -95,6 +101,14 @@ export function LootManager({
     if (!backendReady) return;
     void checkResourcesUpdate();
   }, [backendReady, status?.downloadedProfiles]);
+
+  useEffect(() => {
+    if (!backendReady || ignoreConfigWarnings) {
+      setShowDroppedItemNameEnabled(false);
+      return;
+    }
+    void loadRoseConfigState();
+  }, [backendReady, ignoreConfigWarnings, status?.selectedGameBase]);
 
   useEffect(() => {
     setExpandedPreview(null);
@@ -129,6 +143,28 @@ export function LootManager({
       setResourcesUpdateVersion(undefined);
     } finally {
       setResourcesUpdateChecking(false);
+    }
+  }
+
+  async function loadRoseConfigState() {
+    try {
+      const roseConfigState = await getRoseConfigState();
+      setShowDroppedItemNameEnabled(roseConfigState.showDroppedItemName);
+    } catch (_err) {
+      setShowDroppedItemNameEnabled(false);
+    }
+  }
+
+  async function onFixDroppedItemNames() {
+    onBusyChange(true);
+    try {
+      const roseConfigState = await setRoseShowDroppedItemName(false);
+      setShowDroppedItemNameEnabled(roseConfigState.showDroppedItemName);
+      onMessage("Disabled item drop names in rose.toml.");
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to update rose.toml setting."));
+    } finally {
+      onBusyChange(false);
     }
   }
 
@@ -203,10 +239,22 @@ export function LootManager({
     }
 
     const profileId = status.installedProfile.name || status.installedProfile.url || "installed";
-    await runAction(
-      () => manageInstalledProfile(profileId, disabledManagedSubfolders),
-      "Managed folders updated."
-    );
+    onBusyChange(true);
+    try {
+      await manageInstalledProfile(profileId, disabledManagedSubfolders);
+      onMessage("Package updated.");
+    } catch (_err) {
+      onMessage("Failed to update package.");
+      onBusyChange(false);
+      return;
+    }
+    try {
+      await onStatusRefresh();
+    } catch (_err) {
+      // Keep the success toast if refresh fails.
+    } finally {
+      onBusyChange(false);
+    }
   }
 
   async function onOpenInstalledProfile(url: string) {
@@ -370,6 +418,19 @@ export function LootManager({
             </button>
           </div>
         </div>
+        {showDroppedItemNameEnabled && showDropNameWarningForProfile && !ignoreConfigWarnings ? (
+          <div className="lootWarningBanner" role="status">
+            <span>Recommended: disable item drop names (<strong>show_dropped_item_name = false</strong>).</span>
+            <button
+              type="button"
+              className="buttonSubtle lootWarningFixButton"
+              disabled={loading}
+              onClick={onFixDroppedItemNames}
+            >
+              Fix it
+            </button>
+          </div>
+        ) : null}
 
         {!collapsed ? (
           <div className="accordionBody">

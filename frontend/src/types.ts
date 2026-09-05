@@ -91,3 +91,8 @@ export type IgnoreListState = {
   names: string[];
   file: ConfigEditorFileState;
 };
+
+export type RoseConfigState = {
+  showDroppedItemName: boolean;
+  roseFileExists: boolean;
+};

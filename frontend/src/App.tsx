@@ -177,7 +177,7 @@ function App() {
         if (!message) {
             return;
         }
-        const timer = window.setTimeout(() => setMessage(""), 5000);
+        const timer = window.setTimeout(() => setMessage(""), 2500);
         return () => window.clearTimeout(timer);
     }, [message]);
 
