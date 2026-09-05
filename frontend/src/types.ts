@@ -23,6 +23,7 @@ export type AvailableProfile = {
 
 export type AppStatus = {
   version: string;
+  troseRunning: boolean;
   lootServiceEndpoint: string;
   combatTextServiceEndpoint: string;
   userInterfaceServiceEndpoint: string;

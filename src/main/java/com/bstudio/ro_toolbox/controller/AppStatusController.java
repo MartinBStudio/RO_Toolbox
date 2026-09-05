@@ -9,7 +9,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api")
@@ -28,6 +31,7 @@ public class AppStatusController {
         UserInterfaceManagerService.ProfileInfo installedUserInterface = userInterfaceManagerService.getInstalledProfileInfo();
         return new AppStatusResponse(
                 app.getVersion(),
+                isTroseRunning(),
                 new LootServiceSummaryResponse(
                         "/api/loot",
                         installed == null ? null : new ProfileInfoResponse(
@@ -80,11 +84,106 @@ public class AppStatusController {
 
     public record AppStatusResponse(
             String version,
+            boolean troseRunning,
             LootServiceSummaryResponse lootService,
             CombatTextServiceSummaryResponse combatTextService,
             UserInterfaceServiceSummaryResponse userInterfaceService,
             List<ServiceEndpointResponse> services
     ) {
+    }
+
+    static boolean isTroseRunning() {
+        if (isTroseRunningFromProcessHandles()) {
+            return true;
+        }
+        if (!isWindows()) {
+            return false;
+        }
+        if (isTroseRunningFromTasklist()) {
+            return true;
+        }
+        return isTroseRunningFromPowerShell();
+    }
+
+    private static boolean isTroseRunningFromProcessHandles() {
+        try {
+            return ProcessHandle.allProcesses()
+                    .map(ProcessHandle::info)
+                    .anyMatch(info -> isTroseExecutable(info.command().orElse(null))
+                            || isTroseExecutable(info.commandLine().orElse(null)));
+        } catch (SecurityException ignored) {
+            return false;
+        }
+    }
+
+    private static boolean isWindows() {
+        return System.getProperty("os.name", "").toLowerCase(Locale.ROOT).contains("win");
+    }
+
+    private static boolean isTroseRunningFromTasklist() {
+        String tasklistPath = resolveTasklistPath();
+        try {
+            Process process = new ProcessBuilder(tasklistPath, "/FI", "IMAGENAME eq trose.exe", "/FO", "CSV", "/NH")
+                    .redirectErrorStream(true)
+                    .start();
+            String output = new String(process.getInputStream().readAllBytes(), Charset.defaultCharset());
+            process.waitFor();
+            return tasklistOutputContainsTrose(output);
+        } catch (IOException ignored) {
+            return false;
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    private static boolean isTroseRunningFromPowerShell() {
+        try {
+            Process process = new ProcessBuilder(
+                    "powershell",
+                    "-NoProfile",
+                    "-Command",
+                    "(Get-Process -Name trose -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty ProcessName)"
+            ).redirectErrorStream(true).start();
+            String output = new String(process.getInputStream().readAllBytes(), Charset.defaultCharset());
+            process.waitFor();
+            return output.toLowerCase(Locale.ROOT).contains("trose");
+        } catch (IOException ignored) {
+            return false;
+        } catch (InterruptedException ignored) {
+            Thread.currentThread().interrupt();
+            return false;
+        }
+    }
+
+    private static String resolveTasklistPath() {
+        String systemRoot = System.getenv("SystemRoot");
+        if (systemRoot == null || systemRoot.isBlank()) {
+            return "tasklist";
+        }
+        return systemRoot + "\\System32\\tasklist.exe";
+    }
+
+    static boolean tasklistOutputContainsTrose(String output) {
+        if (output == null || output.isBlank()) {
+            return false;
+        }
+        String normalized = output.toLowerCase(Locale.ROOT);
+        return normalized.contains("trose.exe");
+    }
+
+    private static boolean isTroseExecutable(String command) {
+        if (command == null || command.isBlank()) {
+            return false;
+        }
+        String value = command.trim().replace("\"", "").toLowerCase(Locale.ROOT);
+        int executableEnd = value.indexOf(".exe");
+        if (executableEnd >= 0) {
+            value = value.substring(0, executableEnd + 4);
+        }
+        int separatorIndex = Math.max(value.lastIndexOf('\\'), value.lastIndexOf('/'));
+        String fileName = separatorIndex >= 0 ? value.substring(separatorIndex + 1) : value;
+        return "trose.exe".equals(fileName);
     }
 
     public record LootServiceSummaryResponse(String endpoint, ProfileInfoResponse activeProfile) {

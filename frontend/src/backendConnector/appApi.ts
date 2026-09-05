@@ -3,6 +3,7 @@ import { request } from "./apiClient.ts";
 
 type ApiAppStatus = {
   version: string;
+  troseRunning: boolean;
   lootService: {
     endpoint: string;
   };
@@ -46,6 +47,7 @@ export function getStatus() {
     request<ApiUserInterfaceStatus>("/userinterface/status")
   ]).then(([appStatus, lootStatus, combatTextStatus, userInterfaceStatus]) => ({
     version: appStatus.version,
+    troseRunning: Boolean(appStatus.troseRunning),
     lootServiceEndpoint: appStatus.lootService.endpoint,
     combatTextServiceEndpoint: appStatus.combatTextService.endpoint,
     userInterfaceServiceEndpoint: appStatus.userInterfaceService.endpoint,
