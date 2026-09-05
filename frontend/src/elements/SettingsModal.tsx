@@ -24,7 +24,7 @@ export function SettingsModal({
   onStatusRefresh,
   onMessage
 }: SettingsModalProps) {
-  const { debugMode, setDebugMode } = useApplicationContext();
+  const { debugMode, setDebugMode, ignoreConfigWarnings, setIgnoreConfigWarnings } = useApplicationContext();
   const [factoryResetOpen, setFactoryResetOpen] = useState(false);
 
   function toErrorMessage(err: unknown, fallback: string) {
@@ -116,6 +116,14 @@ export function SettingsModal({
     }
   }
 
+  async function onToggleIgnoreConfigWarnings(enabled: boolean) {
+    try {
+      await setIgnoreConfigWarnings(enabled);
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to update warning mode."));
+    }
+  }
+
   if (!open) {
     return null;
   }
@@ -158,6 +166,24 @@ export function SettingsModal({
                 type="checkbox"
                 checked={debugMode}
                 onChange={(event) => setDebugMode(event.target.checked)}
+              />
+              <span className="settingsToggleTrack" aria-hidden="true">
+                <span className="settingsToggleThumb" />
+              </span>
+            </label>
+          </div>
+          <div className="settingsToggleRow">
+            <div>
+              <p className="settingsSectionLabel">Config check</p>
+              <p className="settingsToggleHelp">Ignore config warnings in managers.</p>
+            </div>
+            <label className="settingsToggle" aria-label="Toggle config warning checks">
+              <input
+                type="checkbox"
+                checked={ignoreConfigWarnings}
+                onChange={(event) => {
+                  void onToggleIgnoreConfigWarnings(event.target.checked);
+                }}
               />
               <span className="settingsToggleTrack" aria-hidden="true">
                 <span className="settingsToggleThumb" />

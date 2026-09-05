@@ -30,6 +30,8 @@ public class LootManagerService {
 
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
+    private static final String QUICK_LAUNCH_ONLY_MODE_KEY = "quickLaunchOnlyMode";
+    private static final String IGNORE_CONFIG_WARNINGS_KEY = "ignoreConfigWarnings";
 
     private static Path resolveAppDataRoot() {
         String appData = System.getenv("APPDATA");
@@ -173,7 +175,7 @@ public class LootManagerService {
         try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
             prop.load(in);
         }
-        return Boolean.parseBoolean(prop.getProperty("quickLaunchOnlyMode", "false").trim());
+        return Boolean.parseBoolean(prop.getProperty(QUICK_LAUNCH_ONLY_MODE_KEY, "false").trim());
     }
 
     public void saveQuickLaunchOnlyMode(boolean enabled) throws IOException {
@@ -184,7 +186,32 @@ public class LootManagerService {
                 prop.load(in);
             }
         }
-        prop.setProperty("quickLaunchOnlyMode", String.valueOf(enabled));
+        prop.setProperty(QUICK_LAUNCH_ONLY_MODE_KEY, String.valueOf(enabled));
+        try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
+            prop.store(out, "RO LootManager config");
+        }
+    }
+
+    public boolean getIgnoreConfigWarnings() throws IOException {
+        if (!Files.exists(CONFIG_FILE)) {
+            return false;
+        }
+        Properties prop = new Properties();
+        try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+            prop.load(in);
+        }
+        return Boolean.parseBoolean(prop.getProperty(IGNORE_CONFIG_WARNINGS_KEY, "false").trim());
+    }
+
+    public void saveIgnoreConfigWarnings(boolean enabled) throws IOException {
+        Files.createDirectories(CONFIG_DIR);
+        Properties prop = new Properties();
+        if (Files.exists(CONFIG_FILE)) {
+            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+                prop.load(in);
+            }
+        }
+        prop.setProperty(IGNORE_CONFIG_WARNINGS_KEY, String.valueOf(enabled));
         try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
             prop.store(out, "RO LootManager config");
         }
@@ -585,23 +612,38 @@ public class LootManagerService {
             if (parent == null) continue;
 
             Path disabledPath = parent.resolve("disabled_" + targetName);
-            boolean shouldBeDisabled = normalizedDisabled.contains(subfolder.toLowerCase());
+            boolean shouldBeDisabled = normalizedDisabled.contains(subfolder.trim().toLowerCase());
             boolean isCurrentlyDisabled = Files.exists(disabledPath) && Files.isDirectory(disabledPath);
 
             if (shouldBeDisabled && !isCurrentlyDisabled) {
                 // Disable: rename folder to disabled_*
                 if (Files.exists(target) && Files.isDirectory(target)) {
-                    Files.move(target, disabledPath, StandardCopyOption.REPLACE_EXISTING);
+                    moveDirectoryReplacingExisting(target, disabledPath);
                     log("Disabled managed subfolder: " + target.toAbsolutePath());
                 }
             } else if (!shouldBeDisabled && isCurrentlyDisabled) {
                 // Enable: rename folder back from disabled_*
                 if (Files.exists(disabledPath) && Files.isDirectory(disabledPath)) {
-                    Files.move(disabledPath, target, StandardCopyOption.REPLACE_EXISTING);
+                    moveDirectoryReplacingExisting(disabledPath, target);
                     log("Enabled managed subfolder: " + disabledPath.toAbsolutePath());
                 }
             }
         }
+    }
+
+    private void moveDirectoryReplacingExisting(Path source, Path target) throws IOException {
+        if (source == null || target == null) {
+            return;
+        }
+        if (Files.exists(target)) {
+            if (!Files.isDirectory(target)) {
+                Files.deleteIfExists(target);
+            } else {
+                deleteDirectoryContents(target);
+                Files.deleteIfExists(target);
+            }
+        }
+        Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private AvailableProfile findAvailableProfile(String profileId) {
@@ -783,7 +825,7 @@ public class LootManagerService {
                     ? itemFolder.resolve("disabled_" + target.getFileName())
                     : target.getParent().resolve("disabled_" + target.getFileName());
 
-            if (!Files.exists(target) && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
+            if (Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
                 disabled.add(subfolder);
             }
         }

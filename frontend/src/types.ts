@@ -23,6 +23,7 @@ export type AvailableProfile = {
 
 export type AppStatus = {
   version: string;
+  troseRunning: boolean;
   lootServiceEndpoint: string;
   combatTextServiceEndpoint: string;
   userInterfaceServiceEndpoint: string;
@@ -90,4 +91,9 @@ export type ConfigEditorStatus = {
 export type IgnoreListState = {
   names: string[];
   file: ConfigEditorFileState;
+};
+
+export type RoseConfigState = {
+  showDroppedItemName: boolean;
+  roseFileExists: boolean;
 };

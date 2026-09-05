@@ -195,6 +195,20 @@ public class SettingsController {
         return new QuickLaunchOnlyModeResponse(request.enabled());
     }
 
+    @GetMapping("/ignore-config-warnings")
+    public IgnoreConfigWarningsResponse getIgnoreConfigWarnings() throws IOException {
+        return new IgnoreConfigWarningsResponse(lootManagerService.getIgnoreConfigWarnings());
+    }
+
+    @PostMapping("/ignore-config-warnings")
+    public IgnoreConfigWarningsResponse saveIgnoreConfigWarnings(@RequestBody IgnoreConfigWarningsRequest request) throws IOException {
+        if (request == null) {
+            throw new IllegalArgumentException("Mode value is required.");
+        }
+        lootManagerService.saveIgnoreConfigWarnings(request.enabled());
+        return new IgnoreConfigWarningsResponse(request.enabled());
+    }
+
     @GetMapping("/release-notes")
     public ReleaseNotesResponse getReleaseNotes() throws IOException {
         return new ReleaseNotesResponse(readReleaseNotesContent());
@@ -258,6 +272,12 @@ public class SettingsController {
     }
 
     public record QuickLaunchOnlyModeResponse(boolean enabled) {
+    }
+
+    public record IgnoreConfigWarningsRequest(boolean enabled) {
+    }
+
+    public record IgnoreConfigWarningsResponse(boolean enabled) {
     }
 
     private void launchWindowsForeground(Path workingDirectory, String executablePath, String... arguments) throws IOException {

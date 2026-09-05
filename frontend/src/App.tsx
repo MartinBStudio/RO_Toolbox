@@ -14,6 +14,7 @@ import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
 import {HowToUseModal} from "./elements/HowToUseModal.tsx";
 import {ReleaseNotesModal} from "./elements/ReleaseNotesModal.tsx";
+import {TroseRunningBanner} from "./elements/TroseRunningBanner.tsx";
 import {QuickLaunchModePanel} from "./components/QuickLaunchModePanel.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
 import {useWindowMode} from "./hooks/useWindowMode.ts";
@@ -65,6 +66,7 @@ function App() {
     const [servicePreferenceLoaded, setServicePreferenceLoaded] = useState(false);
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>(readInitialService);
     const [minimumStartupDisplayReached, setMinimumStartupDisplayReached] = useState(false);
+    const [troseRefreshLoading, setTroseRefreshLoading] = useState(false);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
     const hasQuickLaunchProfiles = quickAccounts.length > 0;
@@ -97,6 +99,10 @@ function App() {
         try {
             await quickLaunchGame();
             setMessage("ROSE Online launched.");
+            await refreshStatus();
+            window.setTimeout(() => {
+                void refreshStatus();
+            }, 1500);
         } catch (err) {
             setMessage(toErrorMessage(err, "Failed to launch ROSE Online."));
         } finally {
@@ -134,10 +140,25 @@ function App() {
         try {
             await quickLaunchLoginAccount(account.id);
             setMessage(`ROSE Online launched for ${account.name}.`);
+            await refreshStatus();
+            window.setTimeout(() => {
+                void refreshStatus();
+            }, 1500);
         } catch (err) {
             setMessage(toErrorMessage(err, `Failed to launch ROSE Online for ${account.name}.`));
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function onRefreshTroseStatus() {
+        setTroseRefreshLoading(true);
+        try {
+            await refreshStatus();
+        } catch (err) {
+            setMessage(toErrorMessage(err, "Failed to refresh game status."));
+        } finally {
+            setTroseRefreshLoading(false);
         }
     }
 
@@ -177,7 +198,7 @@ function App() {
         if (!message) {
             return;
         }
-        const timer = window.setTimeout(() => setMessage(""), 5000);
+        const timer = window.setTimeout(() => setMessage(""), 2500);
         return () => window.clearTimeout(timer);
     }, [message]);
 
@@ -221,6 +242,29 @@ function App() {
         saveSelectedServiceSetting(selectedService).catch(() => undefined);
     }, [backendReady, servicePreferenceLoaded, selectedService]);
 
+    useEffect(() => {
+        if (!backendReady) {
+            return;
+        }
+
+        const handleForegroundRefresh = () => {
+            void refreshStatus();
+        };
+        const handleVisibilityChange = () => {
+            if (!document.hidden) {
+                handleForegroundRefresh();
+            }
+        };
+
+        window.addEventListener("focus", handleForegroundRefresh);
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        return () => {
+            window.removeEventListener("focus", handleForegroundRefresh);
+            document.removeEventListener("visibilitychange", handleVisibilityChange);
+        };
+    }, [backendReady, refreshStatus]);
+
     return (
         <main className={`layout${loading ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
             <BackendReadyGate onStartupError={setMessage} showStartupScreen={showStartupScreen}>
@@ -244,6 +288,13 @@ function App() {
                         />
                     )}
                     <div className="appMainScroll">
+                        {!quickLaunchOnlyActive && Boolean(status?.troseRunning) && (
+                            <TroseRunningBanner
+                                running={true}
+                                loading={troseRefreshLoading || loading}
+                                onRefresh={onRefreshTroseStatus}
+                            />
+                        )}
                         {quickLaunchOnlyActive ? (
                             <QuickLaunchModePanel
                                 accounts={quickAccounts}

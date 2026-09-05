@@ -95,4 +95,69 @@ class ConfigEditorServiceTests {
 
         assertTrue(error.getMessage().contains("each [[ignore]] entry must be a table"));
     }
+
+    @Test
+    void roseConfigStateDefaultsWhenValueMissing() throws IOException {
+        ConfigEditorService service = new ConfigEditorService(tempDir);
+
+        ConfigEditorService.RoseConfigState roseConfigState = service.readRoseConfigState();
+
+        assertFalse(roseConfigState.roseFileExists());
+        assertFalse(roseConfigState.showDroppedItemName());
+    }
+
+    @Test
+    void roseConfigStateReadsNestedShowDroppedItemName() throws IOException {
+        ConfigEditorService service = new ConfigEditorService(tempDir);
+        Files.writeString(tempDir.resolve("rose.toml"), "[ui]\nshow_dropped_item_name = true\n");
+
+        ConfigEditorService.RoseConfigState roseConfigState = service.readRoseConfigState();
+
+        assertTrue(roseConfigState.roseFileExists());
+        assertTrue(roseConfigState.showDroppedItemName());
+    }
+
+    @Test
+    void roseConfigStateRejectsNonBooleanShowDroppedItemName() throws IOException {
+        ConfigEditorService service = new ConfigEditorService(tempDir);
+        Files.writeString(tempDir.resolve("rose.toml"), "show_dropped_item_name = \"yes\"\n");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, service::readRoseConfigState);
+
+        assertTrue(error.getMessage().contains("show_dropped_item_name must be true or false"));
+    }
+
+    @Test
+    void setShowDroppedItemNameCreatesRoseConfigWhenMissing() throws IOException {
+        ConfigEditorService service = new ConfigEditorService(tempDir);
+
+        ConfigEditorService.RoseConfigState roseConfigState = service.setShowDroppedItemName(false);
+
+        assertTrue(roseConfigState.roseFileExists());
+        assertFalse(roseConfigState.showDroppedItemName());
+        assertEquals("show_dropped_item_name = false" + System.lineSeparator(), Files.readString(tempDir.resolve("rose.toml")));
+    }
+
+    @Test
+    void setShowDroppedItemNameUpdatesExistingValueAndKeepsInlineComment() throws IOException {
+        ConfigEditorService service = new ConfigEditorService(tempDir);
+        Files.writeString(tempDir.resolve("rose.toml"), "[ui]\nshow_dropped_item_name = true # keep me\n");
+
+        ConfigEditorService.RoseConfigState roseConfigState = service.setShowDroppedItemName(false);
+
+        assertTrue(roseConfigState.roseFileExists());
+        assertFalse(roseConfigState.showDroppedItemName());
+        String savedContent = Files.readString(tempDir.resolve("rose.toml"));
+        assertTrue(savedContent.contains("show_dropped_item_name = false # keep me"));
+    }
+
+    @Test
+    void setShowDroppedItemNameRejectsNonBooleanAssignment() throws IOException {
+        ConfigEditorService service = new ConfigEditorService(tempDir);
+        Files.writeString(tempDir.resolve("rose.toml"), "show_dropped_item_name = \"enabled\"\n");
+
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> service.setShowDroppedItemName(false));
+
+        assertTrue(error.getMessage().contains("show_dropped_item_name must be true or false"));
+    }
 }

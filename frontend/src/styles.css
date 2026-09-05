@@ -243,6 +243,57 @@ header.card {
   overflow: hidden;
 }
 
+.troseStatusBanner {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  align-self: flex-start;
+  padding: 0.32rem 0.45rem;
+  border: 1px solid #3f4e68;
+  border-radius: 7px;
+  background: rgba(24, 34, 52, 0.8);
+  margin-left: auto;
+}
+
+.troseStatusBannerRunning {
+  border-color: #d28b3d;
+  background: rgba(57, 40, 18, 0.8);
+}
+
+.troseStatusIndicator {
+  width: 0.45rem;
+  height: 0.45rem;
+  border-radius: 999px;
+  background: #d28b3d;
+  box-shadow: 0 0 0 1px rgba(210, 139, 61, 0.28);
+}
+
+.troseStatusBannerRunning .troseStatusIndicator {
+  background: #f0b459;
+  box-shadow: 0 0 0 1px rgba(240, 180, 89, 0.3);
+}
+
+.troseStatusText {
+  font-size: 0.72rem;
+  color: #d8e3f5;
+  white-space: nowrap;
+}
+
+.troseStatusRefreshButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.8rem;
+  min-height: 1.8rem;
+  padding: 0.2rem;
+  border-radius: 6px;
+}
+
+.troseStatusRefreshIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
 .quickLaunchOnlyPanel {
   display: flex;
   align-items: center;
@@ -407,6 +458,34 @@ p {
   padding: 0.5rem 0.6rem;
   display: grid;
   gap: 0.45rem;
+}
+
+.lootWarningBanner {
+  border: 1px solid #5a6479;
+  background: rgba(25, 34, 50, 0.55);
+  color: #aebcd2;
+  border-radius: 7px;
+  padding: 0.32rem 0.5rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.lootWarningFixButton {
+  flex-shrink: 0;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.76rem;
+  background: #0b7a5a;
+  border-color: #21a67f;
+  color: #eaf8f2;
+}
+
+.lootWarningFixButton:hover:enabled {
+  background: #2f8f69;
+  border-color: #69d0a6;
 }
 
 .accordionHeader {
@@ -1277,6 +1356,14 @@ button .heroIcon {
   padding-top: 0.25rem;
 }
 
+.includedPackagesAccordion {
+  margin: 0.2rem 0;
+}
+
+.includedPackagesHeader {
+  min-height: 2.2rem;
+}
+
 .profileCardPreviewGrid {
   display: flex;
   flex-wrap: wrap;
@@ -1420,7 +1507,7 @@ button .heroIcon {
   height: 0.18rem;
   background: #6d98ea;
   transform-origin: left center;
-  animation: statusToastProgress 5s linear forwards;
+  animation: statusToastProgress 2.5s linear forwards;
 }
 
 .statusToastSuccess .statusToastProgress {

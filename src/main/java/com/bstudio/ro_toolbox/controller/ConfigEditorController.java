@@ -38,6 +38,19 @@ public class ConfigEditorController {
         return configEditorService.readIgnoreList();
     }
 
+    @GetMapping("/rose-settings")
+    public ConfigEditorService.RoseConfigState readRoseConfig() throws IOException {
+        return configEditorService.readRoseConfigState();
+    }
+
+    @PostMapping("/rose-settings/show-dropped-item-name")
+    public ConfigEditorService.RoseConfigState setShowDroppedItemName(@RequestBody SetShowDroppedItemNameRequest request) throws IOException {
+        if (request == null || request.enabled() == null) {
+            throw new IllegalArgumentException("enabled is required.");
+        }
+        return configEditorService.setShowDroppedItemName(request.enabled());
+    }
+
     @PostMapping("/ignore")
     public ConfigEditorService.IgnoreListState addIgnoreEntry(@RequestBody IgnoreEntryRequest request) throws IOException {
         if (request == null || request.name() == null) {
@@ -100,6 +113,9 @@ public class ConfigEditorController {
     }
 
     public record IgnoreEntryRequest(String name) {
+    }
+
+    public record SetShowDroppedItemNameRequest(Boolean enabled) {
     }
 
     public record MessageResponse(String message) {

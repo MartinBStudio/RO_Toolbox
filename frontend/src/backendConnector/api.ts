@@ -8,7 +8,9 @@ export {
   getSelectedServiceSetting,
   saveSelectedServiceSetting,
   getQuickLaunchOnlyModeSetting,
-  saveQuickLaunchOnlyModeSetting
+  saveQuickLaunchOnlyModeSetting,
+  getIgnoreConfigWarningsSetting,
+  saveIgnoreConfigWarningsSetting
 } from "./settingsApi.ts";
 export {
   downloadProfiles,
@@ -45,7 +47,9 @@ export {
   openConfigEditorFolder,
   getIgnoreList,
   addIgnoreListEntry,
-  deleteIgnoreListEntry
+  deleteIgnoreListEntry,
+  getRoseConfigState,
+  setRoseShowDroppedItemName
 } from "./configEditorApi.ts";
 export {
   listLoginAccounts,

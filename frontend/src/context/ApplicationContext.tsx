@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import { getVersion as getAppVersion } from "@tauri-apps/api/app";
-import { getQuickLaunchOnlyModeSetting, getStatus, saveQuickLaunchOnlyModeSetting } from "../backendConnector/api.ts";
+import {
+  getIgnoreConfigWarningsSetting,
+  getQuickLaunchOnlyModeSetting,
+  getStatus,
+  saveIgnoreConfigWarningsSetting,
+  saveQuickLaunchOnlyModeSetting
+} from "../backendConnector/api.ts";
 import type { AppStatus } from "../types";
 
 const DEBUG_MODE_STORAGE_KEY = "roToolbox.debugMode";
@@ -12,6 +18,8 @@ type ApplicationContextValue = {
   startupError: string | null;
   debugMode: boolean;
   setDebugMode: (enabled: boolean) => void;
+  ignoreConfigWarnings: boolean;
+  setIgnoreConfigWarnings: (enabled: boolean) => Promise<void>;
   quickLaunchOnlyMode: boolean;
   setQuickLaunchOnlyMode: (enabled: boolean) => Promise<void>;
   refreshStatus: () => Promise<void>;
@@ -29,6 +37,7 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const [startupError, setStartupError] = useState<string | null>(null);
   const [debugMode, setDebugMode] = useState(false);
+  const [ignoreConfigWarnings, setIgnoreConfigWarningsState] = useState(false);
   const [quickLaunchOnlyMode, setQuickLaunchOnlyModeState] = useState(false);
 
   const refreshStatus = useCallback(async () => {
@@ -62,8 +71,14 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
     setQuickLaunchOnlyModeState(enabled);
   }, []);
 
+  const setIgnoreConfigWarnings = useCallback(async (enabled: boolean) => {
+    await saveIgnoreConfigWarningsSetting(enabled);
+    setIgnoreConfigWarningsState(enabled);
+  }, []);
+
   useEffect(() => {
     if (!backendReady) {
+      setIgnoreConfigWarningsState(false);
       setQuickLaunchOnlyModeState(false);
       return;
     }
@@ -72,6 +87,24 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
       .then((result) => {
         if (!cancelled) {
           setQuickLaunchOnlyModeState(Boolean(result.enabled));
+        }
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [backendReady]);
+
+  useEffect(() => {
+    if (!backendReady) {
+      setIgnoreConfigWarningsState(false);
+      return;
+    }
+    let cancelled = false;
+    getIgnoreConfigWarningsSetting()
+      .then((result) => {
+        if (!cancelled) {
+          setIgnoreConfigWarningsState(Boolean(result.enabled));
         }
       })
       .catch(() => undefined);
@@ -115,11 +148,24 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
       startupError,
       debugMode,
       setDebugMode,
+      ignoreConfigWarnings,
+      setIgnoreConfigWarnings,
       quickLaunchOnlyMode,
       setQuickLaunchOnlyMode,
       refreshStatus
     }),
-    [appVersion, backendReady, debugMode, quickLaunchOnlyMode, refreshStatus, setQuickLaunchOnlyMode, startupError, status]
+    [
+      appVersion,
+      backendReady,
+      debugMode,
+      ignoreConfigWarnings,
+      quickLaunchOnlyMode,
+      refreshStatus,
+      setIgnoreConfigWarnings,
+      setQuickLaunchOnlyMode,
+      startupError,
+      status
+    ]
   );
 
   return <ApplicationContext.Provider value={value}>{children}</ApplicationContext.Provider>;

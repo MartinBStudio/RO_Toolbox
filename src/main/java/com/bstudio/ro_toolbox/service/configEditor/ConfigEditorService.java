@@ -16,12 +16,18 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class ConfigEditorService {
     private static final String IGNORE_ID = "ignore";
     private static final String ROSE_ID = "rose";
+    private static final String SHOW_DROPPED_ITEM_NAME_KEY = "show_dropped_item_name";
+    private static final Pattern SHOW_DROPPED_ITEM_NAME_BOOLEAN_PATTERN = Pattern.compile("^(\\s*show_dropped_item_name\\s*=\\s*)(true|false)(\\s*(?:#.*)?)$");
+    private static final Pattern SHOW_DROPPED_ITEM_NAME_ASSIGNMENT_PATTERN = Pattern.compile("^\\s*show_dropped_item_name\\s*=\\s*.+$");
     private static final List<ConfigFileSpec> TARGET_FILES = List.of(
             new ConfigFileSpec(IGNORE_ID, "ignore.toml"),
             new ConfigFileSpec(ROSE_ID, "rose.toml")
@@ -99,6 +105,31 @@ public class ConfigEditorService {
         }
         ConfigFileState updatedFile = saveIgnoreList(updatedNames);
         return new IgnoreListState(updatedNames, updatedFile);
+    }
+
+    public RoseConfigState readRoseConfigState() throws IOException {
+        ConfigFileSpec roseSpec = findTargetFile(ROSE_ID);
+        ConfigFileState fileState = readFileState(roseSpec);
+        if (fileState.parseError() != null) {
+            throw new IllegalArgumentException(fileState.parseError());
+        }
+        boolean showDroppedItemName = false;
+        if (fileState.parsed() != null) {
+            showDroppedItemName = findBooleanByKey(fileState.parsed(), SHOW_DROPPED_ITEM_NAME_KEY)
+                    .orElse(false);
+        }
+        return new RoseConfigState(showDroppedItemName, fileState.exists());
+    }
+
+    public RoseConfigState setShowDroppedItemName(boolean enabled) throws IOException {
+        ConfigFileSpec roseSpec = findTargetFile(ROSE_ID);
+        ConfigFileState fileState = readFileState(roseSpec);
+        if (fileState.parseError() != null) {
+            throw new IllegalArgumentException(fileState.parseError());
+        }
+        String updatedContent = upsertRoseBooleanValue(fileState.content(), SHOW_DROPPED_ITEM_NAME_KEY, enabled);
+        save(roseSpec.id(), updatedContent);
+        return readRoseConfigState();
     }
 
     private ConfigFileSpec findTargetFile(String fileId) {
@@ -231,6 +262,67 @@ public class ConfigEditorService {
         return value.replace("'", "''");
     }
 
+    private String upsertRoseBooleanValue(String content, String key, boolean enabled) {
+        String normalizedContent = content == null ? "" : content;
+        if (normalizedContent.isBlank()) {
+            return key + " = " + enabled + System.lineSeparator();
+        }
+
+        String[] lines = normalizedContent.split("\\R", -1);
+        String newline = normalizedContent.contains("\r\n") ? "\r\n" : "\n";
+        boolean updated = false;
+        for (int index = 0; index < lines.length; index++) {
+            String line = lines[index];
+            Matcher matcher = SHOW_DROPPED_ITEM_NAME_BOOLEAN_PATTERN.matcher(line);
+            if (matcher.matches()) {
+                lines[index] = matcher.group(1) + enabled + matcher.group(3);
+                updated = true;
+                break;
+            }
+            if (SHOW_DROPPED_ITEM_NAME_ASSIGNMENT_PATTERN.matcher(line).matches()) {
+                throw new IllegalArgumentException("Invalid rose.toml format: show_dropped_item_name must be true or false.");
+            }
+        }
+
+        if (!updated) {
+            StringBuilder appended = new StringBuilder(normalizedContent);
+            if (!normalizedContent.endsWith("\n") && !normalizedContent.endsWith("\r\n")) {
+                appended.append(newline);
+            }
+            appended.append(key).append(" = ").append(enabled).append(newline);
+            return appended.toString();
+        }
+
+        return String.join(newline, lines);
+    }
+
+    private Optional<Boolean> findBooleanByKey(Object node, String key) {
+        if (node instanceof Map<?, ?> map) {
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                if (entry.getKey() instanceof String entryKey && entryKey.equals(key)) {
+                    Object value = entry.getValue();
+                    if (value instanceof Boolean booleanValue) {
+                        return Optional.of(booleanValue);
+                    }
+                    throw new IllegalArgumentException("Invalid rose.toml format: show_dropped_item_name must be true or false.");
+                }
+                Optional<Boolean> nested = findBooleanByKey(entry.getValue(), key);
+                if (nested.isPresent()) {
+                    return nested;
+                }
+            }
+        }
+        if (node instanceof List<?> values) {
+            for (Object item : values) {
+                Optional<Boolean> nested = findBooleanByKey(item, key);
+                if (nested.isPresent()) {
+                    return nested;
+                }
+            }
+        }
+        return Optional.empty();
+    }
+
     private static Path resolveRoseConfigDir() {
         String appData = System.getenv("APPDATA");
         if (appData != null && !appData.isBlank()) {
@@ -257,6 +349,9 @@ public class ConfigEditorService {
     }
 
     public record IgnoreListState(List<String> names, ConfigFileState file) {
+    }
+
+    public record RoseConfigState(boolean showDroppedItemName, boolean roseFileExists) {
     }
 
     private record ParsedIgnoreData(List<String> names, ConfigFileState fileState) {

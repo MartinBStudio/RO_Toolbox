@@ -44,3 +44,14 @@ export function saveQuickLaunchOnlyModeSetting(enabled: boolean) {
     body: JSON.stringify({ enabled })
   });
 }
+
+export function getIgnoreConfigWarningsSetting() {
+  return request<{ enabled: boolean }>("/settings/ignore-config-warnings");
+}
+
+export function saveIgnoreConfigWarningsSetting(enabled: boolean) {
+  return request<{ enabled: boolean }>("/settings/ignore-config-warnings", {
+    method: "POST",
+    body: JSON.stringify({ enabled })
+  });
+}

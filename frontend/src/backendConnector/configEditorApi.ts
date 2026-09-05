@@ -1,4 +1,4 @@
-import type { ConfigEditorFileState, ConfigEditorStatus, IgnoreListState } from "../types.ts";
+import type { ConfigEditorFileState, ConfigEditorStatus, IgnoreListState, RoseConfigState } from "../types.ts";
 import { request } from "./apiClient.ts";
 
 export function getConfigEditorStatus() {
@@ -31,5 +31,16 @@ export function deleteIgnoreListEntry(name: string) {
   return request<IgnoreListState>("/config-editor/ignore", {
     method: "DELETE",
     body: JSON.stringify({ name })
+  });
+}
+
+export function getRoseConfigState() {
+  return request<RoseConfigState>("/config-editor/rose-settings");
+}
+
+export function setRoseShowDroppedItemName(enabled: boolean) {
+  return request<RoseConfigState>("/config-editor/rose-settings/show-dropped-item-name", {
+    method: "POST",
+    body: JSON.stringify({ enabled })
   });
 }
