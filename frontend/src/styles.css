@@ -222,9 +222,12 @@ header.card {
 }
 
 .quickModeToggleButton {
-  white-space: nowrap;
-  font-size: 0.68rem;
-  padding: 0.28rem 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  min-height: 2rem;
+  padding: 0.28rem;
 }
 
 .layoutQuickLaunchOnly {
@@ -292,8 +295,17 @@ header.card {
 
 .quickLaunchOnlyExitButton {
   justify-self: end;
-  font-size: 0.64rem;
-  padding: 0.24rem 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.9rem;
+  min-height: 1.9rem;
+  padding: 0.24rem;
+}
+
+.quickModeToggleIcon {
+  width: 1rem;
+  height: 1rem;
 }
 
 .headerRow > h1 {
@@ -391,7 +403,7 @@ p {
 .lootAccordion {
   border: 1px solid #2b3344;
   border-radius: 8px;
-  background: #111725;
+  background: #1a2333;
   padding: 0.5rem 0.6rem;
   display: grid;
   gap: 0.45rem;
@@ -441,10 +453,8 @@ p {
 }
 
 .profilePickerRow {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
+  display: grid;
+  gap: 0.35rem;
   min-width: 0;
 }
 
@@ -943,6 +953,19 @@ button:disabled {
   border-color: #2a5fce;
 }
 
+.lootAccordion > .accordionHeader {
+  align-items: flex-start;
+  padding: 0;
+  background: #1a2333;
+  min-height: 0;
+  cursor: default;
+  transition: none;
+}
+
+.lootAccordion > .accordionHeader:hover {
+  background: #1a2333;
+}
+
 .lootManager .headerActions {
   gap: 0.3rem;
 }
@@ -1150,10 +1173,6 @@ button .heroIcon {
   border-color: #21a67f;
 }
 
-.status {
-  border-color: #4169e1;
-}
-
 .statusToast {
   position: fixed;
   right: 0.7rem;
@@ -1161,7 +1180,129 @@ button .heroIcon {
   z-index: 1050;
   margin: 0;
   width: min(360px, calc(100vw - 1.4rem));
-  box-shadow: 0 9px 22px rgba(0, 0, 0, 0.35);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.8rem 0.85rem 0.9rem;
+  border: 1px solid #41506b;
+  border-radius: 10px;
+  background: #182131;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.32);
+  overflow: hidden;
+  animation: statusToastEnter 150ms ease-out;
+}
+
+.statusToastSuccess {
+  border-color: #2f8f69;
+}
+
+.statusToastError {
+  border-color: #b95f5f;
+}
+
+.statusToastInfo {
+  border-color: #4c6fb1;
+}
+
+.statusToastIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: rgba(122, 168, 255, 0.1);
+  color: #98b8f4;
+  flex-shrink: 0;
+}
+
+.statusToastSuccess .statusToastIcon {
+  background: rgba(66, 185, 136, 0.14);
+  color: #69d0a6;
+}
+
+.statusToastError .statusToastIcon {
+  background: rgba(207, 95, 95, 0.14);
+  color: #f29a9a;
+}
+
+.statusToastIcon svg,
+.statusToastClose svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.statusToastBody {
+  min-width: 0;
+}
+
+.statusToastText {
+  margin: 0;
+  color: #d9e3f3;
+  font-size: 0.9rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.statusToastClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.8rem;
+  height: 1.8rem;
+  padding: 0;
+  border: 1px solid #3f4d66;
+  background: #1a2434;
+  color: #8ea3c7;
+  box-shadow: none;
+}
+
+.statusToastClose:hover:enabled {
+  border-color: #5a7094;
+  background: #202c3f;
+  color: #dce8ff;
+}
+
+.statusToastProgress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0.18rem;
+  background: #6d98ea;
+  transform-origin: left center;
+  animation: statusToastProgress 5s linear forwards;
+}
+
+.statusToastSuccess .statusToastProgress {
+  background: #32b27f;
+}
+
+.statusToastError .statusToastProgress {
+  background: #d96b6b;
+}
+
+@keyframes statusToastEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes statusToastProgress {
+  from {
+    transform: scaleX(1);
+  }
+
+  to {
+    transform: scaleX(0);
+  }
 }
 
 a {

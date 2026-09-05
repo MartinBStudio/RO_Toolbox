@@ -1,3 +1,4 @@
+import { Squares2X2Icon } from "@heroicons/react/24/outline";
 import type { LoginAccount } from "../backendConnector/api.ts";
 
 type QuickLaunchModePanelProps = {
@@ -37,8 +38,10 @@ export function QuickLaunchModePanel({
               type="button"
               className="buttonSubtle quickLaunchOnlyExitButton"
               onClick={onExit}
+              aria-label="Switch back to full mode"
+              title="Switch back to full mode"
             >
-              Full mode
+              <Squares2X2Icon className="quickModeToggleIcon" />
             </button>
           </div>
         </div>

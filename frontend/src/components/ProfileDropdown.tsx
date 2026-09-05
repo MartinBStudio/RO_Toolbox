@@ -55,7 +55,7 @@ export function ProfileDropdown({
 
   const triggerLabel = selectedOption
     ? `${selectedOption.label}${selectedOption.profile.version ? ` (${formatManifestVersion(selectedOption.profile.version)})` : ""}`
-    : "No profile selected";
+    : "No package selected";
 
   return (
     <div className="profileDropdown" ref={containerRef}>

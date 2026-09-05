@@ -67,7 +67,7 @@ export function LootManager({
     separator: " · "
   });
   const installedProfileUrl = status?.installedProfile?.url ?? null;
-  const activeProfileName = resolveProfileName(status?.installedProfile?.name, "No active profile");
+  const activeProfileName = resolveProfileName(status?.installedProfile?.name, "No active package");
   const activeProfileAuthor = status?.installedProfile?.author ? `by ${status.installedProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.installedProfile?.version);
 
@@ -174,10 +174,10 @@ export function LootManager({
       return;
     }
     const confirmed = window.confirm(
-      `Install profile "${selectedProfile}"? This will clear current installed models first.`
+      `Install package "${selectedProfile}"? This will clear current installed models first.`
     );
     if (!confirmed) return;
-    await runAction(() => installProfile(selectedProfile), `Installed profile: ${selectedProfile}.`);
+    await runAction(() => installProfile(selectedProfile), `Installed package: ${selectedProfile}.`);
   }
 
   async function onClearInstalled() {
@@ -190,7 +190,7 @@ export function LootManager({
     try {
       await openUrl(url);
     } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to open profile link."));
+      onMessage(toErrorMessage(err, "Failed to open package link."));
     }
   }
 
@@ -240,7 +240,7 @@ export function LootManager({
           <div>
             <p className="sectionTitle">Loot models</p>
             <p className="activeProfileMeta">
-              Active profile: <span className="activeProfileValue">{activeProfileName}</span>
+              Active package: <span className="activeProfileValue">{activeProfileName}</span>
               {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
               {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
             </p>
@@ -319,7 +319,7 @@ export function LootManager({
               aria-label={collapsed ? "Expand Loot models" : "Collapse Loot models"}
               aria-expanded={!collapsed}
               disabled={loading || !hasProfiles}
-              title={!hasProfiles ? "Download profiles first" : undefined}
+              title={!hasProfiles ? "Download packages first" : undefined}
               onClick={() => setCollapsed((value) => !value)}
             >
               {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
@@ -331,6 +331,7 @@ export function LootManager({
           <div className="accordionBody">
             <div className="accordionSection">
               <div className="profilePickerRow">
+                <p className="settingsSectionLabel">Choose package</p>
                 <ProfileDropdown
                   groups={profileOptionGroups}
                   disabled={loading || availableProfiles.length === 0}
@@ -354,8 +355,8 @@ export function LootManager({
                         type="button"
                         className="iconBtn iconBtnSubtle iconBtnDim"
                         onClick={() => openUrl(selectedProfileData.url!)}
-                        title="Open profile page"
-                        aria-label="Open profile page"
+                        title="Open package page"
+                        aria-label="Open package page"
                       >
                         <ArrowTopRightOnSquareIcon className="heroIcon" />
                       </button>
@@ -394,7 +395,7 @@ export function LootManager({
                 </div>
               ) : (
                 <>
-                  <p className="profileCardEmpty">No profile selected</p>
+                  <p className="profileCardEmpty">No package selected</p>
                   <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
                     {installButtonLabel}
                   </button>

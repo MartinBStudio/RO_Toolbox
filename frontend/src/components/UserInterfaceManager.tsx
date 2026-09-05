@@ -67,7 +67,7 @@ export function UserInterfaceManager({
     separator: " · "
   });
   const installedProfileUrl = status?.userInterfaceInstalledProfile?.url ?? null;
-  const activeProfileName = resolveProfileName(status?.userInterfaceInstalledProfile?.name, "No active profile");
+  const activeProfileName = resolveProfileName(status?.userInterfaceInstalledProfile?.name, "No active package");
   const activeProfileAuthor = status?.userInterfaceInstalledProfile?.author ? `by ${status.userInterfaceInstalledProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.userInterfaceInstalledProfile?.version);
 
@@ -138,7 +138,7 @@ export function UserInterfaceManager({
 
   async function onResourcesUpdateAction() {
     if (resourcesUpdateAvailable) {
-      await runAction(downloadUserInterfaceProfiles, "User interface profiles downloaded.");
+      await runAction(downloadUserInterfaceProfiles, "User interface packages downloaded.");
       setResourcesUpdateAvailable(false);
       setResourcesUpdateVersion(undefined);
     } else {
@@ -170,12 +170,12 @@ export function UserInterfaceManager({
       return;
     }
     const confirmed = window.confirm(
-      `Install user interface profile "${selectedProfile}"? This will clear current installed models first.`
+      `Install user interface package "${selectedProfile}"? This will clear current installed models first.`
     );
     if (!confirmed) return;
     await runAction(
       () => installUserInterfaceProfile(selectedProfile),
-      `Installed user interface profile: ${selectedProfile}.`
+      `Installed user interface package: ${selectedProfile}.`
     );
   }
 
@@ -189,7 +189,7 @@ export function UserInterfaceManager({
     try {
       await openUrl(url);
     } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to open profile link."));
+      onMessage(toErrorMessage(err, "Failed to open package link."));
     }
   }
 
@@ -239,7 +239,7 @@ export function UserInterfaceManager({
           <div>
             <p className="sectionTitle">User interface</p>
             <p className="activeProfileMeta">
-              Active profile: <span className="activeProfileValue">{activeProfileName}</span>
+              Active package: <span className="activeProfileValue">{activeProfileName}</span>
               {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
               {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
             </p>
@@ -318,7 +318,7 @@ export function UserInterfaceManager({
               aria-label={collapsed ? "Expand User interface" : "Collapse User interface"}
               aria-expanded={!collapsed}
               disabled={loading || !hasProfiles}
-              title={!hasProfiles ? "Download profiles first" : undefined}
+              title={!hasProfiles ? "Download packages first" : undefined}
               onClick={() => setCollapsed((value) => !value)}
             >
               {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
@@ -330,6 +330,7 @@ export function UserInterfaceManager({
           <div className="accordionBody">
             <div className="accordionSection">
               <div className="profilePickerRow">
+                <p className="settingsSectionLabel">Choose package</p>
                 <ProfileDropdown
                   groups={profileOptionGroups}
                   disabled={loading || availableProfiles.length === 0}
@@ -353,8 +354,8 @@ export function UserInterfaceManager({
                         type="button"
                         className="iconBtn iconBtnSubtle iconBtnDim"
                         onClick={() => openUrl(selectedProfileData.url!)}
-                        title="Open profile page"
-                        aria-label="Open profile page"
+                        title="Open package page"
+                        aria-label="Open package page"
                       >
                         <ArrowTopRightOnSquareIcon className="heroIcon" />
                       </button>
@@ -393,7 +394,7 @@ export function UserInterfaceManager({
                 </div>
               ) : (
                 <>
-                  <p className="profileCardEmpty">No profile selected</p>
+                  <p className="profileCardEmpty">No package selected</p>
                   <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
                     {installButtonLabel}
                   </button>

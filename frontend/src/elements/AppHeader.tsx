@@ -7,8 +7,10 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
+  BoltIcon,
   Cog6ToothIcon,
-  QuestionMarkCircleIcon
+  QuestionMarkCircleIcon,
+  Squares2X2Icon
 } from "@heroicons/react/24/outline";
 import roseLogo from "../assets/rose-logo-bg.webp";
 import { checkBackendUpdate, fetchLatestReleaseDownload } from "../backendConnector/api.ts";
@@ -97,7 +99,7 @@ export function AppHeader({
         setUpdateVersion(undefined);
         setReleaseUrl(undefined);
         if (showUpToDateMessage) {
-          onMessage("You are up to date.");
+          onMessage("Application is up to date.");
         }
       }
     } catch (err) {
@@ -114,7 +116,7 @@ export function AppHeader({
           setUpdateVersion(undefined);
           setReleaseUrl(undefined);
           if (showUpToDateMessage) {
-            onMessage("You are up to date.");
+            onMessage("Application is up to date.");
           }
         } else {
           onMessage(backendResult.message || toErrorMessage(err, "Update check failed."));
@@ -239,7 +241,10 @@ export function AppHeader({
           Toolbox
         </h1>
         <div className="headerActions">
-          <span className="versionMeta">App v{appVersion ?? "..."} | Backend v{backendVersion ?? "..."}</span>
+          <span className="versionMeta">
+            App v{appVersion ?? "..."}
+            {debugMode ? ` | Backend v${backendVersion ?? "..."}` : ""}
+          </span>
           <button
             type="button"
             className="buttonSubtle headerLaunchButton"
@@ -309,9 +314,14 @@ export function AppHeader({
               className="buttonSubtle quickModeToggleButton"
               onClick={onToggleQuickLaunchOnlyMode}
               disabled={loading}
+              aria-label={quickLaunchOnlyMode ? "Switch back to full mode" : "Show only quick launch buttons"}
               title={quickLaunchOnlyMode ? "Switch back to full mode" : "Show only quick launch buttons"}
             >
-              {quickLaunchOnlyMode ? "Full mode" : "Quick mode"}
+              {quickLaunchOnlyMode ? (
+                <Squares2X2Icon className="quickModeToggleIcon" />
+              ) : (
+                <BoltIcon className="quickModeToggleIcon" />
+              )}
             </button>
           )}
         </div>
