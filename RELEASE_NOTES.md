@@ -3,6 +3,8 @@
 ## v0.3.8 – UX Polish
 
 ### ✨ Improvements
+- Improved the confirmation dialogs so they stay centered and compact instead of stretching across the app.
+- Polished the package selection and preview layout for a cleaner and more consistent package manager experience.
 - Refined the startup screen with centered branding and a cleaner loading state.
 - Simplified startup window chrome for a more focused first-launch experience.
 - Tuned the startup window size and layout for better visual balance.
