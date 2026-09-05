@@ -5,6 +5,8 @@ export type ProfileInfo = {
   url: string | null;
   createdAt: string | null;
   version: string | null;
+  managedSubfolders: string[];
+  disabledManagedSubfolders: string[];
 };
 
 export type AvailableProfile = {
@@ -15,6 +17,7 @@ export type AvailableProfile = {
   url: string | null;
   createdAt: string | null;
   version: string | null;
+  managedSubfolders: string[];
   previewImages: string[];
 };
 

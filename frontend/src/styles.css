@@ -433,6 +433,116 @@ p {
   padding-top: 0.45rem;
 }
 
+.lootManageModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(8, 12, 18, 0.74);
+}
+
+.lootManageModal {
+  width: min(820px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #141b2a;
+  border: 1px solid #2b3344;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 0.9rem;
+}
+
+.lootManageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.lootManageTitle {
+  margin: 0;
+  color: #edf4ff;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.lootManageSubtitle {
+  margin: 6px 0 0;
+  font-size: 0.76rem;
+  color: #8ea5c8;
+}
+
+.lootManageEmpty {
+  color: #b8c3d4;
+  margin: 0;
+}
+
+.lootManageTableWrap {
+  border: 1px solid #2b3344;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #111725;
+}
+
+.lootManageTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.lootManageTable thead th {
+  padding: 0.7rem 0.75rem;
+  text-align: left;
+  font-weight: 700;
+  color: #dce4ef;
+  background: #171d2a;
+  border-bottom: 1px solid #2b3344;
+}
+
+.lootManageTable tbody td {
+  padding: 0.7rem 0.75rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #c7d4e8;
+  vertical-align: top;
+}
+
+.lootManageTable tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.lootManageTable tbody tr:hover td {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.lootManageFolder {
+  font-family: "Consolas", "SFMono-Regular", monospace;
+  font-weight: 700;
+  color: #edf4ff;
+}
+
+.lootManageToggleCell {
+  text-align: center;
+  width: 12%;
+}
+
+.lootManageToggle {
+  width: 16px;
+  height: 16px;
+  accent-color: #226cf1;
+  cursor: pointer;
+}
+
+.lootManageFooter {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
 .lootHeader {
   border: 1px solid #2b3344;
   border-radius: 8px;
@@ -948,6 +1058,21 @@ button:disabled {
   border-color: #4b607f;
 }
 
+.lootManager .iconBtnDanger {
+  background: #1a2333;
+  border-color: #3a4a64;
+  color: #c7d4e8;
+}
+
+.lootManager .iconBtnDanger .heroIcon {
+  color: #eb6b6b;
+}
+
+.lootManager .iconBtnDanger:hover:enabled {
+  background: #202c3f;
+  border-color: #5d3d3d;
+}
+
 .lootManager .iconBtnToggle {
   background: #2a5fce;
   border-color: #2a5fce;
@@ -1150,6 +1275,29 @@ button .heroIcon {
   margin-top: 0.1rem;
   border-top: 1px solid #1e2d3f;
   padding-top: 0.25rem;
+}
+
+.profileCardPreviewGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.55rem 0;
+}
+
+.profileCardPreviewImage {
+  width: 104px;
+  height: 78px;
+  object-fit: cover;
+  border-radius: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: transform 120ms ease, border-color 120ms ease;
+}
+
+.profileCardPreviewImage:hover {
+  transform: translateY(-1px);
+  border-color: rgba(151, 189, 255, 0.45);
 }
 
 .profileCardEmpty {
@@ -1392,7 +1540,9 @@ a {
 }
 
 .modalCard {
-  width: min(560px, 100%);
+  width: 360px;
+  max-width: calc(100vw - 1rem);
+  box-sizing: border-box;
 }
 
 .modalHeader {
@@ -1504,13 +1654,226 @@ a {
   transform: translateX(0.9rem);
 }
 
+.lootManageModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 12, 18, 0.72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 1000;
+}
+
+.lootManageModal {
+  width: min(760px, 100%);
+  max-height: min(82vh, 760px);
+  display: grid;
+  gap: 0.8rem;
+  background: #141b2a;
+  border: 1px solid #2b3344;
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  padding: 0.9rem;
+  overflow: auto;
+}
+
+.lootManageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.8rem;
+}
+
+.lootManageTitle {
+  margin: 0;
+  color: #edf4ff;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.lootManageSubtitle {
+  margin: 0.18rem 0 0;
+  color: #8fa6c0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.lootManageTableWrap {
+  border: 1px solid #243040;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0d1420;
+}
+
+.lootManageTable {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.lootManageTable th,
+.lootManageTable td {
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid #1a2a3d;
+  vertical-align: middle;
+  text-align: left;
+  color: #dce4ef;
+}
+
+.lootManageTable thead th {
+  background: #101b2b;
+  color: #8fa6c0;
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.lootManageTable th:first-child,
+.lootManageTable td:first-child {
+  width: 88px;
+  max-width: 88px;
+  text-align: center;
+}
+
+.lootManageTable th:nth-child(2),
+.lootManageTable td:nth-child(2) {
+  width: 18%;
+}
+
+.lootManageTable th:nth-child(3),
+.lootManageTable td:nth-child(3) {
+  width: 22%;
+}
+
+.lootManageTable th:nth-child(4),
+.lootManageTable td:nth-child(4) {
+  width: auto;
+}
+
+.lootManageTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.lootManageTable tbody tr:hover {
+  background: rgba(106, 141, 196, 0.04);
+}
+
+.lootManageFolder {
+  font-family: "Consolas", "Courier New", monospace;
+  color: #dce4ef;
+  font-size: 0.8rem;
+}
+
+.lootManageToggleCell {
+  width: 88px;
+  max-width: 88px;
+  text-align: center;
+}
+
+.lootManageToggleHeader {
+  width: 88px;
+  max-width: 88px;
+}
+
+.lootManageCheckbox {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.lootManageCheckbox input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.lootManageCheckboxBox {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  border-radius: 3px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: #0d1723;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 0 0 1px rgba(0, 0, 0, 0.35);
+  transition: background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.lootManageCheckbox.isEnabled .lootManageCheckboxBox {
+  background: linear-gradient(180deg, rgba(32, 162, 112, 0.9), rgba(18, 96, 64, 0.9));
+  border-color: rgba(149, 235, 181, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 0 1px rgba(18, 62, 41, 0.52);
+}
+
+.lootManageCheckbox.isDisabled .lootManageCheckboxBox {
+  background: linear-gradient(180deg, rgba(150, 57, 57, 0.9), rgba(94, 31, 31, 0.9));
+  border-color: rgba(245, 146, 146, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 0 0 1px rgba(64, 17, 17, 0.5);
+}
+
+.lootManageCheckboxMark {
+  width: 0.8rem;
+  height: 0.8rem;
+  overflow: visible;
+}
+
+.lootManageCheckboxCheck,
+.lootManageCheckboxCross {
+  fill: none;
+  stroke: #f5fbff;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  opacity: 0;
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.lootManageCheckbox.isEnabled .lootManageCheckboxCheck {
+  opacity: 1;
+}
+
+.lootManageCheckbox.isDisabled .lootManageCheckboxCross {
+  opacity: 1;
+}
+
+.lootManageCheckbox input:focus-visible + .lootManageCheckboxBox {
+  outline: 2px solid #8cb7ff;
+  outline-offset: 2px;
+}
+
+.lootManageEmpty {
+  margin: 0;
+  padding: 1rem;
+  border: 1px dashed #2d3f59;
+  border-radius: 8px;
+  background: rgba(16, 27, 43, 0.4);
+  color: #7d90aa;
+  text-align: center;
+}
+
+.lootManageFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  padding-top: 0.1rem;
+}
+
 .modalActions {
   margin-top: 0.5rem;
 }
 
 .confirmationModal {
-  width: min(420px, 100%);
+  width: min(360px, calc(100vw - 2rem));
+  max-width: 360px;
   padding: 1rem 1rem 0.9rem;
+  box-sizing: border-box;
+  border-radius: 12px;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.38);
 }
 
 .confirmationHeader {

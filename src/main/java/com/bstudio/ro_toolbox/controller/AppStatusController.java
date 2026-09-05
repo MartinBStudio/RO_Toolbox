@@ -31,19 +31,40 @@ public class AppStatusController {
                 new LootServiceSummaryResponse(
                         "/api/loot",
                         installed == null ? null : new ProfileInfoResponse(
-                                installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
+                                installed.name,
+                                installed.author,
+                                installed.description,
+                                installed.url,
+                                installed.createdAt,
+                                installed.version,
+                                installed.managedSubfolders,
+                                installed.disabledManagedSubfolders
                         )
                 ),
                 new CombatTextServiceSummaryResponse(
                         "/api/combattext",
                         installedCombatText == null ? null : new ProfileInfoResponse(
-                                installedCombatText.name, installedCombatText.author, installedCombatText.description, installedCombatText.url, installedCombatText.createdAt, installedCombatText.version
+                                installedCombatText.name,
+                                installedCombatText.author,
+                                installedCombatText.description,
+                                installedCombatText.url,
+                                installedCombatText.createdAt,
+                                installedCombatText.version,
+                                List.of(),
+                                List.of()
                         )
                 ),
                 new UserInterfaceServiceSummaryResponse(
                         "/api/userinterface",
                         installedUserInterface == null ? null : new ProfileInfoResponse(
-                                installedUserInterface.name, installedUserInterface.author, installedUserInterface.description, installedUserInterface.url, installedUserInterface.createdAt, installedUserInterface.version
+                                installedUserInterface.name,
+                                installedUserInterface.author,
+                                installedUserInterface.description,
+                                installedUserInterface.url,
+                                installedUserInterface.createdAt,
+                                installedUserInterface.version,
+                                List.of(),
+                                List.of()
                         )
                 ),
                 List.of(
@@ -78,6 +99,6 @@ public class AppStatusController {
     public record ServiceEndpointResponse(String key, String endpoint, String description) {
     }
 
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
+    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version, List<String> managedSubfolders, List<String> disabledManagedSubfolders) {
     }
 }
