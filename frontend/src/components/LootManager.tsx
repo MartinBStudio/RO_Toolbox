@@ -6,6 +6,7 @@ import {
   ArrowTopRightOnSquareIcon,
   ChevronDownIcon,
   ChevronUpIcon,
+  Cog6ToothIcon,
   FolderOpenIcon,
   FolderIcon,
   TrashIcon
@@ -17,6 +18,7 @@ import {
   clearResources,
   downloadProfiles,
   installProfile,
+  manageInstalledProfile,
   openItemFolder,
   openResourcesFolder
 } from "../backendConnector/api.ts";
@@ -29,6 +31,9 @@ import {
   resolveProfileName
 } from "../formatting.ts";
 import { ProfileDropdown } from "./ProfileDropdown.tsx";
+import { ManageInstalledLootModal } from "../elements/ManageInstalledLootModal.tsx";
+import { IncludedFoldersTable } from "../elements/IncludedFoldersTable.tsx";
+import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 
 type LootManagerProps = {
   status: AppStatus | null;
@@ -52,6 +57,8 @@ export function LootManager({
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
+  const [manageModalOpen, setManageModalOpen] = useState(false);
+  const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
   const availableProfiles = status?.availableProfiles ?? [];
   const profileOptionGroups = useMemo(
     () => buildProfileOptionGroups(availableProfiles),
@@ -181,9 +188,25 @@ export function LootManager({
   }
 
   async function onClearInstalled() {
-    const confirmed = window.confirm("Clear all installed models from the selected game folder?");
-    if (!confirmed) return;
+    setClearInstalledConfirmOpen(true);
+  }
+
+  async function confirmClearInstalled() {
+    setClearInstalledConfirmOpen(false);
     await runAction(clearInstalled, "Installed models cleared.");
+  }
+
+  async function onSaveManagedFolders(disabledManagedSubfolders: string[]) {
+    if (!status?.installedProfile) {
+      onMessage("No installed profile available.");
+      return;
+    }
+
+    const profileId = status.installedProfile.name || status.installedProfile.url || "installed";
+    await runAction(
+      () => manageInstalledProfile(profileId, disabledManagedSubfolders),
+      "Managed folders updated."
+    );
   }
 
   async function onOpenInstalledProfile(url: string) {
@@ -198,9 +221,11 @@ export function LootManager({
     ? `Download loot models update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
     : "Check for loot models updates";
   const hasProfiles = (status?.downloadedProfiles.length ?? 0) > 0;
+  const canClearInstalled = Boolean(status?.installedProfile);
   const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.installedProfile);
   const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
   const installButtonDisabled = loading || !canInstall || selectedProfileAlreadyInstalled;
+  const canManageInstalledFolders = Boolean(status?.installedProfile && status.selectedGameItemFolder);
 
   return (
     <>
@@ -292,17 +317,36 @@ export function LootManager({
                 </button>
               </>
             ) : null}
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle iconBtnDim"
-              disabled={loading}
-              onClick={onClearInstalled}
-              title="Clear installed"
-              aria-label="Clear installed"
-            >
-              <TrashIcon className="heroIcon" />
-            </button>
-            <span className="headerSep" />
+            {canClearInstalled ? (
+              <>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnDanger iconBtnDim"
+                  disabled={loading}
+                  onClick={onClearInstalled}
+                  title="Clear installed"
+                  aria-label="Clear installed"
+                >
+                  <TrashIcon className="heroIcon" />
+                </button>
+                {canManageInstalledFolders ? <span className="headerSep" /> : null}
+              </>
+            ) : null}
+            {canManageInstalledFolders ? (
+              <>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnSubtle iconBtnDim"
+                  disabled={loading}
+                  onClick={() => setManageModalOpen(true)}
+                  title="Manage installed packages"
+                  aria-label="Manage installed packages"
+                >
+                  <Cog6ToothIcon className="heroIcon" />
+                </button>
+                <span className="headerSep" />
+              </>
+            ) : null}
             <button
               type="button"
               className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
@@ -331,7 +375,7 @@ export function LootManager({
           <div className="accordionBody">
             <div className="accordionSection">
               <div className="profilePickerRow">
-                <p className="settingsSectionLabel">Choose package</p>
+                <p className="settingsSectionLabel">Available packages</p>
                 <ProfileDropdown
                   groups={profileOptionGroups}
                   disabled={loading || availableProfiles.length === 0}
@@ -363,22 +407,14 @@ export function LootManager({
                     ) : null}
                   </div>
                   {selectedProfilePreviewImages.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12, marginBottom: 12 }}>
+                    <div className="profileCardPreviewGrid">
                       {selectedProfilePreviewImages.map((image, index) => (
                         <img
                           key={`${selectedProfileData.id}-preview-${index}`}
                           src={image}
                           alt={`${resolveProfileName(selectedProfileData.name, selectedProfileData.id)} preview ${index + 1}`}
                           onClick={() => setExpandedPreview(image)}
-                          style={{
-                            width: 120,
-                            height: 90,
-                            objectFit: "cover",
-                            borderRadius: 6,
-                            border: "1px solid rgba(255,255,255,0.15)",
-                            background: "rgba(255,255,255,0.03)",
-                            cursor: "pointer"
-                          }}
+                          className="profileCardPreviewImage"
                         />
                       ))}
                     </div>
@@ -386,9 +422,7 @@ export function LootManager({
                   {selectedProfileData.description ? (
                     <p className="profileCardDesc">{selectedProfileData.description}</p>
                   ) : null}
-                  {selectedProfileAlreadyInstalled ? (
-                    <p className="profileCardInstalled">Already installed</p>
-                  ) : null}
+                  <IncludedFoldersTable folders={selectedProfileData.managedSubfolders || []} />
                   <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
                     {installButtonLabel}
                   </button>
@@ -406,6 +440,21 @@ export function LootManager({
         ) : null}
       </div>
       </section>
+      <ManageInstalledLootModal
+        isOpen={manageModalOpen}
+        managedSubfolders={status?.installedProfile?.managedSubfolders || []}
+        disabledManagedSubfolders={status?.installedProfile?.disabledManagedSubfolders || []}
+        onClose={() => setManageModalOpen(false)}
+        onSave={onSaveManagedFolders}
+      />
+      <ConfirmationModal
+        open={clearInstalledConfirmOpen}
+        title="Clear installed models"
+        message="Clear all installed models from the selected game folder?"
+        confirmLabel="Clear"
+        onConfirm={confirmClearInstalled}
+        onClose={() => setClearInstalledConfirmOpen(false)}
+      />
     </>
   );
 }

@@ -31,3 +31,10 @@ export function openItemFolder() {
 export function checkLootResourcesUpdate() {
   return request<ResourcesUpdateCheckResult>("/loot/check-update");
 }
+
+export function manageInstalledProfile(profileId: string, disabledManagedSubfolders: string[]) {
+  return request<{ message: string }>("/loot/manage", {
+    method: "POST",
+    body: JSON.stringify({ profileId, disabledManagedSubfolders })
+  });
+}

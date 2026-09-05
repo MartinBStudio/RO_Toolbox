@@ -29,6 +29,7 @@ import {
   resolveProfileName
 } from "../formatting.ts";
 import { ProfileDropdown } from "./ProfileDropdown.tsx";
+import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 
 type CombatTextManagerProps = {
   status: AppStatus | null;
@@ -52,6 +53,7 @@ export function CombatTextManager({
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
+  const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
   const availableProfiles = status?.combatTextAvailableProfiles ?? [];
   const profileOptionGroups = useMemo(
     () => buildProfileOptionGroups(availableProfiles),
@@ -184,8 +186,11 @@ export function CombatTextManager({
   }
 
   async function onClearInstalled() {
-    const confirmed = window.confirm("Clear all installed combat text models from the selected game folder?");
-    if (!confirmed) return;
+    setClearInstalledConfirmOpen(true);
+  }
+
+  async function confirmClearInstalled() {
+    setClearInstalledConfirmOpen(false);
     await runAction(clearCombatTextInstalled, "Installed combat text models cleared.");
   }
 
@@ -201,6 +206,7 @@ export function CombatTextManager({
     ? `Download combat text update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
     : "Check for combat text updates";
   const hasProfiles = (status?.combatTextDownloadedProfiles.length ?? 0) > 0;
+  const canClearInstalled = Boolean(status?.combatTextInstalledProfile);
   const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.combatTextInstalledProfile);
   const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
   const installButtonDisabled = loading || !canInstall || selectedProfileAlreadyInstalled;
@@ -295,17 +301,21 @@ export function CombatTextManager({
                 </button>
               </>
             ) : null}
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle iconBtnDim"
-              disabled={loading}
-              onClick={onClearInstalled}
-              title="Clear installed"
-              aria-label="Clear installed"
-            >
-              <TrashIcon className="heroIcon" />
-            </button>
-            <span className="headerSep" />
+            {canClearInstalled ? (
+              <>
+                <button
+                  type="button"
+                  className="iconBtn iconBtnDanger iconBtnDim"
+                  disabled={loading}
+                  onClick={onClearInstalled}
+                  title="Clear installed"
+                  aria-label="Clear installed"
+                >
+                  <TrashIcon className="heroIcon" />
+                </button>
+                <span className="headerSep" />
+              </>
+            ) : null}
             <button
               type="button"
               className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
@@ -366,31 +376,20 @@ export function CombatTextManager({
                     ) : null}
                   </div>
                   {selectedProfilePreviewImages.length > 0 ? (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12, marginBottom: 12 }}>
+                    <div className="profileCardPreviewGrid">
                       {selectedProfilePreviewImages.map((image, index) => (
                         <img
                           key={`${selectedProfileData.id}-preview-${index}`}
                           src={image}
                           alt={`${resolveProfileName(selectedProfileData.name, selectedProfileData.id)} preview ${index + 1}`}
                           onClick={() => setExpandedPreview(image)}
-                          style={{
-                            width: 120,
-                            height: 90,
-                            objectFit: "cover",
-                            borderRadius: 6,
-                            border: "1px solid rgba(255,255,255,0.15)",
-                            background: "rgba(255,255,255,0.03)",
-                            cursor: "pointer"
-                          }}
+                          className="profileCardPreviewImage"
                         />
                       ))}
                     </div>
                   ) : null}
                   {selectedProfileData.description ? (
                     <p className="profileCardDesc">{selectedProfileData.description}</p>
-                  ) : null}
-                  {selectedProfileAlreadyInstalled ? (
-                    <p className="profileCardInstalled">Already installed</p>
                   ) : null}
                   <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
                     {installButtonLabel}
@@ -409,6 +408,14 @@ export function CombatTextManager({
         ) : null}
         </div>
       </section>
+      <ConfirmationModal
+        open={clearInstalledConfirmOpen}
+        title="Clear installed models"
+        message="Clear all installed combat text models from the selected game folder?"
+        confirmLabel="Clear"
+        onConfirm={confirmClearInstalled}
+        onClose={() => setClearInstalledConfirmOpen(false)}
+      />
     </>
   );
 }

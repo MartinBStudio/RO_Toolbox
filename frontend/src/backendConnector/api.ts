@@ -13,6 +13,7 @@ export {
 export {
   downloadProfiles,
   installProfile,
+  manageInstalledProfile,
   clearResources,
   clearInstalled,
   openResourcesFolder,

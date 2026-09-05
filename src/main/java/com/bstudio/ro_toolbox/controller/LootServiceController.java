@@ -25,7 +25,8 @@ public class LootServiceController {
                 absoluteOrNull(lootManagerService.getSelectedGameBase()),
                 absoluteOrNull(lootManagerService.getSelectedGameItemFolder()),
                 installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
+                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version,
+                        installed.managedSubfolders, installed.disabledManagedSubfolders
                 ),
                 lootManagerService.listDownloadedProfiles(),
                 lootManagerService.listAvailableProfiles().stream()
@@ -37,6 +38,7 @@ public class LootServiceController {
                                 profile.url(),
                                 profile.createdAt(),
                                 profile.version(),
+                                profile.managedSubfolders(),
                                 profile.previewImages()
                         ))
                         .toList()
@@ -56,8 +58,17 @@ public class LootServiceController {
         if (request == null || request.profileId() == null || request.profileId().isBlank()) {
             throw new IllegalArgumentException("profileId is required.");
         }
-        lootManagerService.installProfile(request.profileId().trim());
+        lootManagerService.installProfile(request.profileId().trim(), request.disabledManagedSubfolders());
         return new MessageResponse("Profile installed: " + request.profileId().trim());
+    }
+
+    @PostMapping("/manage")
+    public MessageResponse manageInstalledProfile(@RequestBody InstallProfileRequest request) throws IOException {
+        if (request == null || request.profileId() == null || request.profileId().isBlank()) {
+            throw new IllegalArgumentException("profileId is required.");
+        }
+        lootManagerService.manageInstalledProfile(request.profileId().trim(), request.disabledManagedSubfolders());
+        return new MessageResponse("Managed folders updated.");
     }
 
     @PostMapping("/clear-resources")
@@ -135,16 +146,16 @@ public class LootServiceController {
         new ProcessBuilder("xdg-open", path.toAbsolutePath().toString()).start();
     }
 
-    public record InstallProfileRequest(String profileId) {
+    public record InstallProfileRequest(String profileId, List<String> disabledManagedSubfolders) {
     }
 
     public record MessageResponse(String message) {
     }
 
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
+    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version, List<String> managedSubfolders, List<String> disabledManagedSubfolders) {
     }
 
-    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> previewImages) {
+    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> managedSubfolders, List<String> previewImages) {
     }
 
     public record LootStatusResponse(

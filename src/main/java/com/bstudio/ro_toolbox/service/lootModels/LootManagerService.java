@@ -399,6 +399,7 @@ public class LootManagerService {
             String version,
             long normalizedVersion,
             Path source,
+            List<String> managedSubfolders,
             List<String> previewImages
     ) {
         public AvailableProfile(
@@ -412,7 +413,7 @@ public class LootManagerService {
                 long normalizedVersion,
                 Path source
         ) {
-            this(id, name, author, description, url, createdAt, version, normalizedVersion, source, List.of());
+            this(id, name, author, description, url, createdAt, version, normalizedVersion, source, List.of(), List.of());
         }
     }
 
@@ -510,6 +511,7 @@ public class LootManagerService {
                                 readManifestVersion(manifest),
                                 normalizeVersion(readManifestVersion(manifest)),
                                 p,
+                                readManifestManagedSubfolders(manifest),
                                 loadPreviewImages(p)
                         ));
                     }
@@ -527,6 +529,10 @@ public class LootManagerService {
     }
 
     public void installProfile(String profileId) throws IOException {
+        installProfile(profileId, List.of());
+    }
+
+    public void installProfile(String profileId, List<String> disabledManagedSubfolders) throws IOException {
         Path destination = getSelectedGameItemFolder();
         if (destination == null) {
             throw new IllegalStateException("No game installation folder is selected.");
@@ -537,6 +543,65 @@ public class LootManagerService {
         copyDirectoryContents(selected.source(), destination);
         normalizeInstalledManifest(destination);
         setCurrentLootProfile(selected.id());
+
+        if (disabledManagedSubfolders != null && !disabledManagedSubfolders.isEmpty()) {
+            manageInstalledProfile(profileId, disabledManagedSubfolders);
+        }
+    }
+
+    public void manageInstalledProfile(String profileId, List<String> disabledManagedSubfolders) throws IOException {
+        Path destination = getSelectedGameItemFolder();
+        if (destination == null) {
+            throw new IllegalStateException("No game installation folder is selected.");
+        }
+
+        Path manifest = resolveManifestPath(destination);
+        if (!Files.exists(manifest)) {
+            throw new IllegalStateException("No installed profile found.");
+        }
+
+        List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
+        if (managedSubfolders == null || managedSubfolders.isEmpty()) {
+            throw new IllegalStateException("Profile has no managed subfolders.");
+        }
+
+        disabledManagedSubfolders = disabledManagedSubfolders != null ? disabledManagedSubfolders : List.of();
+        Set<String> normalizedDisabled = disabledManagedSubfolders.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .map(value -> value.toLowerCase())
+                .collect(java.util.stream.Collectors.toCollection(LinkedHashSet::new));
+
+        for (String subfolder : managedSubfolders) {
+            if (subfolder == null || subfolder.isBlank()) continue;
+            Path relative = Paths.get(subfolder).normalize();
+            if (relative.isAbsolute() || relative.startsWith("..")) continue;
+            Path target = destination.resolve(relative).normalize();
+            if (!target.startsWith(destination)) continue;
+
+            Path parent = target.getParent();
+            String targetName = target.getFileName().toString();
+            if (parent == null) continue;
+
+            Path disabledPath = parent.resolve("disabled_" + targetName);
+            boolean shouldBeDisabled = normalizedDisabled.contains(subfolder.toLowerCase());
+            boolean isCurrentlyDisabled = Files.exists(disabledPath) && Files.isDirectory(disabledPath);
+
+            if (shouldBeDisabled && !isCurrentlyDisabled) {
+                // Disable: rename folder to disabled_*
+                if (Files.exists(target) && Files.isDirectory(target)) {
+                    Files.move(target, disabledPath, StandardCopyOption.REPLACE_EXISTING);
+                    log("Disabled managed subfolder: " + target.toAbsolutePath());
+                }
+            } else if (!shouldBeDisabled && isCurrentlyDisabled) {
+                // Enable: rename folder back from disabled_*
+                if (Files.exists(disabledPath) && Files.isDirectory(disabledPath)) {
+                    Files.move(disabledPath, target, StandardCopyOption.REPLACE_EXISTING);
+                    log("Enabled managed subfolder: " + disabledPath.toAbsolutePath());
+                }
+            }
+        }
     }
 
     private AvailableProfile findAvailableProfile(String profileId) {
@@ -557,14 +622,22 @@ public class LootManagerService {
         public final String url;
         public final String createdAt;
         public final String version;
+        public final List<String> managedSubfolders;
+        public final List<String> disabledManagedSubfolders;
 
-        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version) {
+        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version, List<String> managedSubfolders, List<String> disabledManagedSubfolders) {
             this.name = name;
             this.author = author;
             this.description = description;
             this.url = url;
             this.createdAt = createdAt;
             this.version = version;
+            this.managedSubfolders = managedSubfolders;
+            this.disabledManagedSubfolders = disabledManagedSubfolders;
+        }
+
+        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version) {
+            this(name, author, description, url, createdAt, version, List.of(), List.of());
         }
     }
 
@@ -573,19 +646,22 @@ public class LootManagerService {
         if (itemFolder == null || !Files.exists(itemFolder)) {
             return null;
         }
-        
+
         Path manifest = resolveManifestPath(itemFolder);
         if (!Files.exists(manifest)) {
             return null;
         }
 
+        List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
         return new ProfileInfo(
             readManifestName(manifest),
             readManifestAuthor(manifest),
             readManifestDescription(manifest),
             readManifestUrl(manifest),
             readManifestCreatedAt(manifest),
-            readManifestVersion(manifest)
+            readManifestVersion(manifest),
+            managedSubfolders,
+            readManifestDisabledManagedSubfolders(itemFolder, managedSubfolders)
         );
     }
 
@@ -689,6 +765,29 @@ public class LootManagerService {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    private List<String> readManifestDisabledManagedSubfolders(Path itemFolder, List<String> managedSubfolders) {
+        if (itemFolder == null || !Files.exists(itemFolder) || managedSubfolders == null || managedSubfolders.isEmpty()) {
+            return List.of();
+        }
+
+        List<String> disabled = new ArrayList<>();
+        for (String subfolder : managedSubfolders) {
+            if (subfolder == null || subfolder.isBlank()) continue;
+            Path relative = Paths.get(subfolder).normalize();
+            if (relative.isAbsolute() || relative.startsWith("..")) continue;
+
+            Path target = itemFolder.resolve(relative).normalize();
+            Path disabledTarget = target.getParent() == null
+                    ? itemFolder.resolve("disabled_" + target.getFileName())
+                    : target.getParent().resolve("disabled_" + target.getFileName());
+
+            if (!Files.exists(target) && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
+                disabled.add(subfolder);
+            }
+        }
+        return disabled;
     }
 
     private void deleteManagedSubfolders(Path baseDir, List<String> managedSubfolders) throws IOException {
