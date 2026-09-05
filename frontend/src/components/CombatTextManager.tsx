@@ -67,7 +67,7 @@ export function CombatTextManager({
     separator: " · "
   });
   const installedProfileUrl = status?.combatTextInstalledProfile?.url ?? null;
-  const activeProfileName = resolveProfileName(status?.combatTextInstalledProfile?.name, "No active profile");
+  const activeProfileName = resolveProfileName(status?.combatTextInstalledProfile?.name, "No active package");
   const activeProfileAuthor = status?.combatTextInstalledProfile?.author ? `by ${status.combatTextInstalledProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.combatTextInstalledProfile?.version);
 
@@ -142,7 +142,7 @@ export function CombatTextManager({
 
   async function onResourcesUpdateAction() {
     if (resourcesUpdateAvailable) {
-      await runAction(downloadCombatTextProfiles, "Combat text profiles downloaded.");
+      await runAction(downloadCombatTextProfiles, "Combat text packages downloaded.");
       setResourcesUpdateAvailable(false);
       setResourcesUpdateVersion(undefined);
     } else {
@@ -174,12 +174,12 @@ export function CombatTextManager({
       return;
     }
     const confirmed = window.confirm(
-      `Install combat text profile "${selectedProfile}"? This will clear current installed models first.`
+      `Install combat text package "${selectedProfile}"? This will clear current installed models first.`
     );
     if (!confirmed) return;
     await runAction(
       () => installCombatTextProfile(selectedProfile),
-      `Installed combat text profile: ${selectedProfile}.`
+      `Installed combat text package: ${selectedProfile}.`
     );
   }
 
@@ -193,7 +193,7 @@ export function CombatTextManager({
     try {
       await openUrl(url);
     } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to open profile link."));
+      onMessage(toErrorMessage(err, "Failed to open package link."));
     }
   }
 
@@ -243,7 +243,7 @@ export function CombatTextManager({
           <div>
             <p className="sectionTitle">Combat text</p>
             <p className="activeProfileMeta">
-              Active profile: <span className="activeProfileValue">{activeProfileName}</span>
+              Active package: <span className="activeProfileValue">{activeProfileName}</span>
               {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
               {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
             </p>
@@ -322,7 +322,7 @@ export function CombatTextManager({
               aria-label={collapsed ? "Expand Combat text" : "Collapse Combat text"}
               aria-expanded={!collapsed}
               disabled={loading || !hasProfiles}
-              title={!hasProfiles ? "Download profiles first" : undefined}
+              title={!hasProfiles ? "Download packages first" : undefined}
               onClick={() => setCollapsed((value) => !value)}
             >
               {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
@@ -334,6 +334,7 @@ export function CombatTextManager({
           <div className="accordionBody">
             <div className="accordionSection">
               <div className="profilePickerRow">
+                <p className="settingsSectionLabel">Choose package</p>
                 <ProfileDropdown
                   groups={profileOptionGroups}
                   disabled={loading || availableProfiles.length === 0}
@@ -357,8 +358,8 @@ export function CombatTextManager({
                         type="button"
                         className="iconBtn iconBtnSubtle iconBtnDim"
                         onClick={() => openUrl(selectedProfileData.url!)}
-                        title="Open profile page"
-                        aria-label="Open profile page"
+                        title="Open package page"
+                        aria-label="Open package page"
                       >
                         <ArrowTopRightOnSquareIcon className="heroIcon" />
                       </button>
@@ -397,7 +398,7 @@ export function CombatTextManager({
                 </div>
               ) : (
                 <>
-                  <p className="profileCardEmpty">No profile selected</p>
+                  <p className="profileCardEmpty">No package selected</p>
                   <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
                     {installButtonLabel}
                   </button>

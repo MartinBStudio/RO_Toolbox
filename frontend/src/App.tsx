@@ -282,7 +282,7 @@ function App() {
                                         <div className="card serviceContentPanel">
                                             <div>
                                                 <p className="sectionTitle">Texture replacer</p>
-                                                <p className="activeProfileMeta">Manage loot, combat text, and user interface profile packs.</p>
+                                                <p className="activeProfileMeta">Manage loot, combat text, and user interface packages.</p>
                                             </div>
                                             <LootManager
                                                 status={status}
@@ -324,7 +324,7 @@ function App() {
                                 </section>
                             </div>
                         )}
-                        {!quickLaunchOnlyActive && <StatusMessage message={message}/>}
+                        {!quickLaunchOnlyActive && <StatusMessage message={message} onDismiss={() => setMessage("")}/>}
                     </div>
                     {!quickLaunchOnlyActive && (
                         <AppFooter
