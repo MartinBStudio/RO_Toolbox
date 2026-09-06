@@ -477,6 +477,7 @@ function App() {
                     )}
                     <ConfirmationModal
                         open={closeConfirmOpen}
+                        smallMode={quickLaunchOnlyActive}
                         title="Close application"
                         message="Are you sure you want to close RO Toolbox?"
                         confirmLabel="Close"

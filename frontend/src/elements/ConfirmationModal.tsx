@@ -2,6 +2,7 @@ type ConfirmationModalProps = {
   open: boolean;
   title: string;
   message: string;
+  smallMode?: boolean;
   confirmLabel?: string;
   cancelLabel?: string;
   confirmButtonClassName?: string;
@@ -13,6 +14,7 @@ export function ConfirmationModal({
   open,
   title,
   message,
+  smallMode = false,
   confirmLabel = "Confirm",
   cancelLabel = "Cancel",
   confirmButtonClassName = "buttonDanger",
@@ -24,14 +26,14 @@ export function ConfirmationModal({
   }
 
   return (
-    <div className="modalBackdrop" onClick={onClose}>
-      <section className="card modalCard confirmationModal" onClick={(event) => event.stopPropagation()}>
+    <div className={`modalBackdrop${smallMode ? " modalBackdropSmall" : ""}`} onClick={onClose}>
+      <section className={`card modalCard confirmationModal${smallMode ? " confirmationModalSmall" : ""}`} onClick={(event) => event.stopPropagation()}>
         <div className="modalHeader confirmationHeader">
-          <div className="confirmationTitleBlock">
-            <div className="confirmationIcon" aria-hidden="true">⚠</div>
+          <div className={`confirmationTitleBlock${smallMode ? " confirmationTitleBlockSmall" : ""}`}>
+            {!smallMode && <div className="confirmationIcon" aria-hidden="true">⚠</div>}
             <h2>{title}</h2>
           </div>
-          <button type="button" className="buttonSubtle" onClick={onClose}>✕</button>
+          {!smallMode && <button type="button" className="buttonSubtle" onClick={onClose}>✕</button>}
         </div>
 
         <p className="confirmationMessage">{message}</p>

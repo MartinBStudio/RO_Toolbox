@@ -1995,6 +1995,44 @@ a {
   box-shadow: 0 20px 42px rgba(0, 0, 0, 0.38);
 }
 
+.modalBackdropSmall {
+  padding: 0.35rem;
+}
+
+.confirmationModalSmall {
+  width: min(276px, calc(100vw - 0.7rem));
+  max-width: 276px;
+  max-height: calc(100vh - 0.7rem);
+  padding: 0.35rem 0.45rem 0.4rem;
+  border-radius: 10px;
+  overflow: auto;
+}
+
+.confirmationModalSmall .confirmationHeader {
+  margin-bottom: 0.2rem;
+}
+
+.confirmationTitleBlockSmall h2 {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.2;
+}
+
+.confirmationModalSmall .confirmationMessage {
+  margin-bottom: 0.3rem;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.confirmationModalSmall .confirmationActions {
+  gap: 0.3rem;
+}
+
+.confirmationModalSmall .confirmationActions button {
+  padding: 0.2rem 0.35rem;
+  font-size: 0.74rem;
+}
+
 .confirmationHeader {
   align-items: flex-start;
   margin-bottom: 0.75rem;
