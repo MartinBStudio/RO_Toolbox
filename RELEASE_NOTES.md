@@ -1,6 +1,6 @@
 # RO Toolbox – Release Notes
 
-## v4.0.2 – Small mode close confirmation sizing
+## v0.4.2 – Small mode close confirmation sizing
 
 ### ✨ Improvements
 - The app close confirmation modal now supports a small-mode layout so it fits and is easier to use in quick-launch/small mode.
