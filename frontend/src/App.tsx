@@ -1,4 +1,5 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { KeyIcon, SwatchIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import {AppHeader} from "./elements/AppHeader.tsx";
 import {AppFooter} from "./elements/AppFooter.tsx";
@@ -19,6 +20,7 @@ import {TroseRunningBanner} from "./elements/TroseRunningBanner.tsx";
 import {QuickLaunchModePanel} from "./components/QuickLaunchModePanel.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
 import {useWindowMode} from "./hooks/useWindowMode.ts";
+import { ConfirmationModal } from "./elements/ConfirmationModal.tsx";
 import {
     getReleaseNotes,
     getSelectedServiceSetting,
@@ -68,6 +70,8 @@ function App() {
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>(readInitialService);
     const [minimumStartupDisplayReached, setMinimumStartupDisplayReached] = useState(false);
     const [troseRefreshLoading, setTroseRefreshLoading] = useState(false);
+    const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+    const allowWindowCloseRef = useRef(false);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
     const hasQuickLaunchProfiles = quickAccounts.length > 0;
@@ -81,6 +85,27 @@ function App() {
     const showStartupScreen = !backendReady || !minimumStartupDisplayReached;
 
     useWindowMode(backendReady && minimumStartupDisplayReached, quickLaunchOnlyActive);
+
+    useEffect(() => {
+        const appWindow = getCurrentWindow();
+        let unlisten: (() => void) | undefined;
+
+        appWindow.onCloseRequested((event) => {
+            if (allowWindowCloseRef.current) {
+                return;
+            }
+            event.preventDefault();
+            setCloseConfirmOpen(true);
+        }).then((dispose) => {
+            unlisten = dispose;
+        }).catch(() => undefined);
+
+        return () => {
+            if (unlisten) {
+                unlisten();
+            }
+        };
+    }, []);
 
     function toErrorMessage(err: unknown, fallback: string) {
         if (err instanceof Error && err.message) {
@@ -176,6 +201,17 @@ function App() {
             await setQuickLaunchOnlyMode(false);
         } catch (err) {
             setMessage(toErrorMessage(err, "Failed to disable quick launch mode."));
+        }
+    }
+
+    async function confirmCloseApplication() {
+        allowWindowCloseRef.current = true;
+        setCloseConfirmOpen(false);
+        try {
+            await getCurrentWindow().destroy();
+        } catch (err) {
+            allowWindowCloseRef.current = false;
+            setMessage(toErrorMessage(err, "Failed to close application."));
         }
     }
 
@@ -418,6 +454,15 @@ function App() {
                             onMessage={setMessage}
                         />
                     )}
+                    <ConfirmationModal
+                        open={closeConfirmOpen}
+                        title="Close application"
+                        message="Are you sure you want to close RO Toolbox?"
+                        confirmLabel="Close"
+                        confirmButtonClassName="buttonDanger"
+                        onConfirm={confirmCloseApplication}
+                        onClose={() => setCloseConfirmOpen(false)}
+                    />
                 </>
             </BackendReadyGate>
         </main>

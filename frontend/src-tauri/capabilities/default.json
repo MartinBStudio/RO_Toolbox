@@ -20,6 +20,7 @@
     "core:window:allow-set-maximizable",
     "core:window:allow-set-minimizable",
     "core:window:allow-set-position",
+    "core:window:allow-destroy",
     "updater:default",
     "process:default",
     "dialog:default",
