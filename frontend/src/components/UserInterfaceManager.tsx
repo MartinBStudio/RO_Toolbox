@@ -4,8 +4,7 @@ import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
+  MagnifyingGlassIcon,
   FolderIcon,
   FolderOpenIcon,
   TrashIcon
@@ -207,7 +206,7 @@ export function UserInterfaceManager({
   const resourcesUpdateTitle = resourcesUpdateAvailable
     ? `Download user interface update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
     : "Check for user interface updates";
-  const hasProfiles = (status?.userInterfaceDownloadedProfiles.length ?? 0) > 0;
+  const hasProfiles = (status?.userInterfaceDownloadedProfiles?.length ?? 0) > 0;
   const canClearInstalled = Boolean(status?.userInterfaceInstalledProfile);
   const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.userInterfaceInstalledProfile);
   const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
@@ -331,13 +330,12 @@ export function UserInterfaceManager({
             <button
               type="button"
               className="iconBtn iconBtnToggle"
-              aria-label={collapsed ? "Expand User interface" : "Collapse User interface"}
-              aria-expanded={!collapsed}
-              disabled={loading}
-              title={!hasProfiles ? "No downloaded packages yet" : undefined}
-              onClick={() => setCollapsed((value) => !value)}
+              disabled={loading || !hasProfiles}
+              title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
+              aria-label="Browse packages"
+              onClick={() => setCollapsed(false)}
             >
-              {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
+              <MagnifyingGlassIcon className="heroIcon" />
             </button>
           </div>
         </div>

@@ -4,8 +4,7 @@ import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
+  MagnifyingGlassIcon,
   FolderIcon,
   FolderOpenIcon,
   TrashIcon
@@ -90,7 +89,7 @@ export function BuffIconsManager({
   useEffect(() => {
     if (!backendReady) return;
     void checkResourcesUpdate();
-  }, [backendReady, status?.buffIconsDownloadedProfiles.length]);
+  }, [backendReady, status?.buffIconsDownloadedProfiles?.length]);
 
   useEffect(() => {
     setExpandedPreview(null);
@@ -211,7 +210,7 @@ export function BuffIconsManager({
   const resourcesUpdateTitle = resourcesUpdateAvailable
     ? `Download buff icons update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
     : "Check for buff icons updates";
-  const hasProfiles = (status?.buffIconsDownloadedProfiles.length ?? 0) > 0;
+  const hasProfiles = (status?.buffIconsDownloadedProfiles?.length ?? 0) > 0;
   const canClearInstalled = Boolean(status?.buffIconsInstalledProfile);
   const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.buffIconsInstalledProfile);
   const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
@@ -335,13 +334,12 @@ export function BuffIconsManager({
               <button
                 type="button"
                 className="iconBtn iconBtnToggle"
-                aria-label={collapsed ? "Expand Buff icons" : "Collapse Buff icons"}
-                aria-expanded={!collapsed}
-                disabled={loading}
-                title={!hasProfiles ? "No downloaded packages yet" : undefined}
-                onClick={() => setCollapsed((value) => !value)}
+                disabled={loading || !hasProfiles}
+                title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
+                aria-label="Browse packages"
+                onClick={() => setCollapsed(false)}
               >
-                {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
+                <MagnifyingGlassIcon className="heroIcon" />
               </button>
             </div>
           </div>

@@ -4,8 +4,7 @@ import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
+  MagnifyingGlassIcon,
   Cog6ToothIcon,
   FolderOpenIcon,
   FolderIcon,
@@ -274,7 +273,7 @@ export function LootManager({
   const resourcesUpdateTitle = resourcesUpdateAvailable
     ? `Download loot models update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
     : "Check for loot models updates";
-  const hasProfiles = (status?.downloadedProfiles.length ?? 0) > 0;
+  const hasProfiles = (status?.downloadedProfiles?.length ?? 0) > 0;
   const canClearInstalled = Boolean(status?.installedProfile);
   const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.installedProfile);
   const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
@@ -414,13 +413,12 @@ export function LootManager({
             <button
               type="button"
               className="iconBtn iconBtnToggle"
-              aria-label={collapsed ? "Expand Loot models" : "Collapse Loot models"}
-              aria-expanded={!collapsed}
-              disabled={loading}
-              title={!hasProfiles ? "No downloaded packages yet" : undefined}
-              onClick={() => setCollapsed((value) => !value)}
+              disabled={loading || !hasProfiles}
+              title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
+              aria-label="Browse packages"
+              onClick={() => setCollapsed(false)}
             >
-              {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
+              <MagnifyingGlassIcon className="heroIcon" />
             </button>
           </div>
         </div>

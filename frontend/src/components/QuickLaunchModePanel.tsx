@@ -17,10 +17,19 @@ export function QuickLaunchModePanel({
   onExit
 }: QuickLaunchModePanelProps) {
   return (
-    <section className="card quickLaunchOnlyPanel">
+    <section className="quickLaunchOnlyPanel">
       <div className="quickLaunchOnlyContent">
         <div className="quickLaunchOnlyScroller">
           <div className="quickLaunchOnlyActions">
+            <button
+              type="button"
+              className="buttonSubtle quickLaunchOnlyExitButton"
+              onClick={onExit}
+              aria-label="Switch back to full mode"
+              title="Switch back to full mode"
+            >
+              <Squares2X2Icon className="quickModeToggleIcon" />
+            </button>
             {accounts.map((account) => (
               <button
                 key={account.id}
@@ -34,15 +43,6 @@ export function QuickLaunchModePanel({
                 <span className="quickAccountName">{account.name}</span>
               </button>
             ))}
-            <button
-              type="button"
-              className="buttonSubtle quickLaunchOnlyExitButton"
-              onClick={onExit}
-              aria-label="Switch back to full mode"
-              title="Switch back to full mode"
-            >
-              <Squares2X2Icon className="quickModeToggleIcon" />
-            </button>
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { getVersion as getAppVersion } from "@tauri-apps/api/app";
 import {
   getIgnoreConfigWarningsSetting,
@@ -39,17 +39,35 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
   const [debugMode, setDebugMode] = useState(false);
   const [ignoreConfigWarnings, setIgnoreConfigWarningsState] = useState(false);
   const [quickLaunchOnlyMode, setQuickLaunchOnlyModeState] = useState(false);
+  const refreshInFlightRef = useRef<Promise<void> | null>(null);
 
   function isSameStatus(nextStatus: AppStatus, currentStatus: AppStatus | null) {
     if (currentStatus === null) {
       return false;
     }
-    return JSON.stringify(nextStatus) === JSON.stringify(currentStatus);
+    try {
+      return JSON.stringify(nextStatus) === JSON.stringify(currentStatus);
+    } catch {
+      return false;
+    }
   }
 
   const refreshStatus = useCallback(async () => {
-    const nextStatus = await getStatus();
-    setStatus((currentStatus) => (isSameStatus(nextStatus, currentStatus) ? currentStatus : nextStatus));
+    if (refreshInFlightRef.current) {
+      return refreshInFlightRef.current;
+    }
+    const refreshTask = (async () => {
+      const nextStatus = await getStatus();
+      setStatus((currentStatus) => (isSameStatus(nextStatus, currentStatus) ? currentStatus : nextStatus));
+    })();
+    refreshInFlightRef.current = refreshTask;
+    try {
+      await refreshTask;
+    } finally {
+      if (refreshInFlightRef.current === refreshTask) {
+        refreshInFlightRef.current = null;
+      }
+    }
   }, []);
 
   useEffect(() => {
