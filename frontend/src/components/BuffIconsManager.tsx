@@ -12,13 +12,13 @@ import {
 } from "@heroicons/react/24/outline";
 import type { AppStatus } from "../types";
 import {
-  checkUserInterfaceResourcesUpdate,
-  clearUserInterfaceInstalled,
-  clearUserInterfaceResources,
-  downloadUserInterfaceProfiles,
-  installUserInterfaceProfile,
-  openUserInterfaceItemFolder,
-  openUserInterfaceResourcesFolder
+  checkBuffIconsResourcesUpdate,
+  clearBuffIconsInstalled,
+  clearBuffIconsResources,
+  downloadBuffIconsProfiles,
+  installBuffIconsProfile,
+  openBuffIconsItemFolder,
+  openBuffIconsResourcesFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
 import {
@@ -32,7 +32,7 @@ import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
 
-type UserInterfaceManagerProps = {
+type BuffIconsManagerProps = {
   status: AppStatus | null;
   loading: boolean;
   onBusyChange: (busy: boolean, message?: string) => void;
@@ -40,13 +40,13 @@ type UserInterfaceManagerProps = {
   onMessage: (message: string) => void;
 };
 
-export function UserInterfaceManager({
+export function BuffIconsManager({
   status,
   loading,
   onBusyChange,
   onStatusRefresh,
   onMessage
-}: UserInterfaceManagerProps) {
+}: BuffIconsManagerProps) {
   const { backendReady, debugMode } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
@@ -55,7 +55,7 @@ export function UserInterfaceManager({
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
-  const availableProfiles = status?.userInterfaceAvailableProfiles ?? [];
+  const availableProfiles = status?.buffIconsAvailableProfiles ?? [];
   const profileOptionGroups = useMemo(
     () => buildProfileOptionGroups(availableProfiles),
     [availableProfiles]
@@ -69,10 +69,10 @@ export function UserInterfaceManager({
     createdAt: selectedProfileData?.createdAt,
     separator: " · "
   });
-  const installedProfileUrl = status?.userInterfaceInstalledProfile?.url ?? null;
-  const activeProfileName = resolveProfileName(status?.userInterfaceInstalledProfile?.name, "No active package");
-  const activeProfileAuthor = status?.userInterfaceInstalledProfile?.author ? `by ${status.userInterfaceInstalledProfile.author}` : null;
-  const activeProfileVersion = formatManifestVersion(status?.userInterfaceInstalledProfile?.version);
+  const installedProfileUrl = status?.buffIconsInstalledProfile?.url ?? null;
+  const activeProfileName = resolveProfileName(status?.buffIconsInstalledProfile?.name, "No active package");
+  const activeProfileAuthor = status?.buffIconsInstalledProfile?.author ? `by ${status.buffIconsInstalledProfile.author}` : null;
+  const activeProfileVersion = formatManifestVersion(status?.buffIconsInstalledProfile?.version);
 
   useEffect(() => {
     if (availableProfiles.length === 0) {
@@ -90,7 +90,11 @@ export function UserInterfaceManager({
   useEffect(() => {
     if (!backendReady) return;
     void checkResourcesUpdate();
-  }, [backendReady, status?.userInterfaceDownloadedProfiles]);
+  }, [backendReady, status?.buffIconsDownloadedProfiles.length]);
+
+  useEffect(() => {
+    setExpandedPreview(null);
+  }, [selectedProfile]);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -108,7 +112,7 @@ export function UserInterfaceManager({
   async function checkResourcesUpdate() {
     setResourcesUpdateChecking(true);
     try {
-      const result = await checkUserInterfaceResourcesUpdate();
+      const result = await checkBuffIconsResourcesUpdate();
       if (result.success && result.updateAvailable) {
         setResourcesUpdateAvailable(true);
         setResourcesUpdateVersion(result.remoteVersion);
@@ -143,20 +147,20 @@ export function UserInterfaceManager({
 
   async function onResourcesUpdateAction() {
     if (resourcesUpdateAvailable) {
-      await runAction(downloadUserInterfaceProfiles, "User interface packages downloaded.", "Downloading user interface packages...");
+      await runAction(downloadBuffIconsProfiles, "Buff icon packages downloaded.", "Downloading buff icon packages...");
       setResourcesUpdateAvailable(false);
       setResourcesUpdateVersion(undefined);
     } else {
       setResourcesUpdateChecking(true);
       try {
-        const result = await checkUserInterfaceResourcesUpdate();
+        const result = await checkBuffIconsResourcesUpdate();
         if (result.success && result.updateAvailable) {
           setResourcesUpdateAvailable(true);
           setResourcesUpdateVersion(result.remoteVersion);
         } else if (result.success) {
           setResourcesUpdateAvailable(false);
           setResourcesUpdateVersion(undefined);
-          onMessage("User interface resources are up to date.");
+          onMessage("Buff icon resources are up to date.");
         } else {
           onMessage(result.message || "Update check failed.");
         }
@@ -170,17 +174,17 @@ export function UserInterfaceManager({
 
   async function onInstallProfile() {
     if (!selectedProfile) return;
-    if (!status?.userInterfaceSelectedGameItemFolder) {
+    if (!status?.buffIconsSelectedGameItemFolder) {
       onMessage("Set the game folder first. It must contain trose.exe.");
       return;
     }
     const confirmed = window.confirm(
-      `Install user interface package "${selectedProfile}"? This will clear current installed models first.`
+      `Install buff icon package "${selectedProfile}"? This will replace the current state icon file.`
     );
     if (!confirmed) return;
     const success = await runAction(
-      () => installUserInterfaceProfile(selectedProfile),
-      `Installed user interface package: ${selectedProfile}.`
+      () => installBuffIconsProfile(selectedProfile),
+      `Installed buff icon package: ${selectedProfile}.`
     );
     if (success) {
       setCollapsed(true);
@@ -193,7 +197,7 @@ export function UserInterfaceManager({
 
   async function confirmClearInstalled() {
     setClearInstalledConfirmOpen(false);
-    await runAction(clearUserInterfaceInstalled, "Installed user interface models cleared.");
+    await runAction(clearBuffIconsInstalled, "Installed buff icons cleared.");
   }
 
   async function onOpenInstalledProfile(url: string) {
@@ -205,11 +209,11 @@ export function UserInterfaceManager({
   }
 
   const resourcesUpdateTitle = resourcesUpdateAvailable
-    ? `Download user interface update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
-    : "Check for user interface updates";
-  const hasProfiles = (status?.userInterfaceDownloadedProfiles.length ?? 0) > 0;
-  const canClearInstalled = Boolean(status?.userInterfaceInstalledProfile);
-  const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.userInterfaceInstalledProfile);
+    ? `Download buff icons update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
+    : "Check for buff icons updates";
+  const hasProfiles = (status?.buffIconsDownloadedProfiles.length ?? 0) > 0;
+  const canClearInstalled = Boolean(status?.buffIconsInstalledProfile);
+  const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.buffIconsInstalledProfile);
   const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
   const installButtonDisabled = loading || !canInstall || selectedProfileAlreadyInstalled;
 
@@ -247,104 +251,104 @@ export function UserInterfaceManager({
       ) : null}
       <section className="lootManager">
         <div className="lootAccordion">
-        <div className="accordionHeader">
-          <div>
-            <p className="sectionTitle">User interface</p>
-            <p className="activeProfileMeta">
-              Active package: <span className="activeProfileValue">{activeProfileName}</span>
-              {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
-              {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
-            </p>
-          </div>
-          <div className="headerActions">
-            {installedProfileUrl ? (
+          <div className="accordionHeader">
+            <div>
+              <p className="sectionTitle">Buff icons</p>
+              <p className="activeProfileMeta">
+                Active package: <span className="activeProfileValue">{activeProfileName}</span>
+                {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
+                {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
+              </p>
+            </div>
+            <div className="headerActions">
+              {installedProfileUrl ? (
+                <button
+                  type="button"
+                  className="iconBtn iconBtnSubtle iconBtnDim"
+                  disabled={loading}
+                  onClick={() => onOpenInstalledProfile(installedProfileUrl)}
+                  title="Visit author's profile"
+                  aria-label="Visit author's profile"
+                >
+                  🔗
+                </button>
+              ) : null}
+              {debugMode ? (
+                <>
+                  <button
+                    type="button"
+                    className="iconBtn iconBtnSubtle iconBtnDim"
+                    disabled={loading}
+                    onClick={() => runAction(openBuffIconsResourcesFolder)}
+                    title="Browse downloaded"
+                    aria-label="Open downloaded"
+                  >
+                    <FolderOpenIcon className="heroIcon" />
+                  </button>
+                  <button
+                    type="button"
+                    className="iconBtn iconBtnSubtle iconBtnDim"
+                    disabled={loading}
+                    onClick={() => runAction(clearBuffIconsResources, "Downloaded buff icon resources cleared.")}
+                    title="Clear downloaded"
+                    aria-label="Clear downloaded"
+                  >
+                    <TrashIcon className="heroIcon" />
+                  </button>
+                  <button
+                    type="button"
+                    className="iconBtn iconBtnSubtle iconBtnDim"
+                    disabled={loading}
+                    onClick={() => runAction(openBuffIconsItemFolder)}
+                    title="Browse installed"
+                    aria-label="Browse installed"
+                  >
+                    <FolderIcon className="heroIcon" />
+                  </button>
+                </>
+              ) : null}
+              {canClearInstalled ? (
+                <>
+                  <button
+                    type="button"
+                    className="iconBtn iconBtnDanger iconBtnDim"
+                    disabled={loading}
+                    onClick={onClearInstalled}
+                    title="Clear installed"
+                    aria-label="Clear installed"
+                  >
+                    <TrashIcon className="heroIcon" />
+                  </button>
+                  <span className="headerSep" />
+                </>
+              ) : null}
               <button
                 type="button"
-                className="iconBtn iconBtnSubtle iconBtnDim"
-                disabled={loading}
-                onClick={() => onOpenInstalledProfile(installedProfileUrl)}
-                title="Visit author's profile"
-                aria-label="Visit author's profile"
+                className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
+                disabled={loading || resourcesUpdateChecking}
+                onClick={onResourcesUpdateAction}
+                title={resourcesUpdateTitle}
+                aria-label={resourcesUpdateTitle}
               >
-                🔗
+                {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
               </button>
-            ) : null}
-            {debugMode ? (
-              <>
-                <button
-                  type="button"
-                  className="iconBtn iconBtnSubtle iconBtnDim"
-                  disabled={loading}
-                  onClick={() => runAction(openUserInterfaceResourcesFolder)}
-                  title="Browse downloaded"
-                  aria-label="Open downloaded"
-                >
-                  <FolderOpenIcon className="heroIcon" />
-                </button>
-                <button
-                  type="button"
-                  className="iconBtn iconBtnSubtle iconBtnDim"
-                  disabled={loading}
-                  onClick={() => runAction(clearUserInterfaceResources, "Downloaded user interface resources cleared.")}
-                  title="Clear downloaded"
-                  aria-label="Clear downloaded"
-                >
-                  <TrashIcon className="heroIcon" />
-                </button>
-                <button
-                  type="button"
-                  className="iconBtn iconBtnSubtle iconBtnDim"
-                  disabled={loading}
-                  onClick={() => runAction(openUserInterfaceItemFolder)}
-                  title="Browse installed"
-                  aria-label="Browse installed"
-                >
-                  <FolderIcon className="heroIcon" />
-                </button>
-              </>
-            ) : null}
-            {canClearInstalled ? (
-              <>
-                <button
-                  type="button"
-                  className="iconBtn iconBtnDanger iconBtnDim"
-                  disabled={loading}
-                  onClick={onClearInstalled}
-                  title="Clear installed"
-                  aria-label="Clear installed"
-                >
-                  <TrashIcon className="heroIcon" />
-                </button>
-                <span className="headerSep" />
-              </>
-            ) : null}
-            <button
-              type="button"
-              className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
-              disabled={loading || resourcesUpdateChecking}
-              onClick={onResourcesUpdateAction}
-              title={resourcesUpdateTitle}
-              aria-label={resourcesUpdateTitle}
-            >
-              {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
-            </button>
-            <button
-              type="button"
-              className="iconBtn iconBtnToggle"
-              aria-label={collapsed ? "Expand User interface" : "Collapse User interface"}
-              aria-expanded={!collapsed}
-              disabled={loading}
-              title={!hasProfiles ? "No downloaded packages yet" : undefined}
-              onClick={() => setCollapsed((value) => !value)}
-            >
-              {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
-            </button>
+              <button
+                type="button"
+                className="iconBtn iconBtnToggle"
+                aria-label={collapsed ? "Expand Buff icons" : "Collapse Buff icons"}
+                aria-expanded={!collapsed}
+                disabled={loading}
+                title={!hasProfiles ? "No downloaded packages yet" : undefined}
+                onClick={() => setCollapsed((value) => !value)}
+              >
+                {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
+              </button>
+            </div>
           </div>
-        </div>
 
         <ServiceDetailModal
           open={!collapsed}
-          title="User interface"
+          title="Buff icons"
           onClose={() => setCollapsed(true)}
         >
           <div className="accordionSection">
@@ -414,8 +418,8 @@ export function UserInterfaceManager({
       </section>
       <ConfirmationModal
         open={clearInstalledConfirmOpen}
-        title="Clear installed models"
-        message="Clear all installed user interface models from the selected game folder?"
+        title="Clear installed buff icons"
+        message="Clear the installed buff icon file from the selected game folder?"
         confirmLabel="Clear"
         onConfirm={confirmClearInstalled}
         onClose={() => setClearInstalledConfirmOpen(false)}

@@ -1,4 +1,5 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 import { KeyIcon, SwatchIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import {AppHeader} from "./elements/AppHeader.tsx";
 import {AppFooter} from "./elements/AppFooter.tsx";
@@ -7,6 +8,7 @@ import {BackendReadyGate} from "./elements/BackendReadyGate.tsx";
 import {LootManager} from "./components/LootManager";
 import {CombatTextManager} from "./components/CombatTextManager";
 import {UserInterfaceManager} from "./components/UserInterfaceManager";
+import {BuffIconsManager} from "./components/BuffIconsManager";
 import {LoginManager} from "./components/LoginManager.tsx";
 import {ConfigEditorManager} from "./components/ConfigEditorManager.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
@@ -18,6 +20,7 @@ import {TroseRunningBanner} from "./elements/TroseRunningBanner.tsx";
 import {QuickLaunchModePanel} from "./components/QuickLaunchModePanel.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
 import {useWindowMode} from "./hooks/useWindowMode.ts";
+import { ConfirmationModal } from "./elements/ConfirmationModal.tsx";
 import {
     getReleaseNotes,
     getSelectedServiceSetting,
@@ -67,6 +70,8 @@ function App() {
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>(readInitialService);
     const [minimumStartupDisplayReached, setMinimumStartupDisplayReached] = useState(false);
     const [troseRefreshLoading, setTroseRefreshLoading] = useState(false);
+    const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+    const allowWindowCloseRef = useRef(false);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
     const hasQuickLaunchProfiles = quickAccounts.length > 0;
@@ -80,6 +85,27 @@ function App() {
     const showStartupScreen = !backendReady || !minimumStartupDisplayReached;
 
     useWindowMode(backendReady && minimumStartupDisplayReached, quickLaunchOnlyActive);
+
+    useEffect(() => {
+        const appWindow = getCurrentWindow();
+        let unlisten: (() => void) | undefined;
+
+        appWindow.onCloseRequested((event) => {
+            if (allowWindowCloseRef.current) {
+                return;
+            }
+            event.preventDefault();
+            setCloseConfirmOpen(true);
+        }).then((dispose) => {
+            unlisten = dispose;
+        }).catch(() => undefined);
+
+        return () => {
+            if (unlisten) {
+                unlisten();
+            }
+        };
+    }, []);
 
     function toErrorMessage(err: unknown, fallback: string) {
         if (err instanceof Error && err.message) {
@@ -178,6 +204,17 @@ function App() {
         }
     }
 
+    async function confirmCloseApplication() {
+        allowWindowCloseRef.current = true;
+        setCloseConfirmOpen(false);
+        try {
+            await getCurrentWindow().destroy();
+        } catch (err) {
+            allowWindowCloseRef.current = false;
+            setMessage(toErrorMessage(err, "Failed to close application."));
+        }
+    }
+
     useEffect(() => {
         void refreshQuickAccounts();
     }, [backendReady]);
@@ -265,8 +302,25 @@ function App() {
         };
     }, [backendReady, refreshStatus]);
 
+    useEffect(() => {
+        if (!backendReady) {
+            return;
+        }
+
+        const pollInterval = window.setInterval(() => {
+            if (!document.hidden) {
+                void refreshStatus();
+            }
+        }, 5000);
+
+        return () => {
+            window.clearInterval(pollInterval);
+        };
+    }, [backendReady, refreshStatus]);
+
     return (
         <main className={`layout${loading ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
+            <div className="appBackground" aria-hidden="true" />
             <BackendReadyGate onStartupError={setMessage} showStartupScreen={showStartupScreen}>
                 <>
                     {!quickLaunchOnlyActive && (
@@ -333,26 +387,33 @@ function App() {
                                         <div className="card serviceContentPanel">
                                             <div>
                                                 <p className="sectionTitle">Texture replacer</p>
-                                                <p className="activeProfileMeta">Manage loot, combat text, and user interface packages.</p>
+                                                <p className="activeProfileMeta">Manage loot, combat text, user interface, and buff icon packages.</p>
                                             </div>
                                             <LootManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={setLoading}
+                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                             <CombatTextManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={setLoading}
+                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                             <UserInterfaceManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={setLoading}
+                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
+                                                onStatusRefresh={refreshStatus}
+                                                onMessage={setMessage}
+                                            />
+                                            <BuffIconsManager
+                                                status={status}
+                                                loading={loading}
+                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
@@ -410,6 +471,15 @@ function App() {
                             onMessage={setMessage}
                         />
                     )}
+                    <ConfirmationModal
+                        open={closeConfirmOpen}
+                        title="Close application"
+                        message="Are you sure you want to close RO Toolbox?"
+                        confirmLabel="Close"
+                        confirmButtonClassName="buttonDanger"
+                        onConfirm={confirmCloseApplication}
+                        onClose={() => setCloseConfirmOpen(false)}
+                    />
                 </>
             </BackendReadyGate>
         </main>

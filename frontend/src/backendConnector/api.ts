@@ -40,6 +40,15 @@ export {
   openUserInterfaceItemFolder,
   checkUserInterfaceResourcesUpdate
 } from "./userInterfaceApi.ts";
+export {
+  downloadBuffIconsProfiles,
+  installBuffIconsProfile,
+  clearBuffIconsResources,
+  clearBuffIconsInstalled,
+  openBuffIconsResourcesFolder,
+  openBuffIconsItemFolder,
+  checkBuffIconsResourcesUpdate
+} from "./buffIconsApi.ts";
 export { checkBackendUpdate, fetchLatestReleaseDownload } from "./updateApi.ts";
 export {
   getConfigEditorStatus,

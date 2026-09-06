@@ -97,7 +97,7 @@ export function HowToUseModal({ open, onClose }: HowToUseModalProps) {
                     {section.id === "texture-replacer" && (
                       <>
                         <p className="howToUseIntro">
-                          Use this service to manage Loot, Combat Text, and UI replacement profiles.
+                          Use this service to manage Loot, Combat Text,UI and Buff icon replacement packages.
                         </p>
                         <ol className="howToUseSteps">
                           <li>Open <strong>Settings</strong> and choose your ROSE Online game folder.</li>

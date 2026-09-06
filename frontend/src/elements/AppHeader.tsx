@@ -149,7 +149,7 @@ export function AppHeader({
         await relaunch();
       } catch (restartErr) {
         onMessage(`Update installed. Please reopen the app manually. ${toErrorMessage(restartErr, "")}`.trim());
-        await getCurrentWindow().close().catch(() => undefined);
+        await getCurrentWindow().destroy().catch(() => undefined);
       }
     } catch (err) {
       onMessage(toErrorMessage(err, "Update failed."));
