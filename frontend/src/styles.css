@@ -1599,6 +1599,21 @@ a {
   gap: 0.6rem;
 }
 
+.serviceDetailModalCard {
+  width: min(980px, 100%);
+  max-height: min(84vh, 820px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.serviceDetailModalBody {
+  min-height: 0;
+  overflow: auto;
+  display: grid;
+  gap: 0.8rem;
+}
+
 .releaseNotesContent {
   margin: 0;
   white-space: pre-wrap;

@@ -375,28 +375,28 @@ function App() {
                                             <LootManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={setLoading}
+                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                             <CombatTextManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={setLoading}
+                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                             <UserInterfaceManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={setLoading}
+                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                             <BuffIconsManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={setLoading}
+                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />

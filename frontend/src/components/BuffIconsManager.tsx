@@ -30,11 +30,12 @@ import {
 } from "../formatting.ts";
 import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
+import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
 
 type BuffIconsManagerProps = {
   status: AppStatus | null;
   loading: boolean;
-  onBusyChange: (busy: boolean) => void;
+  onBusyChange: (busy: boolean, message?: string) => void;
   onStatusRefresh: () => Promise<void>;
   onMessage: (message: string) => void;
 };
@@ -127,16 +128,18 @@ export function BuffIconsManager({
     }
   }
 
-  async function runAction(action: () => Promise<unknown>, successMessage?: string) {
-    onBusyChange(true);
+  async function runAction(action: () => Promise<unknown>, successMessage?: string, busyMessage?: string) {
+    onBusyChange(true, busyMessage);
     try {
       await action();
       await onStatusRefresh();
       if (successMessage) {
         onMessage(successMessage);
       }
+      return true;
     } catch (err) {
       onMessage(toErrorMessage(err, "Request failed."));
+      return false;
     } finally {
       onBusyChange(false);
     }
@@ -144,7 +147,7 @@ export function BuffIconsManager({
 
   async function onResourcesUpdateAction() {
     if (resourcesUpdateAvailable) {
-      await runAction(downloadBuffIconsProfiles, "Buff icon packages downloaded.");
+      await runAction(downloadBuffIconsProfiles, "Buff icon packages downloaded.", "Downloading buff icon packages...");
       setResourcesUpdateAvailable(false);
       setResourcesUpdateVersion(undefined);
     } else {
@@ -179,10 +182,13 @@ export function BuffIconsManager({
       `Install buff icon package "${selectedProfile}"? This will replace the current state icon file.`
     );
     if (!confirmed) return;
-    await runAction(
+    const success = await runAction(
       () => installBuffIconsProfile(selectedProfile),
       `Installed buff icon package: ${selectedProfile}.`
     );
+    if (success) {
+      setCollapsed(true);
+    }
   }
 
   async function onClearInstalled() {
@@ -340,72 +346,74 @@ export function BuffIconsManager({
             </div>
           </div>
 
-          {!collapsed ? (
-            <div className="accordionBody">
-              <div className="accordionSection">
-                <div className="profilePickerRow">
-                  <p className="settingsSectionLabel">Choose package</p>
-                  <ProfileDropdown
-                    groups={profileOptionGroups}
-                    disabled={loading || availableProfiles.length === 0}
-                    value={selectedProfile}
-                    onChange={setSelectedProfile}
-                  />
-                </div>
-                {selectedProfileData ? (
-                  <div className="profileCard">
-                    <div className="profileCardHeader">
-                      <div>
-                        <p className="profileCardName">{resolveProfileName(selectedProfileData.name, selectedProfileData.id)}</p>
-                        {selectedProfileMeta && (
-                          <p className="profileCardMeta">
-                            {selectedProfileMeta}
-                          </p>
-                        )}
-                      </div>
-                      {selectedProfileData.url ? (
-                        <button
-                          type="button"
-                          className="iconBtn iconBtnSubtle iconBtnDim"
-                          onClick={() => openUrl(selectedProfileData.url!)}
-                          title="Open package page"
-                          aria-label="Open package page"
-                        >
-                          <ArrowTopRightOnSquareIcon className="heroIcon" />
-                        </button>
-                      ) : null}
-                    </div>
-                    {selectedProfilePreviewImages.length > 0 ? (
-                      <div className="profileCardPreviewGrid">
-                        {selectedProfilePreviewImages.map((image, index) => (
-                          <img
-                            key={`${selectedProfileData.id}-preview-${index}`}
-                            src={image}
-                            alt={`${resolveProfileName(selectedProfileData.name, selectedProfileData.id)} preview ${index + 1}`}
-                            onClick={() => setExpandedPreview(image)}
-                            className="profileCardPreviewImage"
-                          />
-                        ))}
-                      </div>
-                    ) : null}
-                    {selectedProfileData.description ? (
-                      <p className="profileCardDesc">{selectedProfileData.description}</p>
-                    ) : null}
-                    <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
-                      {installButtonLabel}
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <p className="profileCardEmpty">No package selected</p>
-                    <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
-                      {installButtonLabel}
-                    </button>
-                  </>
-                )}
-              </div>
+        <ServiceDetailModal
+          open={!collapsed}
+          title="Buff icons"
+          onClose={() => setCollapsed(true)}
+        >
+          <div className="accordionSection">
+            <div className="profilePickerRow">
+              <p className="settingsSectionLabel">Choose package</p>
+              <ProfileDropdown
+                groups={profileOptionGroups}
+                disabled={loading || availableProfiles.length === 0}
+                value={selectedProfile}
+                onChange={setSelectedProfile}
+              />
             </div>
-          ) : null}
+            {selectedProfileData ? (
+              <div className="profileCard">
+                <div className="profileCardHeader">
+                  <div>
+                    <p className="profileCardName">{resolveProfileName(selectedProfileData.name, selectedProfileData.id)}</p>
+                    {selectedProfileMeta && (
+                      <p className="profileCardMeta">
+                        {selectedProfileMeta}
+                      </p>
+                    )}
+                  </div>
+                  {selectedProfileData.url ? (
+                    <button
+                      type="button"
+                      className="iconBtn iconBtnSubtle iconBtnDim"
+                      onClick={() => openUrl(selectedProfileData.url!)}
+                      title="Open package page"
+                      aria-label="Open package page"
+                    >
+                      <ArrowTopRightOnSquareIcon className="heroIcon" />
+                    </button>
+                  ) : null}
+                </div>
+                {selectedProfilePreviewImages.length > 0 ? (
+                  <div className="profileCardPreviewGrid">
+                    {selectedProfilePreviewImages.map((image, index) => (
+                      <img
+                        key={`${selectedProfileData.id}-preview-${index}`}
+                        src={image}
+                        alt={`${resolveProfileName(selectedProfileData.name, selectedProfileData.id)} preview ${index + 1}`}
+                        onClick={() => setExpandedPreview(image)}
+                        className="profileCardPreviewImage"
+                      />
+                    ))}
+                  </div>
+                ) : null}
+                {selectedProfileData.description ? (
+                  <p className="profileCardDesc">{selectedProfileData.description}</p>
+                ) : null}
+                <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                  {installButtonLabel}
+                </button>
+              </div>
+            ) : (
+              <>
+                <p className="profileCardEmpty">No package selected</p>
+                <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                  {installButtonLabel}
+                </button>
+              </>
+            )}
+          </div>
+        </ServiceDetailModal>
         </div>
       </section>
       <ConfirmationModal
