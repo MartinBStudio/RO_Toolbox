@@ -36,7 +36,7 @@ export function ConfirmationModal({
           <button
             type="button"
             className={`buttonSubtle${smallMode ? " confirmationCloseButtonSmall" : ""}`}
-            aria-label="Close confirmation modal"
+            aria-label={`Close ${title}`}
             onClick={onClose}
           >
             ✕
