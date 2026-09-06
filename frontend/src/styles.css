@@ -1611,9 +1611,9 @@ a {
   gap: 0.6rem;
 }
 
-.serviceDetailModalCard {
-  width: min(980px, 100%);
-  max-height: min(84vh, 820px);
+.modalCard.serviceDetailModalCard {
+  width: min(50vw, calc(100vw - 1rem));
+  height: min(80vh, calc(100vh - 1rem));
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   gap: 0.6rem;

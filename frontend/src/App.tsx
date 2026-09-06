@@ -120,6 +120,10 @@ function App() {
         return fallback;
     }
 
+    function refreshStatusSilently() {
+        void refreshStatus().catch(() => undefined);
+    }
+
     async function onQuickLaunch() {
         setLoading(true);
         try {
@@ -127,7 +131,7 @@ function App() {
             setMessage("ROSE Online launched.");
             await refreshStatus();
             window.setTimeout(() => {
-                void refreshStatus();
+                refreshStatusSilently();
             }, 1500);
         } catch (err) {
             setMessage(toErrorMessage(err, "Failed to launch ROSE Online."));
@@ -168,7 +172,7 @@ function App() {
             setMessage(`ROSE Online launched for ${account.name}.`);
             await refreshStatus();
             window.setTimeout(() => {
-                void refreshStatus();
+                refreshStatusSilently();
             }, 1500);
         } catch (err) {
             setMessage(toErrorMessage(err, `Failed to launch ROSE Online for ${account.name}.`));
@@ -285,7 +289,7 @@ function App() {
         }
 
         const handleForegroundRefresh = () => {
-            void refreshStatus();
+            refreshStatusSilently();
         };
         const handleVisibilityChange = () => {
             if (!document.hidden) {
@@ -309,7 +313,7 @@ function App() {
 
         const pollInterval = window.setInterval(() => {
             if (!document.hidden) {
-                void refreshStatus();
+                refreshStatusSilently();
             }
         }, 5000);
 

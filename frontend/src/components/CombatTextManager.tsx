@@ -4,8 +4,7 @@ import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
+  MagnifyingGlassIcon,
   FolderIcon,
   FolderOpenIcon,
   TrashIcon
@@ -211,7 +210,7 @@ export function CombatTextManager({
   const resourcesUpdateTitle = resourcesUpdateAvailable
     ? `Download combat text update${resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}`
     : "Check for combat text updates";
-  const hasProfiles = (status?.combatTextDownloadedProfiles.length ?? 0) > 0;
+  const hasProfiles = (status?.combatTextDownloadedProfiles?.length ?? 0) > 0;
   const canClearInstalled = Boolean(status?.combatTextInstalledProfile);
   const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.combatTextInstalledProfile);
   const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
@@ -335,13 +334,12 @@ export function CombatTextManager({
             <button
               type="button"
               className="iconBtn iconBtnToggle"
-              aria-label={collapsed ? "Expand Combat text" : "Collapse Combat text"}
-              aria-expanded={!collapsed}
-              disabled={loading}
-              title={!hasProfiles ? "No downloaded packages yet" : undefined}
-              onClick={() => setCollapsed((value) => !value)}
+              disabled={loading || !hasProfiles}
+              title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
+              aria-label="Browse packages"
+              onClick={() => setCollapsed(false)}
             >
-              {collapsed ? <ChevronDownIcon className="heroIcon" /> : <ChevronUpIcon className="heroIcon" />}
+              <MagnifyingGlassIcon className="heroIcon" />
             </button>
           </div>
         </div>
