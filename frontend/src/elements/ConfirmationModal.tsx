@@ -33,7 +33,13 @@ export function ConfirmationModal({
             {!smallMode && <div className="confirmationIcon" aria-hidden="true">⚠</div>}
             <h2>{title}</h2>
           </div>
-          {!smallMode && <button type="button" className="buttonSubtle" onClick={onClose}>✕</button>}
+          <button
+            type="button"
+            className={`buttonSubtle${smallMode ? " confirmationCloseButtonSmall" : ""}`}
+            onClick={onClose}
+          >
+            ✕
+          </button>
         </div>
 
         <p className="confirmationMessage">{message}</p>

@@ -2012,6 +2012,12 @@ a {
   margin-bottom: 0.2rem;
 }
 
+.confirmationCloseButtonSmall {
+  padding: 0.12rem 0.32rem;
+  font-size: 0.74rem;
+  line-height: 1;
+}
+
 .confirmationTitleBlockSmall h2 {
   margin: 0;
   font-size: 0.8rem;
