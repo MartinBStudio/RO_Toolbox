@@ -13,6 +13,9 @@ type ApiAppStatus = {
   userInterfaceService: {
     endpoint: string;
   };
+  buffIconsService: {
+    endpoint: string;
+  };
 };
 
 type ApiLootStatus = {
@@ -39,18 +42,28 @@ type ApiUserInterfaceStatus = {
   availableProfiles: AppStatus["userInterfaceAvailableProfiles"];
 };
 
+type ApiBuffIconsStatus = {
+  selectedGameBase: string | null;
+  selectedGameItemFolder: string | null;
+  installedProfile: AppStatus["buffIconsInstalledProfile"];
+  downloadedProfiles: string[];
+  availableProfiles: AppStatus["buffIconsAvailableProfiles"];
+};
+
 export function getStatus() {
   return Promise.all([
     request<ApiAppStatus>("/status"),
     request<ApiLootStatus>("/loot/status"),
     request<ApiCombatTextStatus>("/combattext/status"),
-    request<ApiUserInterfaceStatus>("/userinterface/status")
-  ]).then(([appStatus, lootStatus, combatTextStatus, userInterfaceStatus]) => ({
+    request<ApiUserInterfaceStatus>("/userinterface/status"),
+    request<ApiBuffIconsStatus>("/bufficons/status")
+  ]).then(([appStatus, lootStatus, combatTextStatus, userInterfaceStatus, buffIconsStatus]) => ({
     version: appStatus.version,
     troseRunning: Boolean(appStatus.troseRunning),
     lootServiceEndpoint: appStatus.lootService.endpoint,
     combatTextServiceEndpoint: appStatus.combatTextService.endpoint,
     userInterfaceServiceEndpoint: appStatus.userInterfaceService.endpoint,
+    buffIconsServiceEndpoint: appStatus.buffIconsService.endpoint,
     selectedGameBase: lootStatus.selectedGameBase,
     selectedGameItemFolder: lootStatus.selectedGameItemFolder,
     installedProfile: lootStatus.installedProfile,
@@ -65,6 +78,11 @@ export function getStatus() {
     userInterfaceSelectedGameItemFolder: userInterfaceStatus.selectedGameItemFolder,
     userInterfaceInstalledProfile: userInterfaceStatus.installedProfile,
     userInterfaceDownloadedProfiles: userInterfaceStatus.downloadedProfiles,
-    userInterfaceAvailableProfiles: userInterfaceStatus.availableProfiles
+    userInterfaceAvailableProfiles: userInterfaceStatus.availableProfiles,
+    buffIconsSelectedGameBase: buffIconsStatus.selectedGameBase,
+    buffIconsSelectedGameItemFolder: buffIconsStatus.selectedGameItemFolder,
+    buffIconsInstalledProfile: buffIconsStatus.installedProfile,
+    buffIconsDownloadedProfiles: buffIconsStatus.downloadedProfiles,
+    buffIconsAvailableProfiles: buffIconsStatus.availableProfiles
   }));
 }
