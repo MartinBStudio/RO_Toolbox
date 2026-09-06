@@ -302,8 +302,25 @@ function App() {
         };
     }, [backendReady, refreshStatus]);
 
+    useEffect(() => {
+        if (!backendReady) {
+            return;
+        }
+
+        const pollInterval = window.setInterval(() => {
+            if (!document.hidden) {
+                void refreshStatus();
+            }
+        }, 5000);
+
+        return () => {
+            window.clearInterval(pollInterval);
+        };
+    }, [backendReady, refreshStatus]);
+
     return (
         <main className={`layout${loading ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
+            <div className="appBackground" aria-hidden="true" />
             <BackendReadyGate onStartupError={setMessage} showStartupScreen={showStartupScreen}>
                 <>
                     {!quickLaunchOnlyActive && (

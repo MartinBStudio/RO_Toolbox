@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 1000" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="800" y1="0" x2="800" y2="1000" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#221436"/>
+      <stop offset="0.45" stop-color="#17152d"/>
+      <stop offset="1" stop-color="#0d1020"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(1180 220) rotate(130) scale(320 240)">
+      <stop stop-color="#ffb3d9" stop-opacity="0.7"/>
+      <stop offset="0.55" stop-color="#ff7ac3" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#ff7ac3" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="moon" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(330 170) rotate(90) scale(150)">
+      <stop stop-color="#ffe9fb" stop-opacity="0.95"/>
+      <stop offset="1" stop-color="#ffe9fb" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="tower" x1="800" y1="620" x2="800" y2="980" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2e2347" stop-opacity="0.9"/>
+      <stop offset="1" stop-color="#141728" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="petal" x1="0" y1="0" x2="1" y2="1" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffd4ea" stop-opacity="0.96"/>
+      <stop offset="1" stop-color="#ff74b6" stop-opacity="0.35"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <ellipse cx="1180" cy="220" rx="320" ry="240" fill="url(#glow)"/>
+  <circle cx="330" cy="170" r="135" fill="url(#moon)"/>
+  <circle cx="286" cy="145" r="7" fill="#fff7fd" fill-opacity="0.72"/>
+  <circle cx="372" cy="108" r="4" fill="#fff7fd" fill-opacity="0.62"/>
+  <circle cx="410" cy="210" r="5" fill="#fff7fd" fill-opacity="0.55"/>
+
+  <path d="M0 782L112 738L199 762L287 715L391 736L468 710L551 736L642 700L728 731L819 692L912 723L1006 686L1102 720L1200 688L1296 721L1397 700L1500 735L1600 708V1000H0V782Z" fill="#111423" fill-opacity="0.95"/>
+  <path d="M0 825L92 802L180 816L266 792L349 808L430 789L519 804L608 781L691 799L786 776L881 795L974 774L1068 790L1159 770L1247 791L1338 779L1427 799L1514 786L1600 805V1000H0V825Z" fill="#0b0e18" fill-opacity="0.96"/>
+
+  <g opacity="0.8">
+    <path d="M760 690H840V1000H760V690Z" fill="url(#tower)"/>
+    <path d="M700 742H736V1000H700V742Z" fill="#171a2a"/>
+    <path d="M864 726H904V1000H864V726Z" fill="#171a2a"/>
+    <path d="M798 618L846 690H750L798 618Z" fill="#3f2b57"/>
+    <path d="M798 596L826 630H770L798 596Z" fill="#ffb0dc" fill-opacity="0.48"/>
+  </g>
+
+  <g opacity="0.92">
+    <path d="M1280 620C1298 594 1332 590 1352 611C1372 632 1367 664 1346 680C1318 701 1278 685 1271 657C1268 645 1271 631 1280 620Z" fill="url(#petal)"/>
+    <path d="M1358 560C1377 536 1410 538 1424 562C1438 585 1429 618 1404 629C1378 641 1349 625 1345 597C1343 585 1348 571 1358 560Z" fill="url(#petal)"/>
+    <path d="M1458 670C1479 646 1513 648 1526 673C1539 698 1525 730 1498 738C1470 746 1445 726 1443 699C1442 687 1448 677 1458 670Z" fill="url(#petal)"/>
+    <path d="M1178 524C1192 507 1219 508 1230 525C1240 542 1233 565 1213 573C1191 581 1170 567 1168 546C1167 538 1171 530 1178 524Z" fill="url(#petal)"/>
+  </g>
+
+  <g opacity="0.55">
+    <path d="M162 622C186 597 223 594 248 615C272 636 273 671 250 692C225 714 188 712 164 690C141 669 139 637 162 622Z" fill="#ffb3d9"/>
+    <path d="M214 599L248 645L189 636L214 599Z" fill="#fff2fb" fill-opacity="0.55"/>
+    <path d="M244 656L289 691L238 702L244 656Z" fill="#fff2fb" fill-opacity="0.42"/>
+  </g>
+
+  <g opacity="0.25">
+    <path d="M0 1000V910C130 876 254 862 392 875C532 888 649 924 782 918C917 912 1040 865 1176 858C1316 850 1478 889 1600 920V1000H0Z" fill="#ff8fc8"/>
+  </g>
+
+  <g opacity="0.16">
+    <circle cx="510" cy="322" r="116" fill="#f39bd0"/>
+    <circle cx="980" cy="288" r="94" fill="#ff7dc0"/>
+    <circle cx="1232" cy="376" r="74" fill="#ffd0e8"/>
+  </g>
+</svg>

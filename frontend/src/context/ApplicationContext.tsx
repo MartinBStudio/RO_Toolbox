@@ -40,8 +40,16 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
   const [ignoreConfigWarnings, setIgnoreConfigWarningsState] = useState(false);
   const [quickLaunchOnlyMode, setQuickLaunchOnlyModeState] = useState(false);
 
+  function isSameStatus(nextStatus: AppStatus, currentStatus: AppStatus | null) {
+    if (currentStatus === null) {
+      return false;
+    }
+    return JSON.stringify(nextStatus) === JSON.stringify(currentStatus);
+  }
+
   const refreshStatus = useCallback(async () => {
-    setStatus(await getStatus());
+    const nextStatus = await getStatus();
+    setStatus((currentStatus) => (isSameStatus(nextStatus, currentStatus) ? currentStatus : nextStatus));
   }, []);
 
   useEffect(() => {
