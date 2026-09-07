@@ -37,6 +37,7 @@ import { ManageInstalledLootModal } from "../elements/ManageInstalledLootModal.t
 import { IncludedFoldersTable } from "../elements/IncludedFoldersTable.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
+import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 
 type LootManagerProps = {
   status: AppStatus | null;
@@ -80,6 +81,7 @@ export function LootManager({
   });
   const installedProfileUrl = status?.installedProfile?.url ?? null;
   const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.installedProfile);
+  const hasInstalledProfile = Boolean(status?.installedProfile);
   const activeProfileName = resolveProfileName(status?.installedProfile?.name, "No active package");
   const activeProfileAuthor = status?.installedProfile?.author ? `by ${status.installedProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.installedProfile?.version);
@@ -323,14 +325,13 @@ export function LootManager({
       <section className="lootManager">
       <div className="lootAccordion">
         <div className="accordionHeader">
-          <div>
-            <p className="sectionTitle">Loot models</p>
-            <p className="activeProfileMeta">
-              Active package: <span className="activeProfileValue">{activeProfileName}</span>
-              {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
-              {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
-            </p>
-          </div>
+          <ServiceAccordionTitle
+            title="Loot models"
+            activeProfileName={activeProfileName}
+            activeProfileAuthor={activeProfileAuthor}
+            activeProfileVersion={activeProfileVersion}
+            hasInstalledProfile={hasInstalledProfile}
+          />
           <div className="headerActions">
             {installedProfileUrl ? (
               <button
@@ -447,6 +448,7 @@ export function LootManager({
         <ServiceDetailModal
           open={!collapsed}
           title="Loot models"
+          description="Choose a package, preview it, and install it into the selected game folder."
           onClose={() => setCollapsed(true)}
         >
           <div className="accordionSection">

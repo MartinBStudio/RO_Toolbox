@@ -31,6 +31,7 @@ import {
 import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
+import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 
 type UserInterfaceManagerProps = {
   status: AppStatus | null;
@@ -72,6 +73,7 @@ export function UserInterfaceManager({
   });
   const installedProfileUrl = status?.userInterfaceInstalledProfile?.url ?? null;
   const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.userInterfaceInstalledProfile);
+  const hasInstalledProfile = Boolean(status?.userInterfaceInstalledProfile);
   const activeProfileName = resolveProfileName(status?.userInterfaceInstalledProfile?.name, "No active package");
   const activeProfileAuthor = status?.userInterfaceInstalledProfile?.author ? `by ${status.userInterfaceInstalledProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.userInterfaceInstalledProfile?.version);
@@ -255,14 +257,13 @@ export function UserInterfaceManager({
       <section className="lootManager">
         <div className="lootAccordion">
         <div className="accordionHeader">
-          <div>
-            <p className="sectionTitle">User interface</p>
-            <p className="activeProfileMeta">
-              Active package: <span className="activeProfileValue">{activeProfileName}</span>
-              {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
-              {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
-            </p>
-          </div>
+          <ServiceAccordionTitle
+            title="User interface"
+            activeProfileName={activeProfileName}
+            activeProfileAuthor={activeProfileAuthor}
+            activeProfileVersion={activeProfileVersion}
+            hasInstalledProfile={hasInstalledProfile}
+          />
           <div className="headerActions">
             {installedProfileUrl ? (
               <button
@@ -351,6 +352,7 @@ export function UserInterfaceManager({
         <ServiceDetailModal
           open={!collapsed}
           title="User interface"
+          description="Choose a package, preview it, and install it into the selected game folder."
           onClose={() => setCollapsed(true)}
         >
           <div className="accordionSection">

@@ -248,12 +248,18 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
 
   return (
     <section className="card configEditor">
-      <div className="configEditorHeader">
-        <div>
-          <p className="sectionTitle">Config editor</p>
-          <p className="activeProfileMeta">Edit game TOML files with parsed preview and quick boolean controls.</p>
-          <p className="configEditorWarning">Warning: edit these files only when the ROSE client is closed.</p>
-          <p className="configEditorPath">{status?.configDir ?? "%APPDATA%\\Rednim Games\\ROSE Online\\config"}</p>
+      <div className="servicePanelHeader configEditorHeader">
+        <div className="servicePanelHeaderContent">
+          <div className="serviceAccordionTitleRow">
+            <span className="serviceAccordionAccent" aria-hidden="true" />
+            <p className="sectionTitle serviceAccordionTitle">Config editor</p>
+            <span className="serviceAccordionBadge serviceAccordionBadgeActive">Config files</span>
+          </div>
+          <p className="servicePanelDescription">Edit game TOML files with parsed preview and quick boolean controls.</p>
+          <div className="servicePanelMeta">
+            <span className="servicePanelMetaChip servicePanelMetaChipWarn">Close ROSE client first</span>
+            <span className="servicePanelMetaChip servicePanelMetaChipMono">{status?.configDir ?? "%APPDATA%\\Rednim Games\\ROSE Online\\config"}</span>
+          </div>
         </div>
         <div className="headerActions">
           <button

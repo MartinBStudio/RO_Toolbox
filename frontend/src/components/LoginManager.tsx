@@ -249,10 +249,19 @@ export function LoginManager({
   return (
     <section className="loginManager">
       <div className="card serviceContentPanel">
-        <div className="headerRow">
-          <div>
-            <p className="sectionTitle">Login manager</p>
-            <p className="activeProfileMeta">Store multiple ROSE accounts locally.</p>
+        <div className="servicePanelHeader">
+          <div className="servicePanelHeaderContent">
+            <div className="serviceAccordionTitleRow">
+              <span className="serviceAccordionAccent" aria-hidden="true" />
+              <p className="sectionTitle serviceAccordionTitle">Login manager</p>
+              <span className="serviceAccordionBadge serviceAccordionBadgeActive">Local</span>
+            </div>
+            <p className="servicePanelDescription">Store multiple ROSE accounts locally.</p>
+            <div className="servicePanelMeta">
+              <span className="servicePanelMetaChip">{accounts.length} saved</span>
+              <span className="servicePanelMetaChip">Quick launch ready</span>
+              <span className="servicePanelMetaChip">JSON import/export</span>
+            </div>
           </div>
           <div className="loginHeaderActions">
             <button

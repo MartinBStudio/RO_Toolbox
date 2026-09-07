@@ -58,6 +58,7 @@ function readInitialService() {
 function App() {
     const {backendReady, status, appVersion, refreshStatus, quickLaunchOnlyMode, setQuickLaunchOnlyMode} = useApplicationContext();
     const [loading, setLoading] = useState(false);
+    const [loadingOverlayVisible, setLoadingOverlayVisible] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState<string | undefined>(undefined);
     const [message, setMessage] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
@@ -125,8 +126,16 @@ function App() {
         void refreshStatus().catch(() => undefined);
     }, [refreshStatus]);
 
+    const onBusyChange = useCallback((busy: boolean, msg?: string) => {
+        setLoading(busy);
+        setLoadingOverlayVisible(busy);
+        setLoadingMessage(busy ? msg : undefined);
+    }, []);
+
     async function onQuickLaunch() {
         setLoading(true);
+        setLoadingOverlayVisible(false);
+        setLoadingMessage(undefined);
         try {
             await quickLaunchGame();
             setMessage("ROSE Online launched.");
@@ -135,11 +144,13 @@ function App() {
             setMessage(toErrorMessage(err, "Failed to launch ROSE Online."));
         } finally {
             setLoading(false);
+            setLoadingOverlayVisible(false);
+            setLoadingMessage(undefined);
         }
     }
 
     async function onOpenWhatsNew() {
-        setLoading(true);
+        onBusyChange(true);
         try {
             const result = await getReleaseNotes();
             setReleaseNotesContent(result.content ?? "");
@@ -147,7 +158,7 @@ function App() {
         } catch (err) {
             setMessage(toErrorMessage(err, "Failed to load release notes."));
         } finally {
-            setLoading(false);
+            onBusyChange(false);
         }
     }
 
@@ -165,6 +176,8 @@ function App() {
 
     async function onQuickLaunchAccount(account: LoginAccount) {
         setLoading(true);
+        setLoadingOverlayVisible(false);
+        setLoadingMessage(undefined);
         try {
             await quickLaunchLoginAccount(account.id);
             setMessage(`ROSE Online launched for ${account.name}.`);
@@ -173,6 +186,8 @@ function App() {
             setMessage(toErrorMessage(err, `Failed to launch ROSE Online for ${account.name}.`));
         } finally {
             setLoading(false);
+            setLoadingOverlayVisible(false);
+            setLoadingMessage(undefined);
         }
     }
 
@@ -316,7 +331,7 @@ function App() {
     }, [backendReady, refreshStatusSilently]);
 
     return (
-        <main className={`layout${loading ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
+        <main className={`layout${loadingOverlayVisible ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
             <div className="appBackground" aria-hidden="true" />
             <BackendReadyGate onStartupError={setMessage} showStartupScreen={showStartupScreen}>
                 <>
@@ -325,7 +340,7 @@ function App() {
                             onOpenSettings={() => setSettingsOpen(true)}
                             onOpenHowToUse={() => setHowToUseOpen(true)}
                             onLaunchRose={onQuickLaunch}
-                            onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
+                            onBusyChange={onBusyChange}
                             onMessage={setMessage}
                             onQuickLaunchAccount={onQuickLaunchAccount}
                             quickAccounts={quickAccounts}
@@ -389,28 +404,28 @@ function App() {
                                             <LootManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
+                                                onBusyChange={onBusyChange}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                             <CombatTextManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
+                                                onBusyChange={onBusyChange}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                             <UserInterfaceManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
+                                                onBusyChange={onBusyChange}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                             <BuffIconsManager
                                                 status={status}
                                                 loading={loading}
-                                                onBusyChange={(busy, msg) => { setLoading(busy); setLoadingMessage(busy ? msg : undefined); }}
+                                                onBusyChange={onBusyChange}
                                                 onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
@@ -426,7 +441,7 @@ function App() {
                                     {selectedService === "config-editor" && (
                                         <ConfigEditorManager
                                             loading={loading}
-                                            onBusyChange={setLoading}
+                                            onBusyChange={onBusyChange}
                                             onMessage={setMessage}
                                         />
                                     )}
@@ -446,7 +461,7 @@ function App() {
                         status={status}
                         loading={loading}
                         onClose={() => setSettingsOpen(false)}
-                        onBusyChange={setLoading}
+                        onBusyChange={onBusyChange}
                         onStatusRefresh={refreshStatus}
                         onMessage={setMessage}
                     />
@@ -459,11 +474,11 @@ function App() {
                         content={releaseNotesContent}
                         onClose={() => setReleaseNotesOpen(false)}
                     />
-                    <LoadingOverlay visible={loading} label={loadingMessage}/>
+                    <LoadingOverlay visible={loadingOverlayVisible} label={loadingMessage}/>
                     {needsSetup && (
                         <GameFolderSetupModal
                             loading={loading}
-                            onBusyChange={setLoading}
+                            onBusyChange={onBusyChange}
                             onStatusRefresh={refreshStatus}
                             onMessage={setMessage}
                         />

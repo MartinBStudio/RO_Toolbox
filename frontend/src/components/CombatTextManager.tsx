@@ -31,6 +31,7 @@ import {
 import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
+import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 
 type CombatTextManagerProps = {
   status: AppStatus | null;
@@ -72,6 +73,7 @@ export function CombatTextManager({
   });
   const installedProfileUrl = status?.combatTextInstalledProfile?.url ?? null;
   const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.combatTextInstalledProfile);
+  const hasInstalledProfile = Boolean(status?.combatTextInstalledProfile);
   const activeProfileName = resolveProfileName(status?.combatTextInstalledProfile?.name, "No active package");
   const activeProfileAuthor = status?.combatTextInstalledProfile?.author ? `by ${status.combatTextInstalledProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.combatTextInstalledProfile?.version);
@@ -259,14 +261,13 @@ export function CombatTextManager({
       <section className="lootManager">
         <div className="lootAccordion">
         <div className="accordionHeader">
-          <div>
-            <p className="sectionTitle">Combat text</p>
-            <p className="activeProfileMeta">
-              Active package: <span className="activeProfileValue">{activeProfileName}</span>
-              {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
-              {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
-            </p>
-          </div>
+          <ServiceAccordionTitle
+            title="Combat text"
+            activeProfileName={activeProfileName}
+            activeProfileAuthor={activeProfileAuthor}
+            activeProfileVersion={activeProfileVersion}
+            hasInstalledProfile={hasInstalledProfile}
+          />
           <div className="headerActions">
             {installedProfileUrl ? (
               <button
@@ -355,6 +356,7 @@ export function CombatTextManager({
         <ServiceDetailModal
           open={!collapsed}
           title="Combat text"
+          description="Choose a package, preview it, and install it into the selected game folder."
           onClose={() => setCollapsed(true)}
         >
           <div className="accordionSection">

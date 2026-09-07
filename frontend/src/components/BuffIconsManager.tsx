@@ -31,6 +31,7 @@ import {
 import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
+import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 
 type BuffIconsManagerProps = {
   status: AppStatus | null;
@@ -72,6 +73,7 @@ export function BuffIconsManager({
   });
   const installedProfileUrl = status?.buffIconsInstalledProfile?.url ?? null;
   const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.buffIconsInstalledProfile);
+  const hasInstalledProfile = Boolean(status?.buffIconsInstalledProfile);
   const activeProfileName = resolveProfileName(status?.buffIconsInstalledProfile?.name, "No active package");
   const activeProfileAuthor = status?.buffIconsInstalledProfile?.author ? `by ${status.buffIconsInstalledProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.buffIconsInstalledProfile?.version);
@@ -259,14 +261,13 @@ export function BuffIconsManager({
       <section className="lootManager">
         <div className="lootAccordion">
           <div className="accordionHeader">
-            <div>
-              <p className="sectionTitle">Buff icons</p>
-              <p className="activeProfileMeta">
-                Active package: <span className="activeProfileValue">{activeProfileName}</span>
-                {activeProfileAuthor ? <> • <span className="activeProfileValue">{activeProfileAuthor}</span></> : null}
-                {activeProfileVersion ? <> • <span className="activeProfileVersion">{activeProfileVersion}</span></> : null}
-              </p>
-            </div>
+            <ServiceAccordionTitle
+              title="Buff icons"
+              activeProfileName={activeProfileName}
+              activeProfileAuthor={activeProfileAuthor}
+              activeProfileVersion={activeProfileVersion}
+              hasInstalledProfile={hasInstalledProfile}
+            />
             <div className="headerActions">
               {installedProfileUrl ? (
                 <button
@@ -355,6 +356,7 @@ export function BuffIconsManager({
         <ServiceDetailModal
           open={!collapsed}
           title="Buff icons"
+          description="Choose a package, preview it, and install it into the selected game folder."
           onClose={() => setCollapsed(true)}
         >
           <div className="accordionSection">

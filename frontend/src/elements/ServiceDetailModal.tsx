@@ -3,11 +3,12 @@ import type { ReactNode } from "react";
 type ServiceDetailModalProps = {
   open: boolean;
   title: string;
+  description?: string;
   onClose: () => void;
   children: ReactNode;
 };
 
-export function ServiceDetailModal({ open, title, onClose, children }: ServiceDetailModalProps) {
+export function ServiceDetailModal({ open, title, description, onClose, children }: ServiceDetailModalProps) {
   if (!open) {
     return null;
   }
@@ -16,8 +17,12 @@ export function ServiceDetailModal({ open, title, onClose, children }: ServiceDe
     <div className="modalBackdrop" onClick={onClose}>
       <section className="card modalCard serviceDetailModalCard" onClick={(event) => event.stopPropagation()}>
         <div className="modalHeader">
-          <h2>{title}</h2>
-          <button type="button" className="buttonSubtle" onClick={onClose}>✕</button>
+          <div className="serviceDetailModalHeaderBlock">
+            <p className="serviceDetailModalEyebrow">Package browser</p>
+            <h2 className="serviceDetailModalTitle">{title}</h2>
+            {description ? <p className="serviceDetailModalDescription">{description}</p> : null}
+          </div>
+          <button type="button" className="buttonSubtle serviceDetailModalClose" onClick={onClose} aria-label="Close package browser">✕</button>
         </div>
         <div className="serviceDetailModalBody">
           {children}
