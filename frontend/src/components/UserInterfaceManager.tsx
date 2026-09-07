@@ -23,6 +23,7 @@ import { useApplicationContext } from "../context/ApplicationContext.tsx";
 import {
   buildProfileMeta,
   buildProfileOptionGroups,
+  findInstalledAvailableProfileId,
   formatManifestVersion,
   isProfileAlreadyInstalled,
   resolveProfileName
@@ -61,7 +62,8 @@ export function UserInterfaceManager({
   );
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
-  const selectedProfilePreviewImages = selectedProfileData?.previewImages ?? [];
+  const selectedProfilePreviewImages = (selectedProfileData?.previewImages ?? []).filter((image) => image.trim().length > 0);
+  const hasSelectedProfilePreviewImages = selectedProfilePreviewImages.length > 0;
   const selectedProfileMeta = buildProfileMeta({
     version: selectedProfileData?.version,
     author: selectedProfileData?.author,
@@ -69,6 +71,7 @@ export function UserInterfaceManager({
     separator: " · "
   });
   const installedProfileUrl = status?.userInterfaceInstalledProfile?.url ?? null;
+  const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.userInterfaceInstalledProfile);
   const activeProfileName = resolveProfileName(status?.userInterfaceInstalledProfile?.name, "No active package");
   const activeProfileAuthor = status?.userInterfaceInstalledProfile?.author ? `by ${status.userInterfaceInstalledProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.userInterfaceInstalledProfile?.version);
@@ -82,9 +85,14 @@ export function UserInterfaceManager({
     }
     const selectedStillExists = availableProfiles.some((profile) => profile.id === selectedProfile);
     if (!selectedStillExists) {
-      setSelectedProfile(availableProfiles[0].id);
+      setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0].id);
     }
-  }, [availableProfiles, selectedProfile]);
+  }, [availableProfiles, installedAvailableProfileId, selectedProfile]);
+
+  function openPackageBrowser() {
+    setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0]?.id ?? "");
+    setCollapsed(false);
+  }
 
   useEffect(() => {
     if (!backendReady) return;
@@ -333,7 +341,7 @@ export function UserInterfaceManager({
               disabled={loading || !hasProfiles}
               title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
               aria-label="Browse packages"
-              onClick={() => setCollapsed(false)}
+              onClick={openPackageBrowser}
             >
               <MagnifyingGlassIcon className="heroIcon" />
             </button>
@@ -356,7 +364,7 @@ export function UserInterfaceManager({
               />
             </div>
             {selectedProfileData ? (
-              <div className="profileCard">
+              <div className={`profileCard${hasSelectedProfilePreviewImages ? "" : " profileCardNoPreview"}`}>
                 <div className="profileCardHeader">
                   <div>
                     <p className="profileCardName">{resolveProfileName(selectedProfileData.name, selectedProfileData.id)}</p>
@@ -378,7 +386,7 @@ export function UserInterfaceManager({
                     </button>
                   ) : null}
                 </div>
-                {selectedProfilePreviewImages.length > 0 ? (
+                {hasSelectedProfilePreviewImages ? (
                   <div className="profileCardPreviewGrid">
                     {selectedProfilePreviewImages.map((image, index) => (
                       <img
@@ -394,7 +402,11 @@ export function UserInterfaceManager({
                 {selectedProfileData.description ? (
                   <p className="profileCardDesc">{selectedProfileData.description}</p>
                 ) : null}
-                <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                <button
+                  className={`buttonStrong profileInstallBtn${hasSelectedProfilePreviewImages ? "" : " profileInstallBtnCompact"}`}
+                  disabled={installButtonDisabled}
+                  onClick={onInstallProfile}
+                >
                   {installButtonLabel}
                 </button>
               </div>

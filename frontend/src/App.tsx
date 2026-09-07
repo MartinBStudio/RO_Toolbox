@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { KeyIcon, SwatchIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import {AppHeader} from "./elements/AppHeader.tsx";
@@ -72,6 +72,7 @@ function App() {
     const [troseRefreshLoading, setTroseRefreshLoading] = useState(false);
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
     const allowWindowCloseRef = useRef(false);
+    const appInForegroundRef = useRef(false);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
     const hasQuickLaunchProfiles = quickAccounts.length > 0;
@@ -120,9 +121,9 @@ function App() {
         return fallback;
     }
 
-    function refreshStatusSilently() {
+    const refreshStatusSilently = useCallback(() => {
         void refreshStatus().catch(() => undefined);
-    }
+    }, [refreshStatus]);
 
     async function onQuickLaunch() {
         setLoading(true);
@@ -130,9 +131,6 @@ function App() {
             await quickLaunchGame();
             setMessage("ROSE Online launched.");
             await refreshStatus();
-            window.setTimeout(() => {
-                refreshStatusSilently();
-            }, 1500);
         } catch (err) {
             setMessage(toErrorMessage(err, "Failed to launch ROSE Online."));
         } finally {
@@ -171,9 +169,6 @@ function App() {
             await quickLaunchLoginAccount(account.id);
             setMessage(`ROSE Online launched for ${account.name}.`);
             await refreshStatus();
-            window.setTimeout(() => {
-                refreshStatusSilently();
-            }, 1500);
         } catch (err) {
             setMessage(toErrorMessage(err, `Failed to launch ROSE Online for ${account.name}.`));
         } finally {
@@ -285,42 +280,40 @@ function App() {
 
     useEffect(() => {
         if (!backendReady) {
+            appInForegroundRef.current = false;
             return;
         }
 
-        const handleForegroundRefresh = () => {
-            refreshStatusSilently();
-        };
-        const handleVisibilityChange = () => {
-            if (!document.hidden) {
-                handleForegroundRefresh();
+        const updateForegroundState = (nextForeground: boolean) => {
+            const wasInForeground = appInForegroundRef.current;
+            appInForegroundRef.current = nextForeground;
+            if (!wasInForeground && nextForeground) {
+                refreshStatusSilently();
             }
         };
+        const readForegroundState = () => !document.hidden && document.hasFocus();
+        const handleWindowFocus = () => {
+            updateForegroundState(readForegroundState());
+        };
+        const handleWindowBlur = () => {
+            appInForegroundRef.current = false;
+        };
+        const handleVisibilityChange = () => {
+            updateForegroundState(readForegroundState());
+        };
 
-        window.addEventListener("focus", handleForegroundRefresh);
+        appInForegroundRef.current = readForegroundState();
+
+        window.addEventListener("focus", handleWindowFocus);
+        window.addEventListener("blur", handleWindowBlur);
         document.addEventListener("visibilitychange", handleVisibilityChange);
 
         return () => {
-            window.removeEventListener("focus", handleForegroundRefresh);
+            window.removeEventListener("focus", handleWindowFocus);
+            window.removeEventListener("blur", handleWindowBlur);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [backendReady, refreshStatus]);
-
-    useEffect(() => {
-        if (!backendReady) {
-            return;
-        }
-
-        const pollInterval = window.setInterval(() => {
-            if (!document.hidden) {
-                refreshStatusSilently();
-            }
-        }, 5000);
-
-        return () => {
-            window.clearInterval(pollInterval);
-        };
-    }, [backendReady, refreshStatus]);
+    }, [backendReady, refreshStatusSilently]);
 
     return (
         <main className={`layout${loading ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
@@ -477,8 +470,9 @@ function App() {
                     )}
                     <ConfirmationModal
                         open={closeConfirmOpen}
-                        title="Close application"
-                        message="Are you sure you want to close RO Toolbox?"
+                        smallMode={quickLaunchOnlyActive}
+                        title={quickLaunchOnlyActive ? "Close RO Toolbox?" : "Close application"}
+                        message={quickLaunchOnlyActive ? "Exit the app now?" : "Are you sure you want to close RO Toolbox?"}
                         confirmLabel="Close"
                         confirmButtonClassName="buttonDanger"
                         onConfirm={confirmCloseApplication}

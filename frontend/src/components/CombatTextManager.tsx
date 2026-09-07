@@ -23,6 +23,7 @@ import { useApplicationContext } from "../context/ApplicationContext.tsx";
 import {
   buildProfileMeta,
   buildProfileOptionGroups,
+  findInstalledAvailableProfileId,
   formatManifestVersion,
   isProfileAlreadyInstalled,
   resolveProfileName
@@ -61,7 +62,8 @@ export function CombatTextManager({
   );
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
-  const selectedProfilePreviewImages = selectedProfileData?.previewImages ?? [];
+  const selectedProfilePreviewImages = (selectedProfileData?.previewImages ?? []).filter((image) => image.trim().length > 0);
+  const hasSelectedProfilePreviewImages = selectedProfilePreviewImages.length > 0;
   const selectedProfileMeta = buildProfileMeta({
     version: selectedProfileData?.version,
     author: selectedProfileData?.author,
@@ -69,6 +71,7 @@ export function CombatTextManager({
     separator: " · "
   });
   const installedProfileUrl = status?.combatTextInstalledProfile?.url ?? null;
+  const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.combatTextInstalledProfile);
   const activeProfileName = resolveProfileName(status?.combatTextInstalledProfile?.name, "No active package");
   const activeProfileAuthor = status?.combatTextInstalledProfile?.author ? `by ${status.combatTextInstalledProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.combatTextInstalledProfile?.version);
@@ -82,9 +85,14 @@ export function CombatTextManager({
     }
     const selectedStillExists = availableProfiles.some((profile) => profile.id === selectedProfile);
     if (!selectedStillExists) {
-      setSelectedProfile(availableProfiles[0].id);
+      setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0].id);
     }
-  }, [availableProfiles, selectedProfile]);
+  }, [availableProfiles, installedAvailableProfileId, selectedProfile]);
+
+  function openPackageBrowser() {
+    setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0]?.id ?? "");
+    setCollapsed(false);
+  }
 
   useEffect(() => {
     if (!backendReady) return;
@@ -337,7 +345,7 @@ export function CombatTextManager({
               disabled={loading || !hasProfiles}
               title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
               aria-label="Browse packages"
-              onClick={() => setCollapsed(false)}
+              onClick={openPackageBrowser}
             >
               <MagnifyingGlassIcon className="heroIcon" />
             </button>
@@ -360,7 +368,7 @@ export function CombatTextManager({
               />
             </div>
             {selectedProfileData ? (
-              <div className="profileCard">
+              <div className={`profileCard${hasSelectedProfilePreviewImages ? "" : " profileCardNoPreview"}`}>
                 <div className="profileCardHeader">
                   <div>
                     <p className="profileCardName">{resolveProfileName(selectedProfileData.name, selectedProfileData.id)}</p>
@@ -382,7 +390,7 @@ export function CombatTextManager({
                     </button>
                   ) : null}
                 </div>
-                {selectedProfilePreviewImages.length > 0 ? (
+                {hasSelectedProfilePreviewImages ? (
                   <div className="profileCardPreviewGrid">
                     {selectedProfilePreviewImages.map((image, index) => (
                       <img
@@ -398,7 +406,11 @@ export function CombatTextManager({
                 {selectedProfileData.description ? (
                   <p className="profileCardDesc">{selectedProfileData.description}</p>
                 ) : null}
-                <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                <button
+                  className={`buttonStrong profileInstallBtn${hasSelectedProfilePreviewImages ? "" : " profileInstallBtnCompact"}`}
+                  disabled={installButtonDisabled}
+                  onClick={onInstallProfile}
+                >
                   {installButtonLabel}
                 </button>
               </div>
