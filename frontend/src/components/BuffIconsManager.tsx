@@ -23,6 +23,7 @@ import { useApplicationContext } from "../context/ApplicationContext.tsx";
 import {
   buildProfileMeta,
   buildProfileOptionGroups,
+  findInstalledAvailableProfileId,
   formatManifestVersion,
   isProfileAlreadyInstalled,
   resolveProfileName
@@ -61,7 +62,8 @@ export function BuffIconsManager({
   );
   const canInstall = Boolean(selectedProfile);
   const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
-  const selectedProfilePreviewImages = selectedProfileData?.previewImages ?? [];
+  const selectedProfilePreviewImages = (selectedProfileData?.previewImages ?? []).filter((image) => image.trim().length > 0);
+  const hasSelectedProfilePreviewImages = selectedProfilePreviewImages.length > 0;
   const selectedProfileMeta = buildProfileMeta({
     version: selectedProfileData?.version,
     author: selectedProfileData?.author,
@@ -69,6 +71,7 @@ export function BuffIconsManager({
     separator: " · "
   });
   const installedProfileUrl = status?.buffIconsInstalledProfile?.url ?? null;
+  const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.buffIconsInstalledProfile);
   const activeProfileName = resolveProfileName(status?.buffIconsInstalledProfile?.name, "No active package");
   const activeProfileAuthor = status?.buffIconsInstalledProfile?.author ? `by ${status.buffIconsInstalledProfile.author}` : null;
   const activeProfileVersion = formatManifestVersion(status?.buffIconsInstalledProfile?.version);
@@ -82,9 +85,14 @@ export function BuffIconsManager({
     }
     const selectedStillExists = availableProfiles.some((profile) => profile.id === selectedProfile);
     if (!selectedStillExists) {
-      setSelectedProfile(availableProfiles[0].id);
+      setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0].id);
     }
-  }, [availableProfiles, selectedProfile]);
+  }, [availableProfiles, installedAvailableProfileId, selectedProfile]);
+
+  function openPackageBrowser() {
+    setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0]?.id ?? "");
+    setCollapsed(false);
+  }
 
   useEffect(() => {
     if (!backendReady) return;
@@ -337,7 +345,7 @@ export function BuffIconsManager({
                 disabled={loading || !hasProfiles}
                 title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
                 aria-label="Browse packages"
-                onClick={() => setCollapsed(false)}
+                onClick={openPackageBrowser}
               >
                 <MagnifyingGlassIcon className="heroIcon" />
               </button>
@@ -360,7 +368,7 @@ export function BuffIconsManager({
               />
             </div>
             {selectedProfileData ? (
-              <div className="profileCard">
+              <div className={`profileCard${hasSelectedProfilePreviewImages ? "" : " profileCardNoPreview"}`}>
                 <div className="profileCardHeader">
                   <div>
                     <p className="profileCardName">{resolveProfileName(selectedProfileData.name, selectedProfileData.id)}</p>
@@ -382,7 +390,7 @@ export function BuffIconsManager({
                     </button>
                   ) : null}
                 </div>
-                {selectedProfilePreviewImages.length > 0 ? (
+                {hasSelectedProfilePreviewImages ? (
                   <div className="profileCardPreviewGrid">
                     {selectedProfilePreviewImages.map((image, index) => (
                       <img
@@ -398,7 +406,11 @@ export function BuffIconsManager({
                 {selectedProfileData.description ? (
                   <p className="profileCardDesc">{selectedProfileData.description}</p>
                 ) : null}
-                <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
+                <button
+                  className={`buttonStrong profileInstallBtn${hasSelectedProfilePreviewImages ? "" : " profileInstallBtnCompact"}`}
+                  disabled={installButtonDisabled}
+                  onClick={onInstallProfile}
+                >
                   {installButtonLabel}
                 </button>
               </div>

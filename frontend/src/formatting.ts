@@ -91,6 +91,18 @@ export function isProfileAlreadyInstalled(
   return true;
 }
 
+export function findInstalledAvailableProfileId(
+  availableProfiles: AvailableProfile[],
+  installedProfile: ProfileInfo | null | undefined
+) {
+  if (!installedProfile) {
+    return null;
+  }
+
+  const matchingProfile = availableProfiles.find((profile) => isProfileAlreadyInstalled(profile, installedProfile));
+  return matchingProfile?.id ?? null;
+}
+
 export function buildProfileOptionGroups(profiles: AvailableProfile[]): ProfileOptionGroup[] {
   if (profiles.length === 0) {
     return [];

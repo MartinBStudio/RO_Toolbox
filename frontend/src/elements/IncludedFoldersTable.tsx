@@ -39,9 +39,9 @@ export function IncludedFoldersTable({ folders }: IncludedFoldersTableProps) {
         </span>
       </button>
       {!collapsed ? (
-        <div className="accordionContent">
-          <div className="lootManageTableWrap" style={{ opacity: loading ? 0.6 : 1 }}>
-            <table className="lootManageTable">
+        <div className="accordionContent includedPackagesContent">
+          <div className="lootManageTableWrap includedPackagesTableWrap" style={{ opacity: loading ? 0.6 : 1 }}>
+            <table className="lootManageTable includedPackagesTable">
               <thead>
                 <tr>
                   <th style={{ width: "15%" }}>Folder</th>

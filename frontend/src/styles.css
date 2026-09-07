@@ -1325,6 +1325,10 @@ button .heroIcon {
   gap: 0.45rem;
 }
 
+.profileCardNoPreview {
+  gap: 0.32rem;
+}
+
 .profileCardHeader {
   display: flex;
   align-items: flex-start;
@@ -1344,6 +1348,14 @@ button .heroIcon {
 .profileInstallBtn {
   justify-self: end;
   min-width: 110px;
+}
+
+.profileInstallBtnCompact {
+  justify-self: end;
+  width: fit-content;
+  min-width: 76px;
+  padding: 0.22rem 0.38rem;
+  font-size: 0.78rem;
 }
 
 .profileCardName {
@@ -1378,7 +1390,43 @@ button .heroIcon {
 }
 
 .includedPackagesHeader {
-  min-height: 2.2rem;
+  min-height: 1.9rem;
+  padding: 0.42rem 0.55rem;
+  gap: 0.45rem;
+}
+
+.includedPackagesHeader .accordionLabel {
+  font-size: 0.77rem;
+}
+
+.includedPackagesHeader .accordionIcon {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.includedPackagesContent {
+  padding: 0.4rem 0.5rem;
+}
+
+.includedPackagesTableWrap {
+  border-radius: 6px;
+}
+
+.includedPackagesTable {
+  font-size: 0.74rem;
+}
+
+.includedPackagesTable th,
+.includedPackagesTable td {
+  padding: 0.4rem 0.48rem;
+}
+
+.includedPackagesTable thead th {
+  font-size: 0.64rem;
+}
+
+.includedPackagesTable .lootManageFolder {
+  font-size: 0.72rem;
 }
 
 .profileCardPreviewGrid {
@@ -1996,47 +2044,47 @@ a {
 }
 
 .modalBackdropSmall {
-  padding: 0.35rem;
+  padding: 0.2rem;
 }
 
 .confirmationModalSmall {
-  width: min(276px, calc(100vw - 0.7rem));
-  max-width: 276px;
-  max-height: calc(100vh - 0.7rem);
-  padding: 0.35rem 0.45rem 0.4rem;
-  border-radius: 10px;
+  width: min(232px, calc(100vw - 0.4rem));
+  max-width: 232px;
+  max-height: calc(100vh - 0.4rem);
+  padding: 0.25rem 0.35rem 0.3rem;
+  border-radius: 9px;
   overflow: auto;
 }
 
 .confirmationModalSmall .confirmationHeader {
-  margin-bottom: 0.2rem;
+  margin-bottom: 0.12rem;
 }
 
 .confirmationCloseButtonSmall {
-  padding: 0.12rem 0.32rem;
-  font-size: 0.74rem;
+  padding: 0.08rem 0.24rem;
+  font-size: 0.68rem;
   line-height: 1;
 }
 
 .confirmationTitleBlockSmall h2 {
   margin: 0;
-  font-size: 0.8rem;
-  line-height: 1.2;
+  font-size: 0.74rem;
+  line-height: 1.15;
 }
 
 .confirmationModalSmall .confirmationMessage {
-  margin-bottom: 0.3rem;
-  font-size: 0.74rem;
-  line-height: 1.35;
+  margin-bottom: 0.22rem;
+  font-size: 0.68rem;
+  line-height: 1.25;
 }
 
 .confirmationModalSmall .confirmationActions {
-  gap: 0.3rem;
+  gap: 0.22rem;
 }
 
 .confirmationModalSmall .confirmationActions button {
-  padding: 0.2rem 0.35rem;
-  font-size: 0.74rem;
+  padding: 0.16rem 0.28rem;
+  font-size: 0.68rem;
 }
 
 .confirmationHeader {
