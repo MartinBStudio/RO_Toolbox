@@ -49,6 +49,15 @@ export {
   openBuffIconsItemFolder,
   checkBuffIconsResourcesUpdate
 } from "./buffIconsApi.ts";
+export {
+  downloadBuffsProfiles,
+  installBuffsProfile,
+  clearBuffsResources,
+  clearBuffsInstalled,
+  openBuffsResourcesFolder,
+  openBuffsItemFolder,
+  checkBuffsResourcesUpdate
+} from "./buffsApi.ts";
 export { checkBackendUpdate, fetchLatestReleaseDownload } from "./updateApi.ts";
 export {
   getConfigEditorStatus,

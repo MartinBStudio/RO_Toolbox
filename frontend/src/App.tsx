@@ -9,6 +9,7 @@ import {LootManager} from "./components/LootManager";
 import {CombatTextManager} from "./components/CombatTextManager";
 import {UserInterfaceManager} from "./components/UserInterfaceManager";
 import {BuffIconsManager} from "./components/BuffIconsManager";
+import {BuffsManager} from "./components/BuffsManager";
 import {LoginManager} from "./components/LoginManager.tsx";
 import {ConfigEditorManager} from "./components/ConfigEditorManager.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
@@ -399,7 +400,7 @@ function App() {
                                         <div className="card serviceContentPanel">
                                             <div>
                                                 <p className="sectionTitle">Texture replacer</p>
-                                                <p className="activeProfileMeta">Manage loot, combat text, user interface, and buff icon packages.</p>
+                                            <p className="activeProfileMeta">Manage loot, combat text, user interface, buffs, and buff icon packages.</p>
                                             </div>
                                             <LootManager
                                                 status={status}
@@ -416,6 +417,13 @@ function App() {
                                                 onMessage={setMessage}
                                             />
                                             <UserInterfaceManager
+                                                status={status}
+                                                loading={loading}
+                                                onBusyChange={onBusyChange}
+                                                onStatusRefresh={refreshStatus}
+                                                onMessage={setMessage}
+                                            />
+                                            <BuffsManager
                                                 status={status}
                                                 loading={loading}
                                                 onBusyChange={onBusyChange}

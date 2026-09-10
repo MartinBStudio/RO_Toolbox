@@ -16,6 +16,9 @@ type ApiAppStatus = {
   buffIconsService: {
     endpoint: string;
   };
+  buffsService: {
+    endpoint: string;
+  };
 };
 
 type ApiLootStatus = {
@@ -48,6 +51,14 @@ type ApiBuffIconsStatus = {
   installedProfile: AppStatus["buffIconsInstalledProfile"];
   downloadedProfiles: string[];
   availableProfiles: AppStatus["buffIconsAvailableProfiles"];
+};
+
+type ApiBuffsStatus = {
+  selectedGameBase: string | null;
+  selectedGameItemFolder: string | null;
+  installedProfile: AppStatus["buffsInstalledProfile"];
+  downloadedProfiles: string[];
+  availableProfiles: AppStatus["buffsAvailableProfiles"];
 };
 
 function asNullableString(value: unknown): string | null {
@@ -108,14 +119,16 @@ export function getStatus() {
     request<ApiLootStatus>("/loot/status"),
     request<ApiCombatTextStatus>("/combattext/status"),
     request<ApiUserInterfaceStatus>("/userinterface/status"),
-    request<ApiBuffIconsStatus>("/bufficons/status")
-  ]).then(([appStatus, lootStatus, combatTextStatus, userInterfaceStatus, buffIconsStatus]) => ({
+    request<ApiBuffIconsStatus>("/bufficons/status"),
+    request<ApiBuffsStatus>("/buffs/status")
+  ]).then(([appStatus, lootStatus, combatTextStatus, userInterfaceStatus, buffIconsStatus, buffsStatus]) => ({
     version: asString(appStatus?.version),
     troseRunning: Boolean(appStatus?.troseRunning),
     lootServiceEndpoint: asString(appStatus?.lootService?.endpoint),
     combatTextServiceEndpoint: asString(appStatus?.combatTextService?.endpoint),
     userInterfaceServiceEndpoint: asString(appStatus?.userInterfaceService?.endpoint),
     buffIconsServiceEndpoint: asString(appStatus?.buffIconsService?.endpoint),
+    buffsServiceEndpoint: asString(appStatus?.buffsService?.endpoint),
     selectedGameBase: asNullableString(lootStatus?.selectedGameBase),
     selectedGameItemFolder: asNullableString(lootStatus?.selectedGameItemFolder),
     installedProfile: asProfileInfo(lootStatus?.installedProfile),
@@ -135,6 +148,11 @@ export function getStatus() {
     buffIconsSelectedGameItemFolder: asNullableString(buffIconsStatus?.selectedGameItemFolder),
     buffIconsInstalledProfile: asProfileInfo(buffIconsStatus?.installedProfile),
     buffIconsDownloadedProfiles: asStringArray(buffIconsStatus?.downloadedProfiles),
-    buffIconsAvailableProfiles: asAvailableProfiles(buffIconsStatus?.availableProfiles)
+    buffIconsAvailableProfiles: asAvailableProfiles(buffIconsStatus?.availableProfiles),
+    buffsSelectedGameBase: asNullableString(buffsStatus?.selectedGameBase),
+    buffsSelectedGameItemFolder: asNullableString(buffsStatus?.selectedGameItemFolder),
+    buffsInstalledProfile: asProfileInfo(buffsStatus?.installedProfile),
+    buffsDownloadedProfiles: asStringArray(buffsStatus?.downloadedProfiles),
+    buffsAvailableProfiles: asAvailableProfiles(buffsStatus?.availableProfiles)
   }));
 }

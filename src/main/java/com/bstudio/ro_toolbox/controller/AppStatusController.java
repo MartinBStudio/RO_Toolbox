@@ -2,6 +2,7 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.RoToolboxApplication;
 import com.bstudio.ro_toolbox.service.buffIcons.BuffIconsManagerService;
+import com.bstudio.ro_toolbox.service.buffs.BuffsManagerService;
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
@@ -25,6 +26,7 @@ public class AppStatusController {
     private final CombatTextManagerService combatTextManagerService;
     private final UserInterfaceManagerService userInterfaceManagerService;
     private final BuffIconsManagerService buffIconsManagerService;
+    private final BuffsManagerService buffsManagerService;
 
     @GetMapping("/status")
     public AppStatusResponse status() {
@@ -32,6 +34,7 @@ public class AppStatusController {
         CombatTextManagerService.ProfileInfo installedCombatText = combatTextManagerService.getInstalledProfileInfo();
         UserInterfaceManagerService.ProfileInfo installedUserInterface = userInterfaceManagerService.getInstalledProfileInfo();
         BuffIconsManagerService.ProfileInfo installedBuffIcons = buffIconsManagerService.getInstalledProfileInfo();
+        BuffsManagerService.ProfileInfo installedBuffs = buffsManagerService.getInstalledProfileInfo();
         return new AppStatusResponse(
                 app.getVersion(),
                 isTroseRunning(),
@@ -87,11 +90,25 @@ public class AppStatusController {
                                 List.of()
                         )
                 ),
+                new BuffsServiceSummaryResponse(
+                        "/api/buffs",
+                        installedBuffs == null ? null : new ProfileInfoResponse(
+                                installedBuffs.name,
+                                installedBuffs.author,
+                                installedBuffs.description,
+                                installedBuffs.url,
+                                installedBuffs.createdAt,
+                                installedBuffs.version,
+                                List.of(),
+                                List.of()
+                        )
+                ),
                 List.of(
                         new ServiceEndpointResponse("lootService", "/api/loot", "Loot profiles and installation"),
                         new ServiceEndpointResponse("combatTextService", "/api/combattext", "Combat text profiles and installation"),
                         new ServiceEndpointResponse("userInterfaceService", "/api/userinterface", "User interface profiles and installation"),
                         new ServiceEndpointResponse("buffIconsService", "/api/bufficons", "Buff icons profiles and installation"),
+                        new ServiceEndpointResponse("buffsService", "/api/buffs", "Buffs texture replacement profiles and installation"),
                         new ServiceEndpointResponse("configEditorService", "/api/config-editor", "ROSE config TOML editor"),
                         new ServiceEndpointResponse("settings", "/api/settings", "Generic app settings"),
                         new ServiceEndpointResponse("updater", "/api/update", "Backend updater checks and install")
@@ -106,6 +123,7 @@ public class AppStatusController {
             CombatTextServiceSummaryResponse combatTextService,
             UserInterfaceServiceSummaryResponse userInterfaceService,
             BuffIconsServiceSummaryResponse buffIconsService,
+            BuffsServiceSummaryResponse buffsService,
             List<ServiceEndpointResponse> services
     ) {
     }
@@ -214,6 +232,9 @@ public class AppStatusController {
     }
 
     public record BuffIconsServiceSummaryResponse(String endpoint, ProfileInfoResponse activeProfile) {
+    }
+
+    public record BuffsServiceSummaryResponse(String endpoint, ProfileInfoResponse activeProfile) {
     }
 
     public record ServiceEndpointResponse(String key, String endpoint, String description) {

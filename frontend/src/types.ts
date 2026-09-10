@@ -28,6 +28,7 @@ export type AppStatus = {
   combatTextServiceEndpoint: string;
   userInterfaceServiceEndpoint: string;
   buffIconsServiceEndpoint: string;
+  buffsServiceEndpoint: string;
   selectedGameBase: string | null;
   selectedGameItemFolder: string | null;
   installedProfile: ProfileInfo | null;
@@ -48,6 +49,11 @@ export type AppStatus = {
   buffIconsInstalledProfile: ProfileInfo | null;
   buffIconsDownloadedProfiles: string[];
   buffIconsAvailableProfiles: AvailableProfile[];
+  buffsSelectedGameBase: string | null;
+  buffsSelectedGameItemFolder: string | null;
+  buffsInstalledProfile: ProfileInfo | null;
+  buffsDownloadedProfiles: string[];
+  buffsAvailableProfiles: AvailableProfile[];
 };
 
 export type UpdateCheckResult = {

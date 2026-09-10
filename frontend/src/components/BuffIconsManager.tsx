@@ -262,7 +262,7 @@ export function BuffIconsManager({
         <div className="lootAccordion">
           <div className="accordionHeader">
             <ServiceAccordionTitle
-              title="Buff icons"
+              title="Icons"
               activeProfileName={activeProfileName}
               activeProfileAuthor={activeProfileAuthor}
               activeProfileVersion={activeProfileVersion}

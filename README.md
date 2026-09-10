@@ -24,10 +24,15 @@ Desktop app for managing ROSE Online profile packs, combat text packs, user inte
 * Keep installed UI profiles separate from the game’s other data folders
 * Refresh downloaded resources and clear installed files when needed
 
-### Buff icons profiles
+### Icons profiles
 
 * Manage buff icon profile packs in the same workflow as loot and combat text
-* Keep installed buff icon profiles separate from the game’s other data folders
+* Keep installed icon profiles separate from the game’s other data folders
+* Refresh downloaded resources and clear installed files when needed
+
+### Buffs Animations
+* Manage buff animation profile packs in the same workflow as loot and combat text
+* Keep installed animation profiles separate from the game’s other data folders
 * Refresh downloaded resources and clear installed files when needed
 
 ### Login Manager
@@ -70,6 +75,7 @@ RO Toolbox uses separate public repositories for community-created resources:
 * **Combat Text:** https://github.com/MartinBStudio/RO_CombatText_resources
 * **UI Themes:** https://github.com/MartinBStudio/RO_UserInterface_resources
 * **Buff icons:** https://github.com/MartinBStudio/RO_UserInterface_resources
+* **Buff animations:** https://github.com/MartinBStudio/RO_BuffAnimations_resources
 
 The repositories are intentionally public so anyone can create and contribute their own models, themes, or other customizations.
 

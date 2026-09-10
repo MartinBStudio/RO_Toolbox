@@ -1,6 +1,7 @@
 package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.buffIcons.BuffIconsManagerService;
+import com.bstudio.ro_toolbox.service.buffs.BuffsManagerService;
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
@@ -24,6 +25,7 @@ public class SettingsController {
     private final CombatTextManagerService combatTextManagerService;
     private final UserInterfaceManagerService userInterfaceManagerService;
     private final BuffIconsManagerService buffIconsManagerService;
+    private final BuffsManagerService buffsManagerService;
     private final LoginManagerService loginManagerService;
 
     @PostMapping("/game-folder")
@@ -47,6 +49,7 @@ public class SettingsController {
         combatTextManagerService.saveSelectedGame(base);
         userInterfaceManagerService.saveSelectedGame(base);
         buffIconsManagerService.saveSelectedGame(base);
+        buffsManagerService.saveSelectedGame(base);
 
         return new SaveFolderResponse(
                 absoluteOrNull(base),
@@ -80,6 +83,7 @@ public class SettingsController {
         combatTextManagerService.clearSelectedGame();
         userInterfaceManagerService.clearSelectedGame();
         buffIconsManagerService.clearSelectedGame();
+        buffsManagerService.clearSelectedGame();
         return new MessageResponse("Selected game folder cleared.");
     }
 
@@ -90,23 +94,27 @@ public class SettingsController {
         combatTextManagerService.clearSelectedItemFolder();
         userInterfaceManagerService.clearSelectedItemFolder();
         buffIconsManagerService.clearSelectedItemFolder();
+        buffsManagerService.clearSelectedItemFolder();
 
         // Step 2: Clear downloaded resources (.default is preserved for recovery)
         lootManagerService.clearResources();
         combatTextManagerService.clearResources();
         userInterfaceManagerService.clearResources();
         buffIconsManagerService.clearResources();
+        buffsManagerService.clearResources();
 
         // Step 3: Clear game folder selection and app config
         lootManagerService.clearSelectedGame();
         combatTextManagerService.clearSelectedGame();
         userInterfaceManagerService.clearSelectedGame();
         buffIconsManagerService.clearSelectedGame();
+        buffsManagerService.clearSelectedGame();
 
         lootManagerService.clearAppConfig();
         combatTextManagerService.clearAppConfig();
         userInterfaceManagerService.clearAppConfig();
         buffIconsManagerService.clearAppConfig();
+        buffsManagerService.clearAppConfig();
 
         // Step 4: Clear all saved accounts
         loginManagerService.clearAccounts();
