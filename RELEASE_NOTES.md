@@ -1,10 +1,8 @@
 # RO Toolbox – Release Notes
 
-## v0.4.4 – Buffs overhaul and manifest fixes
+## v0.4.5 – Buffs overhaul and manifest fixes
 
-### ✨ Improvements
+### ✨ Fixed minor issue
 
-- Added the full Buffs texture replacer flow with profile discovery, install/clear actions, and .default restore support.
-- Hardened the Buffs status path to avoid crashes when no Buffs profile is installed yet.
-- Kept the UX consistent with the other texture replacer services and preserved the app’s existing resource-management flow.
+- Fullscreen preview picture is now rendered in front of the main window instead of behind it.
 
