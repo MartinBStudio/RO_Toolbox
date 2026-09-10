@@ -628,7 +628,7 @@ p {
 .lootManageModalOverlay {
   position: fixed;
   inset: 0;
-  z-index: 2147483647;
+  z-index: 2147483646;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1962,7 +1962,7 @@ a {
   align-items: center;
   justify-content: center;
   padding: 0.7rem;
-  z-index: 2147483647;
+  z-index: 2147483646;
   isolation: isolate;
 }
 
@@ -2357,7 +2357,7 @@ a {
 
 .modalBackdropSmall {
   padding: 0.2rem;
-  z-index: 2147483647;
+  z-index: 2147483646;
 }
 
 .confirmationModalSmall {
