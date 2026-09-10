@@ -19,6 +19,7 @@ import {HowToUseModal} from "./elements/HowToUseModal.tsx";
 import {ReleaseNotesModal} from "./elements/ReleaseNotesModal.tsx";
 import {TroseRunningBanner} from "./elements/TroseRunningBanner.tsx";
 import {QuickLaunchModePanel} from "./components/QuickLaunchModePanel.tsx";
+import {UsefulStuffPanel} from "./elements/UsefulStuffPanel.tsx";
 import {useApplicationContext} from "./context/ApplicationContext.tsx";
 import {useWindowMode} from "./hooks/useWindowMode.ts";
 import { ConfirmationModal } from "./elements/ConfirmationModal.tsx";
@@ -393,6 +394,7 @@ function App() {
                                             })}
                                         </div>
                                     </div>
+                                    <UsefulStuffPanel onMessage={setMessage} />
                                 </aside>
 
                                 <section className="appContent">

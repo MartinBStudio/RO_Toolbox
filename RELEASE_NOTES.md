@@ -1,8 +1,11 @@
 # RO Toolbox – Release Notes
 
-## v0.4.5 – Buffs overhaul and manifest fixes
+## v0.5.0 – Useful Stuff sidebar
 
-### ✨ Fixed minor issue
+### ✨ Added
 
-- Fullscreen preview picture is now rendered in front of the main window instead of behind it.
+- Added a new **Useful Stuff** sidebar section with quick links to favorite ROSE community tools and sites.
+
+
+
 

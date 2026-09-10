@@ -1,0 +1,26 @@
+[
+  {
+    "id": "rose-utils",
+    "title": "ROSE Utils",
+    "url": "https://roseutils.com/",
+    "description": "Discord-login hub for RoseUtils tools and market.",
+    "accentFrom": "#ff8a48",
+    "accentTo": "#ffd45a"
+  },
+  {
+    "id": "rose-lite",
+    "title": "ROSE Lite",
+    "url": "https://rose-lite.vercel.app/",
+    "description": "Community-built companion with item, quest, crafting, king timer, and market tools.",
+    "accentFrom": "#5aa7ff",
+    "accentTo": "#78ffe6"
+  },
+  {
+    "id": "rose-calc",
+    "title": "ROSE Calc",
+    "url": "https://luizopiloto.github.io/rose_calc/",
+    "description": "Base stat optimizer for planning ROSE builds by level, class, weapon, and goals.",
+    "accentFrom": "#9a7cff",
+    "accentTo": "#ff8df2"
+  }
+]
