@@ -46,6 +46,7 @@ struct BackendState(Mutex<Option<Child>>);
 struct TaskbarQuickAccount {
     id: String,
     name: String,
+    icon: String,
 }
 
 #[tauri::command]
@@ -54,14 +55,18 @@ fn stop_backend(state: tauri::State<BackendState>) {
 }
 
 #[tauri::command]
-fn sync_taskbar_quick_launch(accounts: Vec<TaskbarQuickAccount>) -> Result<(), String> {
+fn sync_taskbar_quick_launch(
+    app_handle: AppHandle,
+    accounts: Vec<TaskbarQuickAccount>,
+) -> Result<(), String> {
     #[cfg(windows)]
     {
-        return sync_taskbar_quick_launch_windows(&accounts);
+        return sync_taskbar_quick_launch_windows(&app_handle, &accounts);
     }
 
     #[cfg(not(windows))]
     {
+        let _ = app_handle;
         let _ = accounts;
         Ok(())
     }
@@ -284,7 +289,10 @@ fn find_bundled_java(app_handle: &AppHandle) -> Option<PathBuf> {
 }
 
 #[cfg(windows)]
-fn sync_taskbar_quick_launch_windows(accounts: &[TaskbarQuickAccount]) -> Result<(), String> {
+fn sync_taskbar_quick_launch_windows(
+    app_handle: &AppHandle,
+    accounts: &[TaskbarQuickAccount],
+) -> Result<(), String> {
     let mut tasks = Vec::new();
 
     for account in accounts {
@@ -295,6 +303,7 @@ fn sync_taskbar_quick_launch_windows(accounts: &[TaskbarQuickAccount]) -> Result
         tasks.push((
             name.to_string(),
             format!("{BACKEND_API_BASE}/login/{}/launch", account.id),
+            resolve_taskbar_icon_path(app_handle, &account.icon),
         ));
     }
 
@@ -302,7 +311,7 @@ fn sync_taskbar_quick_launch_windows(accounts: &[TaskbarQuickAccount]) -> Result
 }
 
 #[cfg(windows)]
-fn update_windows_jump_list(tasks: Vec<(String, String)>) -> Result<(), String> {
+fn update_windows_jump_list(tasks: Vec<(String, String, Option<PathBuf>)>) -> Result<(), String> {
     unsafe {
         CoInitializeEx(None, COINIT_APARTMENTTHREADED)
             .ok()
@@ -319,7 +328,9 @@ fn update_windows_jump_list(tasks: Vec<(String, String)>) -> Result<(), String> 
 }
 
 #[cfg(windows)]
-fn update_windows_jump_list_inner(tasks: Vec<(String, String)>) -> Result<(), String> {
+fn update_windows_jump_list_inner(
+    tasks: Vec<(String, String, Option<PathBuf>)>,
+) -> Result<(), String> {
     let destination_list: ICustomDestinationList = unsafe {
         CoCreateInstance(&DestinationList, None, CLSCTX_INPROC_SERVER)
             .map_err(|err| format!("Failed to create Windows jump list: {err}"))?
@@ -351,10 +362,9 @@ fn update_windows_jump_list_inner(tasks: Vec<(String, String)>) -> Result<(), St
     let launcher_script_path = launcher_script.to_string_lossy().to_string();
     let app_exe = std::env::current_exe()
         .map_err(|err| format!("Failed to resolve app executable path: {err}"))?;
-    let app_exe = HSTRING::from(app_exe.to_string_lossy().to_string());
 
     let max_entries = max_slots.max(1) as usize;
-    for (title, endpoint) in tasks.into_iter().take(max_entries) {
+    for (title, endpoint, icon_path) in tasks.into_iter().take(max_entries) {
         let task_item: IShellLinkW = unsafe {
             CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER)
                 .map_err(|err| format!("Failed to create taskbar menu item: {err}"))?
@@ -377,7 +387,15 @@ fn update_windows_jump_list_inner(tasks: Vec<(String, String)>) -> Result<(), St
                 .SetDescription(&HSTRING::from(title.clone()))
                 .map_err(|err| format!("Failed to set taskbar item description: {err}"))?;
             task_item
-                .SetIconLocation(&app_exe, 0)
+                .SetIconLocation(
+                    &HSTRING::from(
+                        icon_path
+                            .unwrap_or_else(|| app_exe.clone())
+                            .to_string_lossy()
+                            .to_string(),
+                    ),
+                    0,
+                )
                 .map_err(|err| format!("Failed to set taskbar item icon: {err}"))?;
         }
 
@@ -425,6 +443,49 @@ fn set_shell_link_title(shell_link: &IShellLinkW, title: &str) -> Result<(), Str
     Ok(())
 }
 
+fn taskbar_icon_file_name(icon: &str) -> &'static str {
+    match icon.trim() {
+        "✚" => "healer.ico",
+        "🪙" => "coin.ico",
+        "🛡️" => "shield.ico",
+        "🪄" => "wand.ico",
+        "🏹" => "bow.ico",
+        "⚔️" => "swords.ico",
+        "💎" => "gem.ico",
+        "✦" => "sparkle.ico",
+        "⚑" => "flag.ico",
+        _ => "person.ico",
+    }
+}
+
+fn resolve_taskbar_icon_path(app_handle: &AppHandle, icon: &str) -> Option<PathBuf> {
+    let file_name = taskbar_icon_file_name(icon);
+    let mut candidates = Vec::<PathBuf>::new();
+
+    if let Ok(resource_dir) = app_handle.path().resource_dir() {
+        candidates.push(resource_dir.join("taskbar-icons").join(file_name));
+    }
+
+    if let Ok(cwd) = std::env::current_dir() {
+        candidates.push(cwd.join("resources").join("taskbar-icons").join(file_name));
+        candidates.push(
+            cwd.join("src-tauri")
+                .join("resources")
+                .join("taskbar-icons")
+                .join(file_name),
+        );
+        candidates.push(
+            cwd.join("..")
+                .join("src-tauri")
+                .join("resources")
+                .join("taskbar-icons")
+                .join(file_name),
+        );
+    }
+
+    candidates.into_iter().find(|candidate| candidate.exists())
+}
+
 #[cfg(windows)]
 fn ensure_taskbar_launcher_script() -> Result<PathBuf, String> {
     let script_path = std::env::temp_dir().join("ro_toolbox_taskbar_launch.vbs");
@@ -433,6 +494,31 @@ fn ensure_taskbar_launcher_script() -> Result<PathBuf, String> {
     fs::write(&script_path, script)
         .map_err(|err| format!("Failed to prepare taskbar launcher script: {err}"))?;
     Ok(script_path)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::taskbar_icon_file_name;
+
+    #[test]
+    fn maps_login_icons_to_taskbar_icon_files() {
+        assert_eq!(taskbar_icon_file_name("👤"), "person.ico");
+        assert_eq!(taskbar_icon_file_name("✚"), "healer.ico");
+        assert_eq!(taskbar_icon_file_name("🪙"), "coin.ico");
+        assert_eq!(taskbar_icon_file_name("🛡️"), "shield.ico");
+        assert_eq!(taskbar_icon_file_name("🪄"), "wand.ico");
+        assert_eq!(taskbar_icon_file_name("🏹"), "bow.ico");
+        assert_eq!(taskbar_icon_file_name("⚔️"), "swords.ico");
+        assert_eq!(taskbar_icon_file_name("💎"), "gem.ico");
+        assert_eq!(taskbar_icon_file_name("✦"), "sparkle.ico");
+        assert_eq!(taskbar_icon_file_name("⚑"), "flag.ico");
+    }
+
+    #[test]
+    fn falls_back_to_default_taskbar_icon_file() {
+        assert_eq!(taskbar_icon_file_name("unknown"), "person.ico");
+        assert_eq!(taskbar_icon_file_name(""), "person.ico");
+    }
 }
 
 #[cfg(windows)]

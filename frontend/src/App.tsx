@@ -45,6 +45,7 @@ const DEFAULT_SERVICE_ID = SERVICES[0].id;
 type TaskbarQuickAccount = {
     id: string;
     name: string;
+    icon: string;
 };
 
 function isServiceId(value: string): value is (typeof SERVICES)[number]["id"] {
@@ -261,7 +262,8 @@ function App() {
 
         const taskbarAccounts: TaskbarQuickAccount[] = quickAccounts.map((account) => ({
             id: account.id,
-            name: account.name
+            name: account.name,
+            icon: account.icon
         }));
 
         invoke("sync_taskbar_quick_launch", {accounts: taskbarAccounts}).catch(() => undefined);
