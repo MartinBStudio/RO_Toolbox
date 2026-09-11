@@ -1,11 +1,10 @@
 # RO Toolbox – Release Notes
 
-## v0.5.1 – Useful Stuff sidebar
+## v0.5.1 – Useful Stuff + taskbar quick launch
 
 ### ✨ Added
 
-- Added a new **Useful Stuff** sidebar section with quick links to favorite ROSE community tools and sites.
-
+- Added Windows taskbar right-click **Quick launch** actions for accounts marked for quick launch.
 
 
 
