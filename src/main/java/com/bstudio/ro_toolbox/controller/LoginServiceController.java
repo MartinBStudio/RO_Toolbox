@@ -1,6 +1,7 @@
 package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
+import com.bstudio.ro_toolbox.service.app.AppNotificationService;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +20,7 @@ import java.util.Properties;
 public class LoginServiceController {
 
     private final LoginManagerService loginManagerService;
+    private final AppNotificationService appNotificationService;
 
     @GetMapping
     public List<LoginManagerService.LoginAccount> listAccounts() throws IOException {
@@ -60,7 +62,10 @@ public class LoginServiceController {
     }
 
     @PostMapping("/{id}/launch")
-    public MessageResponse launchAccount(@PathVariable String id) throws IOException {
+    public MessageResponse launchAccount(
+            @PathVariable String id,
+            @RequestHeader(value = "X-RO-Toolbox-Source", required = false) String source
+    ) throws IOException {
         LoginManagerService.LoginAccount account = loginManagerService.listAccounts().stream()
                 .filter(item -> id.equals(item.id()))
                 .findFirst()
@@ -83,6 +88,10 @@ public class LoginServiceController {
                 "--password",
                 account.password()
         );
+
+        if ("taskbar".equalsIgnoreCase(source)) {
+            appNotificationService.enqueue("ROSE Online launched for " + account.name() + ".");
+        }
 
         return new MessageResponse("Launching ROSE Online for " + account.name() + ".");
     }

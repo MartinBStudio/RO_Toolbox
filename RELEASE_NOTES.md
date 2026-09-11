@@ -1,6 +1,6 @@
 # RO Toolbox – Release Notes
 
-## v0.5.0 – Useful Stuff sidebar
+## v0.5.1 – Useful Stuff sidebar
 
 ### ✨ Added
 

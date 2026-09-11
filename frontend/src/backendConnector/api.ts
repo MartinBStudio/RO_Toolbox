@@ -1,4 +1,4 @@
-export { getStatus } from "./appApi.ts";
+export { getStatus, drainNotifications } from "./appApi.ts";
 export {
   saveGameFolder,
   clearGameFolder,

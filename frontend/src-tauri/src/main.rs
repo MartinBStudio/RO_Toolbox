@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use serde::Deserialize;
+use std::fs;
 use std::path::PathBuf;
 use std::process::{Child, Command};
 use std::sync::Mutex;
@@ -10,13 +12,59 @@ use tauri::{AppHandle, Manager, RunEvent};
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
 
+#[cfg(windows)]
+use windows::core::{Interface, GUID, HSTRING};
+#[cfg(windows)]
+use windows::Win32::Foundation::PROPERTYKEY;
+#[cfg(windows)]
+use windows::Win32::System::Com::StructuredStorage::PROPVARIANT;
+#[cfg(windows)]
+use windows::Win32::System::Com::{
+    CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER,
+    COINIT_APARTMENTTHREADED,
+};
+#[cfg(windows)]
+use windows::Win32::UI::Shell::Common::{IObjectArray, IObjectCollection};
+#[cfg(windows)]
+use windows::Win32::UI::Shell::PropertiesSystem::IPropertyStore;
+#[cfg(windows)]
+use windows::Win32::UI::Shell::{
+    DestinationList, EnumerableObjectCollection, ICustomDestinationList, IShellLinkW, ShellLink,
+};
+
 const CREATE_NO_WINDOW: u32 = 0x08000000;
+const BACKEND_API_BASE: &str = "http://localhost:8080/api";
+#[cfg(windows)]
+const PKEY_TITLE: PROPERTYKEY = PROPERTYKEY {
+    fmtid: GUID::from_u128(0xf29f85e0_4ff9_1068_ab91_08002b27b3d9),
+    pid: 2,
+};
 
 struct BackendState(Mutex<Option<Child>>);
+
+#[derive(Deserialize)]
+struct TaskbarQuickAccount {
+    id: String,
+    name: String,
+}
 
 #[tauri::command]
 fn stop_backend(state: tauri::State<BackendState>) {
     stop_backend_child(&state);
+}
+
+#[tauri::command]
+fn sync_taskbar_quick_launch(accounts: Vec<TaskbarQuickAccount>) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        return sync_taskbar_quick_launch_windows(&accounts);
+    }
+
+    #[cfg(not(windows))]
+    {
+        let _ = accounts;
+        Ok(())
+    }
 }
 
 fn main() {
@@ -26,7 +74,10 @@ fn main() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .manage(BackendState(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![stop_backend])
+        .invoke_handler(tauri::generate_handler![
+            stop_backend,
+            sync_taskbar_quick_launch
+        ])
         .setup(|app| {
             if use_external_backend() {
                 return Ok(());
@@ -153,9 +204,7 @@ fn spawn_backend_with_retry(
 
 fn use_external_backend() -> bool {
     matches!(
-        std::env::var("RO_TOOLBOX_EXTERNAL_BACKEND")
-            .ok()
-            .as_deref(),
+        std::env::var("RO_TOOLBOX_EXTERNAL_BACKEND").ok().as_deref(),
         Some("1" | "true" | "TRUE" | "True")
     )
 }
@@ -169,7 +218,12 @@ fn find_backend_jar(app_handle: &AppHandle) -> Result<PathBuf, String> {
 
     if let Ok(cwd) = std::env::current_dir() {
         candidates.push(cwd.join("resources").join("RO_Toolbox.jar"));
-        candidates.push(cwd.join("..").join("build").join("libs").join("RO_Toolbox.jar"));
+        candidates.push(
+            cwd.join("..")
+                .join("build")
+                .join("libs")
+                .join("RO_Toolbox.jar"),
+        );
         candidates.push(
             cwd.join("..")
                 .join("..")
@@ -227,4 +281,161 @@ fn find_bundled_java(app_handle: &AppHandle) -> Option<PathBuf> {
     }
 
     candidates.into_iter().find(|candidate| candidate.exists())
+}
+
+#[cfg(windows)]
+fn sync_taskbar_quick_launch_windows(accounts: &[TaskbarQuickAccount]) -> Result<(), String> {
+    let mut tasks = Vec::new();
+
+    for account in accounts {
+        let name = account.name.trim();
+        if name.is_empty() {
+            continue;
+        }
+        tasks.push((
+            name.to_string(),
+            format!("{BACKEND_API_BASE}/login/{}/launch", account.id),
+        ));
+    }
+
+    update_windows_jump_list(tasks)
+}
+
+#[cfg(windows)]
+fn update_windows_jump_list(tasks: Vec<(String, String)>) -> Result<(), String> {
+    unsafe {
+        CoInitializeEx(None, COINIT_APARTMENTTHREADED)
+            .ok()
+            .map_err(|err| format!("Failed to initialize COM for taskbar menu: {err}"))?;
+    }
+
+    let result = update_windows_jump_list_inner(tasks);
+
+    unsafe {
+        CoUninitialize();
+    }
+
+    result
+}
+
+#[cfg(windows)]
+fn update_windows_jump_list_inner(tasks: Vec<(String, String)>) -> Result<(), String> {
+    let destination_list: ICustomDestinationList = unsafe {
+        CoCreateInstance(&DestinationList, None, CLSCTX_INPROC_SERVER)
+            .map_err(|err| format!("Failed to create Windows jump list: {err}"))?
+    };
+
+    let mut max_slots = 0_u32;
+    let _removed_destinations: IObjectArray = unsafe {
+        destination_list
+            .BeginList(&mut max_slots)
+            .map_err(|err| format!("Failed to initialize taskbar menu: {err}"))?
+    };
+
+    if tasks.is_empty() {
+        unsafe {
+            destination_list
+                .CommitList()
+                .map_err(|err| format!("Failed to clear taskbar quick launch group: {err}"))?;
+        }
+        return Ok(());
+    }
+
+    let quick_launch_collection: IObjectCollection = unsafe {
+        CoCreateInstance(&EnumerableObjectCollection, None, CLSCTX_INPROC_SERVER)
+            .map_err(|err| format!("Failed to create taskbar menu collection: {err}"))?
+    };
+
+    let wscript_path = HSTRING::from(r"C:\Windows\System32\wscript.exe");
+    let launcher_script = ensure_taskbar_launcher_script()?;
+    let launcher_script_path = launcher_script.to_string_lossy().to_string();
+    let app_exe = std::env::current_exe()
+        .map_err(|err| format!("Failed to resolve app executable path: {err}"))?;
+    let app_exe = HSTRING::from(app_exe.to_string_lossy().to_string());
+
+    let max_entries = max_slots.max(1) as usize;
+    for (title, endpoint) in tasks.into_iter().take(max_entries) {
+        let task_item: IShellLinkW = unsafe {
+            CoCreateInstance(&ShellLink, None, CLSCTX_INPROC_SERVER)
+                .map_err(|err| format!("Failed to create taskbar menu item: {err}"))?
+        };
+
+        let script_args = HSTRING::from(format!(
+            "//B //Nologo \"{}\" \"{}\"",
+            escape_shell_link_argument(&launcher_script_path),
+            escape_shell_link_argument(&endpoint)
+        ));
+
+        unsafe {
+            task_item
+                .SetPath(&wscript_path)
+                .map_err(|err| format!("Failed to set taskbar command path: {err}"))?;
+            task_item
+                .SetArguments(&script_args)
+                .map_err(|err| format!("Failed to set taskbar command arguments: {err}"))?;
+            task_item
+                .SetDescription(&HSTRING::from(title.clone()))
+                .map_err(|err| format!("Failed to set taskbar item description: {err}"))?;
+            task_item
+                .SetIconLocation(&app_exe, 0)
+                .map_err(|err| format!("Failed to set taskbar item icon: {err}"))?;
+        }
+
+        set_shell_link_title(&task_item, &title)?;
+
+        unsafe {
+            quick_launch_collection
+                .AddObject(&task_item)
+                .map_err(|err| format!("Failed to add taskbar menu item: {err}"))?;
+        }
+    }
+
+    let object_array: IObjectArray = quick_launch_collection
+        .cast()
+        .map_err(|err| format!("Failed to finalize taskbar items: {err}"))?;
+
+    unsafe {
+        destination_list
+            .AppendCategory(&HSTRING::from("Quick launch"), &object_array)
+            .map_err(|err| format!("Failed to update taskbar quick launch group: {err}"))?;
+        destination_list
+            .CommitList()
+            .map_err(|err| format!("Failed to commit taskbar menu: {err}"))?;
+    }
+
+    Ok(())
+}
+
+#[cfg(windows)]
+fn set_shell_link_title(shell_link: &IShellLinkW, title: &str) -> Result<(), String> {
+    let property_store: IPropertyStore = shell_link
+        .cast()
+        .map_err(|err| format!("Failed to open taskbar item properties: {err}"))?;
+    let title_variant = PROPVARIANT::from(title);
+
+    unsafe {
+        property_store
+            .SetValue(&PKEY_TITLE, &title_variant)
+            .map_err(|err| format!("Failed to set taskbar item title: {err}"))?;
+        property_store
+            .Commit()
+            .map_err(|err| format!("Failed to save taskbar item title: {err}"))?;
+    }
+
+    Ok(())
+}
+
+#[cfg(windows)]
+fn ensure_taskbar_launcher_script() -> Result<PathBuf, String> {
+    let script_path = std::env::temp_dir().join("ro_toolbox_taskbar_launch.vbs");
+    let script = "On Error Resume Next\r\nDim url\r\nurl = WScript.Arguments.Item(0)\r\nSet http = CreateObject(\"MSXML2.XMLHTTP\")\r\nhttp.open \"POST\", url, False\r\nhttp.setRequestHeader \"Content-Type\", \"application/json\"\r\nhttp.setRequestHeader \"X-RO-Toolbox-Source\", \"taskbar\"\r\nhttp.send \"\"\r\n";
+
+    fs::write(&script_path, script)
+        .map_err(|err| format!("Failed to prepare taskbar launcher script: {err}"))?;
+    Ok(script_path)
+}
+
+#[cfg(windows)]
+fn escape_shell_link_argument(value: &str) -> String {
+    value.replace('"', "\"\"")
 }

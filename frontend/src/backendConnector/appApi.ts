@@ -156,3 +156,8 @@ export function getStatus() {
     buffsAvailableProfiles: asAvailableProfiles(buffsStatus?.availableProfiles)
   }));
 }
+
+export function drainNotifications() {
+  return request<{ messages?: unknown }>("/notifications/drain")
+    .then((response) => asStringArray(response?.messages));
+}

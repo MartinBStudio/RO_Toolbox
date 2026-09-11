@@ -1,5 +1,6 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { invoke } from "@tauri-apps/api/core";
 import { KeyIcon, SwatchIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import {AppHeader} from "./elements/AppHeader.tsx";
 import {AppFooter} from "./elements/AppFooter.tsx";
@@ -24,6 +25,7 @@ import {useApplicationContext} from "./context/ApplicationContext.tsx";
 import {useWindowMode} from "./hooks/useWindowMode.ts";
 import { ConfirmationModal } from "./elements/ConfirmationModal.tsx";
 import {
+    drainNotifications,
     getReleaseNotes,
     getSelectedServiceSetting,
     listQuickLoginAccounts,
@@ -40,6 +42,10 @@ const SERVICES = [
 ] as const;
 const SELECTED_SERVICE_STORAGE_KEY = "roToolbox.selectedService";
 const DEFAULT_SERVICE_ID = SERVICES[0].id;
+type TaskbarQuickAccount = {
+    id: string;
+    name: string;
+};
 
 function isServiceId(value: string): value is (typeof SERVICES)[number]["id"] {
     return SERVICES.some((service) => service.id === value);
@@ -127,6 +133,19 @@ function App() {
     const refreshStatusSilently = useCallback(() => {
         void refreshStatus().catch(() => undefined);
     }, [refreshStatus]);
+    const consumeTaskbarLaunchMessages = useCallback(() => {
+        if (!backendReady) {
+            return;
+        }
+        void drainNotifications()
+            .then((messages) => {
+                const latestMessage = messages[messages.length - 1];
+                if (latestMessage) {
+                    setMessage(latestMessage);
+                }
+            })
+            .catch(() => undefined);
+    }, [backendReady]);
 
     const onBusyChange = useCallback((busy: boolean, msg?: string) => {
         setLoading(busy);
@@ -236,6 +255,19 @@ function App() {
     }, [backendReady]);
 
     useEffect(() => {
+        if (!backendReady) {
+            return;
+        }
+
+        const taskbarAccounts: TaskbarQuickAccount[] = quickAccounts.map((account) => ({
+            id: account.id,
+            name: account.name
+        }));
+
+        invoke("sync_taskbar_quick_launch", {accounts: taskbarAccounts}).catch(() => undefined);
+    }, [backendReady, quickAccounts]);
+
+    useEffect(() => {
         const handleFactoryReset = () => {
             void refreshQuickAccounts();
             setFactoryResetNonce((value) => value + 1);
@@ -306,6 +338,7 @@ function App() {
             appInForegroundRef.current = nextForeground;
             if (!wasInForeground && nextForeground) {
                 refreshStatusSilently();
+                consumeTaskbarLaunchMessages();
             }
         };
         const readForegroundState = () => !document.hidden && document.hasFocus();
@@ -330,7 +363,21 @@ function App() {
             window.removeEventListener("blur", handleWindowBlur);
             document.removeEventListener("visibilitychange", handleVisibilityChange);
         };
-    }, [backendReady, refreshStatusSilently]);
+    }, [backendReady, consumeTaskbarLaunchMessages, refreshStatusSilently]);
+
+    useEffect(() => {
+        if (!backendReady) {
+            return;
+        }
+
+        const timer = window.setInterval(() => {
+            if (appInForegroundRef.current) {
+                consumeTaskbarLaunchMessages();
+            }
+        }, 2000);
+
+        return () => window.clearInterval(timer);
+    }, [backendReady, consumeTaskbarLaunchMessages]);
 
     return (
         <main className={`layout${loadingOverlayVisible ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>

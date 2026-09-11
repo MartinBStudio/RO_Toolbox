@@ -6,6 +6,7 @@ import com.bstudio.ro_toolbox.service.buffs.BuffsManagerService;
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.service.app.AppNotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,6 +28,7 @@ public class AppStatusController {
     private final UserInterfaceManagerService userInterfaceManagerService;
     private final BuffIconsManagerService buffIconsManagerService;
     private final BuffsManagerService buffsManagerService;
+    private final AppNotificationService appNotificationService;
 
     @GetMapping("/status")
     public AppStatusResponse status() {
@@ -114,6 +116,11 @@ public class AppStatusController {
                         new ServiceEndpointResponse("updater", "/api/update", "Backend updater checks and install")
                 )
         );
+    }
+
+    @GetMapping("/notifications/drain")
+    public NotificationQueueResponse drainNotifications() {
+        return new NotificationQueueResponse(appNotificationService.drain());
     }
 
     public record AppStatusResponse(
@@ -241,5 +248,8 @@ public class AppStatusController {
     }
 
     public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version, List<String> managedSubfolders, List<String> disabledManagedSubfolders) {
+    }
+
+    public record NotificationQueueResponse(List<String> messages) {
     }
 }
