@@ -124,6 +124,13 @@ body {
   margin-top: 0.9rem;
 }
 
+.layoutFloatingStatus {
+  position: absolute;
+  left: 1rem;
+  bottom: 0.2rem;
+  z-index: 2;
+}
+
 .appWorkspace {
   display: grid !important;
   grid-template-columns: 260px minmax(0, 1fr) !important;
@@ -299,7 +306,7 @@ body {
 
 header.card {
   position: relative;
-  z-index: 0;
+  z-index: 1;
   overflow: visible;
   background: var(--rose-panel-header), linear-gradient(180deg, rgba(32, 41, 54, 0.98) 0%, rgba(14, 24, 36, 0.98) 100%);
   border-color: var(--rose-site-border);
@@ -355,13 +362,13 @@ header.card {
 .troseStatusBanner {
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  align-self: flex-start;
-  padding: 0.32rem 0.45rem;
+  gap: 0.28rem;
+  padding: 0.16rem 0.34rem;
   border: 1px solid #3f4e68;
-  border-radius: 7px;
+  border-radius: 8px;
   background: rgba(24, 34, 52, 0.8);
-  margin-left: auto;
+  margin: 0;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
 }
 
 .troseStatusBannerRunning {
@@ -370,8 +377,8 @@ header.card {
 }
 
 .troseStatusIndicator {
-  width: 0.45rem;
-  height: 0.45rem;
+  width: 0.34rem;
+  height: 0.34rem;
   border-radius: 999px;
   background: #d28b3d;
   box-shadow: 0 0 0 1px rgba(210, 139, 61, 0.28);
@@ -383,7 +390,8 @@ header.card {
 }
 
 .troseStatusText {
-  font-size: 0.72rem;
+  font-size: 0.64rem;
+  line-height: 1.05;
   color: #d8e3f5;
   white-space: nowrap;
 }
@@ -392,15 +400,15 @@ header.card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 1.8rem;
-  min-height: 1.8rem;
-  padding: 0.2rem;
+  min-width: 1.35rem;
+  min-height: 1.35rem;
+  padding: 0.12rem;
   border-radius: 6px;
 }
 
 .troseStatusRefreshIcon {
-  width: 0.9rem;
-  height: 0.9rem;
+  width: 0.72rem;
+  height: 0.72rem;
 }
 
 .quickLaunchOnlyPanel {
@@ -568,9 +576,9 @@ p {
   border: 1px solid #2b3344;
   border-radius: 8px;
   background: #1a2333;
-  padding: 0.5rem 0.6rem;
+  padding: 0.24rem 0.38rem;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.16rem;
 }
 
 .lootWarningBanner {
@@ -603,9 +611,11 @@ p {
 
 .accordionHeader {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: 0.5rem;
+  gap: 0.24rem;
+  min-height: 0;
+  padding: 0;
 }
 
 .accordionBody {
@@ -1014,12 +1024,21 @@ p {
   font-size: 0.82rem;
 }
 
+.appFooterRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
 .appFooterLine {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-wrap: wrap;
   gap: 0.15rem;
+  margin: 0;
 }
 
 .footerLinkButton {
@@ -1456,7 +1475,7 @@ button:disabled {
 
 .lootAccordion > .accordionHeader {
   align-items: flex-start;
-  padding: 0.85rem 0.95rem;
+  padding: 0.62rem 0.85rem;
   background: var(--panel-blue-surface);
   min-height: 0;
   cursor: default;
@@ -1469,15 +1488,15 @@ button:disabled {
 }
 
 .lootManager .headerActions {
-  gap: 0.3rem;
+  gap: 0.24rem;
   align-self: center;
-  padding-left: 0.85rem;
+  padding-left: 0.7rem;
   margin-left: auto;
 }
 
 .lootManager .headerSep {
   width: 1px;
-  height: 1.2rem;
+  height: 1.05rem;
   background: #2b3344;
   flex-shrink: 0;
 }
@@ -1504,7 +1523,7 @@ button .heroIcon {
 
 .serviceAccordionTitleBlock {
   display: grid;
-  gap: 0.3rem;
+  gap: 0;
   min-width: 0;
   flex: 1;
 }
@@ -1512,40 +1531,43 @@ button .heroIcon {
 .serviceAccordionTitleRow {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.22rem;
   flex-wrap: wrap;
   min-width: 0;
+  min-height: 0.82rem;
 }
 
 .serviceAccordionAccent {
-  width: 0.58rem;
-  height: 0.58rem;
+  width: 0.38rem;
+  height: 0.38rem;
   border-radius: 999px;
   flex-shrink: 0;
   background: linear-gradient(180deg, #91bcff 0%, #4f7fe6 100%);
-  box-shadow: 0 0 0 3px rgba(79, 127, 230, 0.14);
+  box-shadow: 0 0 0 2px rgba(79, 127, 230, 0.14);
 }
 
 .serviceAccordionTitle {
   margin: 0;
   color: #eef4ff;
-  font-size: 0.98rem;
+  font-size: 0.8rem;
   font-weight: 800;
   letter-spacing: 0.01em;
+  line-height: 1.1;
 }
 
 .serviceAccordionBadge {
   display: inline-flex;
   align-items: center;
-  min-height: 1.25rem;
-  padding: 0.08rem 0.45rem;
+  min-height: 0.8rem;
+  padding: 0.03rem 0.28rem;
   border: 1px solid transparent;
   border-radius: 999px;
-  font-size: 0.63rem;
+  font-size: 0.48rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   font-family: var(--display-font);
+  line-height: 1;
 }
 
 .serviceAccordionBadgeActive {
@@ -1563,35 +1585,35 @@ button .heroIcon {
 .serviceAccordionProfileName {
   margin: 0;
   color: #95a8c2;
-  font-size: 0.84rem;
+  font-size: 0.62rem;
   font-weight: 600;
-  line-height: 1.25;
+  line-height: 1.08;
 }
 
 .serviceAccordionMeta {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
+  gap: 0.16rem;
   align-items: center;
 }
 
 .serviceAccordionMetaChip {
   display: inline-flex;
   align-items: center;
-  min-height: 1.35rem;
-  padding: 0.08rem 0.48rem;
+  min-height: 0.8rem;
+  padding: 0.02rem 0.28rem;
   border: 1px solid rgba(101, 127, 170, 0.3);
   border-radius: 999px;
   background: rgba(28, 40, 60, 0.78);
   color: #9fb6d6;
-  font-size: 0.69rem;
+  font-size: 0.5rem;
   line-height: 1;
 }
 
 .serviceAccordionDetailsRow {
   display: flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.16rem;
   flex-wrap: wrap;
   min-width: 0;
 }

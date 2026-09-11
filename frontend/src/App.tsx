@@ -403,13 +403,6 @@ function App() {
                         />
                     )}
                     <div className="appMainScroll">
-                        {!quickLaunchOnlyActive && Boolean(status?.troseRunning) && (
-                            <TroseRunningBanner
-                                running={true}
-                                loading={troseRefreshLoading || loading}
-                                onRefresh={onRefreshTroseStatus}
-                            />
-                        )}
                         {quickLaunchOnlyActive ? (
                             <QuickLaunchModePanel
                                 accounts={quickAccounts}
@@ -512,6 +505,15 @@ function App() {
                             loading={loading}
                             onOpenWhatsNew={onOpenWhatsNew}
                         />
+                    )}
+                    {!quickLaunchOnlyActive && Boolean(status?.troseRunning) && (
+                        <div className="layoutFloatingStatus">
+                            <TroseRunningBanner
+                                running={true}
+                                loading={troseRefreshLoading || loading}
+                                onRefresh={onRefreshTroseStatus}
+                            />
+                        </div>
                     )}
                     <SettingsModal
                         open={settingsOpen}
