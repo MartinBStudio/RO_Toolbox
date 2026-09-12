@@ -34,6 +34,17 @@ export function saveSelectedServiceSetting(serviceId: string) {
   });
 }
 
+export function getUsefulStuffCollapsedSetting() {
+  return request<{ collapsed: boolean }>("/settings/useful-stuff-collapsed");
+}
+
+export function saveUsefulStuffCollapsedSetting(collapsed: boolean) {
+  return request<{ collapsed: boolean }>("/settings/useful-stuff-collapsed", {
+    method: "POST",
+    body: JSON.stringify({ collapsed })
+  });
+}
+
 export function getQuickLaunchOnlyModeSetting() {
   return request<{ enabled: boolean }>("/settings/quick-launch-only-mode");
 }

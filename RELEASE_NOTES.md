@@ -1,10 +1,10 @@
 # RO Toolbox – Release Notes
 
-## v0.5.1 – Useful Stuff + taskbar quick launch
+## v0.5.2 – Bug Fixes and Improvements
 
-### ✨ Added
+- Updated Windows taskbar right-click **Quick launch** entries to use each account's selected Login Manager icon.
+- Fixed issue where disabled_ folders was not properly deleted.
 
-- Added Windows taskbar right-click **Quick launch** actions for accounts marked for quick launch.
 
 
 

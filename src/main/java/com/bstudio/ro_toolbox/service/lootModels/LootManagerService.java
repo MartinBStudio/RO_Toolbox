@@ -32,6 +32,7 @@ public class LootManagerService {
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
     private static final String QUICK_LAUNCH_ONLY_MODE_KEY = "quickLaunchOnlyMode";
     private static final String IGNORE_CONFIG_WARNINGS_KEY = "ignoreConfigWarnings";
+    private static final String USEFUL_STUFF_COLLAPSED_KEY = "usefulStuffCollapsed";
 
     private static Path resolveAppDataRoot() {
         String appData = System.getenv("APPDATA");
@@ -212,6 +213,31 @@ public class LootManagerService {
             }
         }
         prop.setProperty(IGNORE_CONFIG_WARNINGS_KEY, String.valueOf(enabled));
+        try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
+            prop.store(out, "RO LootManager config");
+        }
+    }
+
+    public boolean getUsefulStuffCollapsed() throws IOException {
+        if (!Files.exists(CONFIG_FILE)) {
+            return false;
+        }
+        Properties prop = new Properties();
+        try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+            prop.load(in);
+        }
+        return Boolean.parseBoolean(prop.getProperty(USEFUL_STUFF_COLLAPSED_KEY, "false").trim());
+    }
+
+    public void saveUsefulStuffCollapsed(boolean collapsed) throws IOException {
+        Files.createDirectories(CONFIG_DIR);
+        Properties prop = new Properties();
+        if (Files.exists(CONFIG_FILE)) {
+            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+                prop.load(in);
+            }
+        }
+        prop.setProperty(USEFUL_STUFF_COLLAPSED_KEY, String.valueOf(collapsed));
         try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
             prop.store(out, "RO LootManager config");
         }
@@ -821,11 +847,9 @@ public class LootManagerService {
             if (relative.isAbsolute() || relative.startsWith("..")) continue;
 
             Path target = itemFolder.resolve(relative).normalize();
-            Path disabledTarget = target.getParent() == null
-                    ? itemFolder.resolve("disabled_" + target.getFileName())
-                    : target.getParent().resolve("disabled_" + target.getFileName());
+            Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
 
-            if (Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
+            if (disabledTarget != null && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
                 disabled.add(subfolder);
             }
         }
@@ -851,7 +875,27 @@ public class LootManagerService {
                 Files.deleteIfExists(target);
                 log("Deleted managed subfolder: " + target.toAbsolutePath());
             }
+
+            Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
+            if (disabledTarget != null && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
+                deleteDirectoryContents(disabledTarget);
+                Files.deleteIfExists(disabledTarget);
+                log("Deleted disabled managed subfolder: " + disabledTarget.toAbsolutePath());
+            }
         }
+    }
+
+    private Path resolveDisabledManagedSubfolderPath(Path target) {
+        if (target == null || target.getFileName() == null) {
+            return null;
+        }
+
+        Path parent = target.getParent();
+        if (parent == null) {
+            return null;
+        }
+
+        return parent.resolve("disabled_" + target.getFileName());
     }
 
     private long normalizeVersion(String version) {

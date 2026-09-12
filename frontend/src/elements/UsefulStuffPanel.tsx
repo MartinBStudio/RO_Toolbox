@@ -6,14 +6,14 @@ import { loadUsefulStuffLinks, type UsefulStuffLink } from "../utils/usefulStuff
 
 type UsefulStuffPanelProps = {
   onMessage: (message: string) => void;
+  collapsed: boolean;
+  onToggleCollapsed: () => void;
 };
 
 type UsefulStuffTileStyle = CSSProperties & {
   "--useful-stuff-accent-from": string;
   "--useful-stuff-accent-to": string;
 };
-
-const USEFUL_STUFF_COLLAPSED_STORAGE_KEY = "roToolbox.usefulStuffCollapsed";
 
 function toErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error && error.message) {
@@ -26,14 +26,6 @@ function toErrorMessage(error: unknown, fallback: string) {
     return error.message;
   }
   return fallback;
-}
-
-function readInitialCollapsedState() {
-  try {
-    return window.localStorage.getItem(USEFUL_STUFF_COLLAPSED_STORAGE_KEY) === "true";
-  } catch {
-    return false;
-  }
 }
 
 function renderLinkTitle(title: string) {
@@ -49,11 +41,10 @@ function renderLinkTitle(title: string) {
   );
 }
 
-export function UsefulStuffPanel({ onMessage }: UsefulStuffPanelProps) {
+export function UsefulStuffPanel({ onMessage, collapsed, onToggleCollapsed }: UsefulStuffPanelProps) {
   const [links, setLinks] = useState<UsefulStuffLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [collapsed, setCollapsed] = useState(readInitialCollapsedState);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,14 +77,6 @@ export function UsefulStuffPanel({ onMessage }: UsefulStuffPanelProps) {
     };
   }, [onMessage]);
 
-  useEffect(() => {
-    try {
-      window.localStorage.setItem(USEFUL_STUFF_COLLAPSED_STORAGE_KEY, String(collapsed));
-    } catch {
-      // Ignore storage failures and keep the in-memory toggle state.
-    }
-  }, [collapsed]);
-
   async function onOpenLink(link: UsefulStuffLink) {
     try {
       await openUrl(link.url);
@@ -107,12 +90,12 @@ export function UsefulStuffPanel({ onMessage }: UsefulStuffPanelProps) {
       <div className="usefulStuffHeader">
         <div>
           <p className="sectionTitle usefulStuffPanelTitle">Useful stuff</p>
-          {!collapsed ? <p className="activeProfileMeta usefulStuffPanelMeta">Quick links to favorite ROSE services.</p> : null}
+          <p className="activeProfileMeta usefulStuffPanelMeta">Links to favorite ROSE services.</p>
         </div>
         <button
           type="button"
           className="buttonSubtle usefulStuffCollapseButton"
-          onClick={() => setCollapsed((value) => !value)}
+          onClick={onToggleCollapsed}
           aria-expanded={!collapsed}
           aria-label={collapsed ? "Show useful stuff links" : "Hide useful stuff links"}
           title={collapsed ? "Show useful stuff links" : "Hide useful stuff links"}
