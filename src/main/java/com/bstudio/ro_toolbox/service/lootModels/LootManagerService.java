@@ -821,11 +821,9 @@ public class LootManagerService {
             if (relative.isAbsolute() || relative.startsWith("..")) continue;
 
             Path target = itemFolder.resolve(relative).normalize();
-            Path disabledTarget = target.getParent() == null
-                    ? itemFolder.resolve("disabled_" + target.getFileName())
-                    : target.getParent().resolve("disabled_" + target.getFileName());
+            Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
 
-            if (Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
+            if (disabledTarget != null && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
                 disabled.add(subfolder);
             }
         }
@@ -851,7 +849,27 @@ public class LootManagerService {
                 Files.deleteIfExists(target);
                 log("Deleted managed subfolder: " + target.toAbsolutePath());
             }
+
+            Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
+            if (disabledTarget != null && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
+                deleteDirectoryContents(disabledTarget);
+                Files.deleteIfExists(disabledTarget);
+                log("Deleted disabled managed subfolder: " + disabledTarget.toAbsolutePath());
+            }
         }
+    }
+
+    private Path resolveDisabledManagedSubfolderPath(Path target) {
+        if (target == null || target.getFileName() == null) {
+            return null;
+        }
+
+        Path parent = target.getParent();
+        if (parent == null) {
+            return null;
+        }
+
+        return parent.resolve("disabled_" + target.getFileName());
     }
 
     private long normalizeVersion(String version) {
