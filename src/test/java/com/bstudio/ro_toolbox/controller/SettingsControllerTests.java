@@ -190,6 +190,43 @@ class SettingsControllerTests {
     }
 
     @Test
+    void savesUsefulStuffCollapsedSetting() throws IOException {
+        LootManagerService loot = mock(LootManagerService.class);
+        SettingsController controller = new SettingsController(
+                loot,
+                mock(CombatTextManagerService.class),
+                mock(UserInterfaceManagerService.class),
+                mock(BuffIconsManagerService.class),
+                mock(BuffsManagerService.class),
+                mock(LoginManagerService.class)
+        );
+
+        SettingsController.UsefulStuffCollapsedResponse response =
+                controller.saveUsefulStuffCollapsed(new SettingsController.UsefulStuffCollapsedRequest(true));
+
+        verify(loot).saveUsefulStuffCollapsed(true);
+        assertTrue(response.collapsed());
+    }
+
+    @Test
+    void readsUsefulStuffCollapsedSetting() throws IOException {
+        LootManagerService loot = mock(LootManagerService.class);
+        when(loot.getUsefulStuffCollapsed()).thenReturn(true);
+        SettingsController controller = new SettingsController(
+                loot,
+                mock(CombatTextManagerService.class),
+                mock(UserInterfaceManagerService.class),
+                mock(BuffIconsManagerService.class),
+                mock(BuffsManagerService.class),
+                mock(LoginManagerService.class)
+        );
+
+        SettingsController.UsefulStuffCollapsedResponse response = controller.getUsefulStuffCollapsed();
+
+        assertTrue(response.collapsed());
+    }
+
+    @Test
     void savesIgnoreConfigWarningsSetting() throws IOException {
         LootManagerService loot = mock(LootManagerService.class);
         SettingsController controller = new SettingsController(

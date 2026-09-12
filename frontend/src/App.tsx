@@ -28,10 +28,12 @@ import {
     drainNotifications,
     getReleaseNotes,
     getSelectedServiceSetting,
+    getUsefulStuffCollapsedSetting,
     listQuickLoginAccounts,
     quickLaunchGame,
     quickLaunchLoginAccount,
     saveSelectedServiceSetting,
+    saveUsefulStuffCollapsedSetting,
     type LoginAccount
 } from "./backendConnector/api.ts";
 
@@ -78,11 +80,14 @@ function App() {
     const [factoryResetNonce, setFactoryResetNonce] = useState(0);
     const [servicePreferenceLoaded, setServicePreferenceLoaded] = useState(false);
     const [selectedService, setSelectedService] = useState<(typeof SERVICES)[number]["id"]>(readInitialService);
+    const [usefulStuffPreferenceLoaded, setUsefulStuffPreferenceLoaded] = useState(false);
+    const [usefulStuffCollapsed, setUsefulStuffCollapsed] = useState(false);
     const [minimumStartupDisplayReached, setMinimumStartupDisplayReached] = useState(false);
     const [troseRefreshLoading, setTroseRefreshLoading] = useState(false);
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
     const allowWindowCloseRef = useRef(false);
     const appInForegroundRef = useRef(false);
+    const usefulStuffPreferenceDirtyRef = useRef(false);
 
     const needsSetup = backendReady && status !== null && !status.selectedGameBase;
     const hasQuickLaunchProfiles = quickAccounts.length > 0;
@@ -251,6 +256,11 @@ function App() {
         }
     }
 
+    const onToggleUsefulStuffCollapsed = useCallback(() => {
+        usefulStuffPreferenceDirtyRef.current = true;
+        setUsefulStuffCollapsed((value) => !value);
+    }, []);
+
     useEffect(() => {
         void refreshQuickAccounts();
     }, [backendReady]);
@@ -328,6 +338,40 @@ function App() {
         }
         saveSelectedServiceSetting(selectedService).catch(() => undefined);
     }, [backendReady, servicePreferenceLoaded, selectedService]);
+
+    useEffect(() => {
+        if (!backendReady) {
+            usefulStuffPreferenceDirtyRef.current = false;
+            setUsefulStuffPreferenceLoaded(false);
+            setUsefulStuffCollapsed(false);
+            return;
+        }
+
+        let cancelled = false;
+        getUsefulStuffCollapsedSetting()
+            .then((response) => {
+                if (!cancelled && !usefulStuffPreferenceDirtyRef.current) {
+                    setUsefulStuffCollapsed(Boolean(response.collapsed));
+                }
+            })
+            .catch(() => undefined)
+            .finally(() => {
+                if (!cancelled) {
+                    setUsefulStuffPreferenceLoaded(true);
+                }
+            });
+
+        return () => {
+            cancelled = true;
+        };
+    }, [backendReady]);
+
+    useEffect(() => {
+        if (!backendReady || !usefulStuffPreferenceLoaded) {
+            return;
+        }
+        saveUsefulStuffCollapsedSetting(usefulStuffCollapsed).catch(() => undefined);
+    }, [backendReady, usefulStuffCollapsed, usefulStuffPreferenceLoaded]);
 
     useEffect(() => {
         if (!backendReady) {
@@ -436,12 +480,16 @@ function App() {
                                             })}
                                         </div>
                                     </div>
-                                    <UsefulStuffPanel onMessage={setMessage} />
+                                    <UsefulStuffPanel
+                                        onMessage={setMessage}
+                                        collapsed={usefulStuffCollapsed}
+                                        onToggleCollapsed={onToggleUsefulStuffCollapsed}
+                                    />
                                 </aside>
 
                                 <section className="appContent">
                                     {selectedService === "texture-replacer" && (
-                                        <div className="card serviceContentPanel">
+                                        <div className="card serviceContentPanel textureReplacerPanel">
                                             <div>
                                                 <p className="sectionTitle">Texture replacer</p>
                                             <p className="activeProfileMeta">Manage loot, combat text, user interface, buffs, and buff icon packages.</p>

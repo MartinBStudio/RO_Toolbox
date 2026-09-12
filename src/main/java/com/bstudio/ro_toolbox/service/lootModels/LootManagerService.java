@@ -32,6 +32,7 @@ public class LootManagerService {
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
     private static final String QUICK_LAUNCH_ONLY_MODE_KEY = "quickLaunchOnlyMode";
     private static final String IGNORE_CONFIG_WARNINGS_KEY = "ignoreConfigWarnings";
+    private static final String USEFUL_STUFF_COLLAPSED_KEY = "usefulStuffCollapsed";
 
     private static Path resolveAppDataRoot() {
         String appData = System.getenv("APPDATA");
@@ -212,6 +213,31 @@ public class LootManagerService {
             }
         }
         prop.setProperty(IGNORE_CONFIG_WARNINGS_KEY, String.valueOf(enabled));
+        try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
+            prop.store(out, "RO LootManager config");
+        }
+    }
+
+    public boolean getUsefulStuffCollapsed() throws IOException {
+        if (!Files.exists(CONFIG_FILE)) {
+            return false;
+        }
+        Properties prop = new Properties();
+        try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+            prop.load(in);
+        }
+        return Boolean.parseBoolean(prop.getProperty(USEFUL_STUFF_COLLAPSED_KEY, "false").trim());
+    }
+
+    public void saveUsefulStuffCollapsed(boolean collapsed) throws IOException {
+        Files.createDirectories(CONFIG_DIR);
+        Properties prop = new Properties();
+        if (Files.exists(CONFIG_FILE)) {
+            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
+                prop.load(in);
+            }
+        }
+        prop.setProperty(USEFUL_STUFF_COLLAPSED_KEY, String.valueOf(collapsed));
         try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
             prop.store(out, "RO LootManager config");
         }

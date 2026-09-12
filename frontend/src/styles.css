@@ -304,6 +304,10 @@ body {
   box-shadow: var(--panel-blue-highlight), var(--panel-blue-shadow);
 }
 
+.card.textureReplacerPanel {
+  padding-bottom: calc(0.7rem + 12px);
+}
+
 header.card {
   position: relative;
   z-index: 1;
@@ -877,10 +881,20 @@ p {
 }
 
 .usefulStuffHeader {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) 2rem;
   align-items: flex-start;
-  justify-content: space-between;
   gap: 0.5rem;
+}
+
+.usefulStuffHeader::before {
+  content: "";
+  width: 2rem;
+  height: 2rem;
+}
+
+.usefulStuffHeader > div {
+  text-align: center;
 }
 
 .usefulStuffPanelTitle {
@@ -900,6 +914,7 @@ p {
   height: 2rem;
   padding: 0;
   flex-shrink: 0;
+  justify-self: end;
 }
 
 .usefulStuffCollapseButton svg {
@@ -933,8 +948,24 @@ p {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.025) 0%, rgba(255, 255, 255, 0) 18%);
-  opacity: 1;
+  z-index: 0;
+  background: linear-gradient(
+    to top right,
+    transparent 0%,
+    transparent 48%,
+    var(--useful-stuff-accent-from) 78%,
+    var(--useful-stuff-accent-to) 100%
+  );
+  opacity: 0.16;
+  pointer-events: none;
+}
+
+.usefulStuffTile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(to bottom left, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0) 28%);
   pointer-events: none;
 }
 

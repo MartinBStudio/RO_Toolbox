@@ -211,6 +211,20 @@ public class SettingsController {
         return new QuickLaunchOnlyModeResponse(request.enabled());
     }
 
+    @GetMapping("/useful-stuff-collapsed")
+    public UsefulStuffCollapsedResponse getUsefulStuffCollapsed() throws IOException {
+        return new UsefulStuffCollapsedResponse(lootManagerService.getUsefulStuffCollapsed());
+    }
+
+    @PostMapping("/useful-stuff-collapsed")
+    public UsefulStuffCollapsedResponse saveUsefulStuffCollapsed(@RequestBody UsefulStuffCollapsedRequest request) throws IOException {
+        if (request == null) {
+            throw new IllegalArgumentException("Collapsed value is required.");
+        }
+        lootManagerService.saveUsefulStuffCollapsed(request.collapsed());
+        return new UsefulStuffCollapsedResponse(request.collapsed());
+    }
+
     @GetMapping("/ignore-config-warnings")
     public IgnoreConfigWarningsResponse getIgnoreConfigWarnings() throws IOException {
         return new IgnoreConfigWarningsResponse(lootManagerService.getIgnoreConfigWarnings());
@@ -288,6 +302,12 @@ public class SettingsController {
     }
 
     public record QuickLaunchOnlyModeResponse(boolean enabled) {
+    }
+
+    public record UsefulStuffCollapsedRequest(boolean collapsed) {
+    }
+
+    public record UsefulStuffCollapsedResponse(boolean collapsed) {
     }
 
     public record IgnoreConfigWarningsRequest(boolean enabled) {
