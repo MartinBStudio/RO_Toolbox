@@ -2,6 +2,7 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.buffIcons.BuffIconsManagerService;
 import com.bstudio.ro_toolbox.service.buffs.BuffsManagerService;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
@@ -66,6 +67,7 @@ class SettingsControllerTests {
                 mock(UserInterfaceManagerService.class),
                 mock(BuffIconsManagerService.class),
                 mock(BuffsManagerService.class),
+                mock(AppConfigService.class),
                 mock(LoginManagerService.class)
         );
         IllegalStateException ex = assertThrows(IllegalStateException.class,
@@ -111,19 +113,18 @@ class SettingsControllerTests {
         UserInterfaceManagerService ui = mock(UserInterfaceManagerService.class);
         BuffIconsManagerService buff = mock(BuffIconsManagerService.class);
         BuffsManagerService buffs = mock(BuffsManagerService.class);
+        AppConfigService appConfig = mock(AppConfigService.class);
         LoginManagerService login = mock(LoginManagerService.class);
  
-        SettingsController controller = new SettingsController(loot, combat, ui, buff, buffs, login);
+        SettingsController controller = new SettingsController(loot, combat, ui, buff, buffs, appConfig, login);
         controller.factoryReset();
  
-        verify(buff).clearSelectedGame();
         verify(buff).clearSelectedItemFolder();
         verify(buff).clearResources();
-        verify(buff).clearAppConfig();
-        verify(buffs).clearSelectedGame();
         verify(buffs).clearSelectedItemFolder();
         verify(buffs).clearResources();
-        verify(buffs).clearAppConfig();
+        verify(appConfig).clearSelectedGameBase();
+        verify(appConfig).clearAppConfig();
         verify(login).clearAccounts();
     }
 
@@ -135,6 +136,7 @@ class SettingsControllerTests {
                 mock(UserInterfaceManagerService.class),
                 mock(BuffIconsManagerService.class),
                 mock(BuffsManagerService.class),
+                mock(AppConfigService.class),
                 mock(LoginManagerService.class)
         );
 
@@ -155,32 +157,36 @@ class SettingsControllerTests {
     @Test
     void savesQuickLaunchOnlyModeSetting() throws IOException {
         LootManagerService loot = mock(LootManagerService.class);
+        AppConfigService appConfig = mock(AppConfigService.class);
         SettingsController controller = new SettingsController(
                 loot,
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
                 mock(BuffIconsManagerService.class),
                 mock(BuffsManagerService.class),
+                appConfig,
                 mock(LoginManagerService.class)
         );
 
         SettingsController.QuickLaunchOnlyModeResponse response =
                 controller.saveQuickLaunchOnlyMode(new SettingsController.QuickLaunchOnlyModeRequest(true));
 
-        verify(loot).saveQuickLaunchOnlyMode(true);
+        verify(appConfig).saveQuickLaunchOnlyMode(true);
         assertTrue(response.enabled());
     }
 
     @Test
     void readsQuickLaunchOnlyModeSetting() throws IOException {
         LootManagerService loot = mock(LootManagerService.class);
-        when(loot.getQuickLaunchOnlyMode()).thenReturn(true);
+        AppConfigService appConfig = mock(AppConfigService.class);
+        when(appConfig.getQuickLaunchOnlyMode()).thenReturn(true);
         SettingsController controller = new SettingsController(
                 loot,
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
                 mock(BuffIconsManagerService.class),
                 mock(BuffsManagerService.class),
+                appConfig,
                 mock(LoginManagerService.class)
         );
 
@@ -198,6 +204,7 @@ class SettingsControllerTests {
                 mock(UserInterfaceManagerService.class),
                 mock(BuffIconsManagerService.class),
                 mock(BuffsManagerService.class),
+                mock(AppConfigService.class),
                 mock(LoginManagerService.class)
         );
 
@@ -218,6 +225,7 @@ class SettingsControllerTests {
                 mock(UserInterfaceManagerService.class),
                 mock(BuffIconsManagerService.class),
                 mock(BuffsManagerService.class),
+                mock(AppConfigService.class),
                 mock(LoginManagerService.class)
         );
 
@@ -235,6 +243,7 @@ class SettingsControllerTests {
                 mock(UserInterfaceManagerService.class),
                 mock(BuffIconsManagerService.class),
                 mock(BuffsManagerService.class),
+                mock(AppConfigService.class),
                 mock(LoginManagerService.class)
         );
 
@@ -255,6 +264,7 @@ class SettingsControllerTests {
                 mock(UserInterfaceManagerService.class),
                 mock(BuffIconsManagerService.class),
                 mock(BuffsManagerService.class),
+                mock(AppConfigService.class),
                 mock(LoginManagerService.class)
         );
 

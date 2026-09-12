@@ -1,5 +1,6 @@
 package com.bstudio.ro_toolbox.service.loginManager;
 
+import com.bstudio.ro_toolbox.util.AppDataPaths;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Cipher;
@@ -35,11 +36,11 @@ public class LoginManagerService {
     private final Path accountsFile;
 
     public LoginManagerService() {
-        this(resolveAppDataRoot());
+        this(AppDataPaths.resolveRoToolboxAppDataRoot());
     }
 
     LoginManagerService(Path appDataRoot) {
-        Path root = appDataRoot == null ? resolveAppDataRoot() : appDataRoot;
+        Path root = appDataRoot == null ? AppDataPaths.resolveRoToolboxAppDataRoot() : appDataRoot;
         this.configDir = root.resolve("config");
         this.accountsFile = this.configDir.resolve("accounts.properties");
     }
@@ -390,14 +391,6 @@ public class LoginManagerService {
         byte[] key = new byte[16];
         System.arraycopy(material, 0, key, 0, key.length);
         return key;
-    }
-
-    private static Path resolveAppDataRoot() {
-        String appData = System.getenv("APPDATA");
-        if (appData != null && !appData.isBlank()) {
-            return Path.of(appData, "RO_Toolbox");
-        }
-        return Path.of(System.getProperty("user.home"), ".ro_toolbox");
     }
 
     public record LoginAccount(

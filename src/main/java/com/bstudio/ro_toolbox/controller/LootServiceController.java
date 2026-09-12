@@ -1,11 +1,10 @@
 package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
-import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
+import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.awt.Desktop;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -93,7 +92,7 @@ public class LootServiceController {
     public MessageResponse openResourcesFolder() throws IOException {
         Path resources = lootManagerService.getResourcesDir();
         Files.createDirectories(resources);
-        openInDesktop(resources);
+        DesktopFolderOpener.openInDesktop(resources);
         return new MessageResponse("Opened resources folder.");
     }
 
@@ -104,46 +103,12 @@ public class LootServiceController {
             throw new IllegalStateException("No game installation folder is selected.");
         }
         Files.createDirectories(item);
-        openInDesktop(item);
+        DesktopFolderOpener.openInDesktop(item);
         return new MessageResponse("Opened item folder.");
     }
 
     private String absoluteOrNull(Path path) {
         return path == null ? null : path.toAbsolutePath().normalize().toString();
-    }
-
-    private void openInDesktop(Path path) {
-        try {
-            String os = System.getProperty("os.name", "").toLowerCase();
-            if (os.contains("win")) {
-                openWithSystemCommand(path);
-                return;
-            }
-            if (!Desktop.isDesktopSupported()) {
-                openWithSystemCommand(path);
-                return;
-            }
-            if (Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                Desktop.getDesktop().open(path.toFile());
-                return;
-            }
-            openWithSystemCommand(path);
-        } catch (Exception ex) {
-            throw new IllegalStateException("Unable to open folder: " + path.toAbsolutePath(), ex);
-        }
-    }
-
-    private void openWithSystemCommand(Path path) throws IOException {
-        String os = System.getProperty("os.name", "").toLowerCase();
-        if (os.contains("win")) {
-            WindowsProcessLauncher.openFolderForeground(path);
-            return;
-        }
-        if (os.contains("mac")) {
-            new ProcessBuilder("open", path.toAbsolutePath().toString()).start();
-            return;
-        }
-        new ProcessBuilder("xdg-open", path.toAbsolutePath().toString()).start();
     }
 
     public record InstallProfileRequest(String profileId, List<String> disabledManagedSubfolders) {

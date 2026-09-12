@@ -2,7 +2,7 @@ package com.bstudio.ro_toolbox.controller;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/loot")
+@RequiredArgsConstructor
 public class LootDictionaryController {
-  @Autowired
-  private ResourceLoader resourceLoader;
+  private final ResourceLoader resourceLoader;
 
   @GetMapping(value = "/dictionary", produces = MediaType.APPLICATION_JSON_VALUE)
   public String getLootDictionary() throws IOException {

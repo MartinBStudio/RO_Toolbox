@@ -2,9 +2,11 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.buffIcons.BuffIconsManagerService;
 import com.bstudio.ro_toolbox.service.buffs.BuffsManagerService;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
+import com.bstudio.ro_toolbox.service.common.GameResourceService;
 import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/settings")
@@ -26,6 +29,7 @@ public class SettingsController {
     private final UserInterfaceManagerService userInterfaceManagerService;
     private final BuffIconsManagerService buffIconsManagerService;
     private final BuffsManagerService buffsManagerService;
+    private final AppConfigService appConfigService;
     private final LoginManagerService loginManagerService;
 
     @PostMapping("/game-folder")
@@ -45,11 +49,7 @@ public class SettingsController {
         }
 
         Files.createDirectories(base);
-        lootManagerService.saveSelectedGame(base);
-        combatTextManagerService.saveSelectedGame(base);
-        userInterfaceManagerService.saveSelectedGame(base);
-        buffIconsManagerService.saveSelectedGame(base);
-        buffsManagerService.saveSelectedGame(base);
+        appConfigService.saveSelectedGameBase(base);
 
         return new SaveFolderResponse(
                 absoluteOrNull(base),
@@ -78,43 +78,26 @@ public class SettingsController {
     }
 
     @PostMapping("/game-folder/clear")
-    public MessageResponse clearGameFolder() {
-        lootManagerService.clearSelectedGame();
-        combatTextManagerService.clearSelectedGame();
-        userInterfaceManagerService.clearSelectedGame();
-        buffIconsManagerService.clearSelectedGame();
-        buffsManagerService.clearSelectedGame();
+    public MessageResponse clearGameFolder() throws IOException {
+        appConfigService.clearSelectedGameBase();
         return new MessageResponse("Selected game folder cleared.");
     }
 
     @PostMapping("/factory-reset")
     public MessageResponse factoryReset() throws IOException {
         // Step 1: Clear installed profiles from game folder
-        lootManagerService.clearSelectedItemFolder();
-        combatTextManagerService.clearSelectedItemFolder();
-        userInterfaceManagerService.clearSelectedItemFolder();
-        buffIconsManagerService.clearSelectedItemFolder();
-        buffsManagerService.clearSelectedItemFolder();
+        for (GameResourceService service : managedServices()) {
+            service.clearSelectedItemFolder();
+        }
 
         // Step 2: Clear downloaded resources (.default is preserved for recovery)
-        lootManagerService.clearResources();
-        combatTextManagerService.clearResources();
-        userInterfaceManagerService.clearResources();
-        buffIconsManagerService.clearResources();
-        buffsManagerService.clearResources();
+        for (GameResourceService service : managedServices()) {
+            service.clearResources();
+        }
 
         // Step 3: Clear game folder selection and app config
-        lootManagerService.clearSelectedGame();
-        combatTextManagerService.clearSelectedGame();
-        userInterfaceManagerService.clearSelectedGame();
-        buffIconsManagerService.clearSelectedGame();
-        buffsManagerService.clearSelectedGame();
-
-        lootManagerService.clearAppConfig();
-        combatTextManagerService.clearAppConfig();
-        userInterfaceManagerService.clearAppConfig();
-        buffIconsManagerService.clearAppConfig();
-        buffsManagerService.clearAppConfig();
+        appConfigService.clearSelectedGameBase();
+        appConfigService.clearAppConfig();
 
         // Step 4: Clear all saved accounts
         loginManagerService.clearAccounts();
@@ -184,7 +167,7 @@ public class SettingsController {
 
     @GetMapping("/selected-service")
     public SelectedServiceResponse getSelectedService() throws IOException {
-        return new SelectedServiceResponse(lootManagerService.getSelectedService());
+        return new SelectedServiceResponse(appConfigService.getSelectedService());
     }
 
     @PostMapping("/selected-service")
@@ -193,13 +176,13 @@ public class SettingsController {
             throw new IllegalArgumentException("Service id is required.");
         }
         String serviceId = request.serviceId().trim();
-        lootManagerService.saveSelectedService(serviceId);
+        appConfigService.saveSelectedService(serviceId);
         return new SelectedServiceResponse(serviceId);
     }
 
     @GetMapping("/quick-launch-only-mode")
     public QuickLaunchOnlyModeResponse getQuickLaunchOnlyMode() throws IOException {
-        return new QuickLaunchOnlyModeResponse(lootManagerService.getQuickLaunchOnlyMode());
+        return new QuickLaunchOnlyModeResponse(appConfigService.getQuickLaunchOnlyMode());
     }
 
     @PostMapping("/quick-launch-only-mode")
@@ -207,7 +190,7 @@ public class SettingsController {
         if (request == null) {
             throw new IllegalArgumentException("Mode value is required.");
         }
-        lootManagerService.saveQuickLaunchOnlyMode(request.enabled());
+        appConfigService.saveQuickLaunchOnlyMode(request.enabled());
         return new QuickLaunchOnlyModeResponse(request.enabled());
     }
 
@@ -246,6 +229,16 @@ public class SettingsController {
 
     private String absoluteOrNull(Path path) {
         return path == null ? null : path.toAbsolutePath().normalize().toString();
+    }
+
+    private List<GameResourceService> managedServices() {
+        return List.of(
+                lootManagerService,
+                combatTextManagerService,
+                userInterfaceManagerService,
+                buffIconsManagerService,
+                buffsManagerService
+        );
     }
 
     private String readReleaseNotesContent() throws IOException {

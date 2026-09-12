@@ -1,7 +1,10 @@
 package com.bstudio.ro_toolbox.service.lootModels;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.bstudio.ro_toolbox.service.common.GameResourceService;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.util.AppDataPaths;
+import com.bstudio.ro_toolbox.util.RuntimeDirectories;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -20,177 +23,41 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 @Service
-public class LootManagerService {
+@Slf4j
+public class LootManagerService implements GameResourceService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
     private static final String MANIFEST_FILE_NAME = "manifestLoot.json";
     private static final String LEGACY_MANIFEST_FILE_NAME = "manifest.json";
-    private static final Path APP_DATA_ROOT = resolveAppDataRoot();
+    private static final Path APP_DATA_ROOT = AppDataPaths.resolveRoToolboxAppDataRoot();
     private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("lootManager");
     private static final Path GAME_SUFFIX = Paths.get("3ddata", "item");
 
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
-    private static final String QUICK_LAUNCH_ONLY_MODE_KEY = "quickLaunchOnlyMode";
     private static final String IGNORE_CONFIG_WARNINGS_KEY = "ignoreConfigWarnings";
     private static final String USEFUL_STUFF_COLLAPSED_KEY = "usefulStuffCollapsed";
 
-    private static Path resolveAppDataRoot() {
-        String appData = System.getenv("APPDATA");
-        if (appData != null && !appData.isBlank()) {
-            return Paths.get(appData, "RO_Toolbox");
-        }
-        return Paths.get(System.getProperty("user.home"), ".ro_toolbox");
-    }
-
-    private static final Logger LOG = LoggerFactory.getLogger(LootManagerService.class);
-
-    private volatile Path selectedGameBase = null; // base installation folder (no suffix)
+    private final AppConfigService appConfigService;
     private volatile String currentLootProfile = null;
 
-    public LootManagerService() {
-        ensureRuntimeDirs();
-        loadConfig();
-    }
-
-    private void ensureRuntimeDirs() {
-        try {
-            Files.createDirectories(APP_DATA_ROOT);
-            Files.createDirectories(CONFIG_DIR);
-            Files.createDirectories(RESOURCES_DIR);
-        } catch (IOException ignored) {
-        }
-    }
-
-    private void log(String s) {
-        LOG.info(s);
+    public LootManagerService(AppConfigService appConfigService) {
+        this.appConfigService = appConfigService;
+        RuntimeDirectories.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
     }
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
 
-    public Path getSelectedGameBase() { return selectedGameBase; }
+    public Path getSelectedGameBase() { return appConfigService.getSelectedGameBase(); }
 
-    public Path getSelectedGameItemFolder() { return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX); }
+    public Path getSelectedGameItemFolder() {
+        Path selectedGameBase = getSelectedGameBase();
+        return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
+    }
 
     public String getCurrentLootProfile() { return currentLootProfile; }
 
     public void setCurrentLootProfile(String profile) {
         currentLootProfile = (profile == null || profile.isBlank()) ? null : profile;
-    }
-
-    // --- config ---
-    private void loadConfig() {
-        try {
-            if (!Files.exists(CONFIG_FILE)) return;
-            Properties p = new Properties();
-            try (InputStream in = Files.newInputStream(CONFIG_FILE)) { p.load(in); }
-            String sel = p.getProperty("selectedGame");
-            if (sel != null && !sel.isEmpty()) {
-                Path pth = Paths.get(sel);
-                if (Files.exists(pth)) selectedGameBase = pth;
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    /** Save the installation base folder (no 3ddata/item suffix). */
-    public void saveSelectedGame(Path base) {
-        try {
-            if (base == null) {
-                clearSelectedGame();
-                return;
-            }
-
-            Files.createDirectories(CONFIG_DIR);
-            Properties prop = new Properties();
-            if (Files.exists(CONFIG_FILE)) {
-                try (InputStream in = Files.newInputStream(CONFIG_FILE)) { prop.load(in); }
-            }
-            prop.setProperty("selectedGame", base.toAbsolutePath().toString());
-            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
-            selectedGameBase = base.toAbsolutePath().normalize();
-            log("Selected game base saved: " + selectedGameBase);
-        } catch (Exception ex) {
-            log("Failed to save selected game base: " + ex.getMessage());
-            throw new IllegalStateException("Unable to save selected game base to config.", ex);
-        }
-    }
-
-    public void clearSelectedGame() {
-        try {
-            Files.createDirectories(CONFIG_DIR);
-            Properties prop = new Properties();
-            if (Files.exists(CONFIG_FILE)) {
-                try (InputStream in = Files.newInputStream(CONFIG_FILE)) { prop.load(in); }
-            }
-            prop.remove("selectedGame");
-            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) { prop.store(out, "RO LootManager config"); }
-            selectedGameBase = null;
-            log("Selected game base cleared.");
-        } catch (Exception ex) {
-            log("Failed to clear selected game base: " + ex.getMessage());
-            throw new IllegalStateException("Unable to clear selected game base from config.", ex);
-        }
-    }
-
-    public void clearAppConfig() throws IOException {
-        if (Files.exists(CONFIG_FILE)) {
-            Files.deleteIfExists(CONFIG_FILE);
-            log("Deleted app config: " + CONFIG_FILE.toAbsolutePath());
-        }
-    }
-
-    public String getSelectedService() throws IOException {
-        if (!Files.exists(CONFIG_FILE)) {
-            return null;
-        }
-        Properties prop = new Properties();
-        try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-            prop.load(in);
-        }
-        String selectedService = prop.getProperty("selectedService");
-        return (selectedService == null || selectedService.isBlank()) ? null : selectedService.trim();
-    }
-
-    public void saveSelectedService(String serviceId) throws IOException {
-        if (serviceId == null || serviceId.isBlank()) {
-            throw new IllegalArgumentException("Service id is required.");
-        }
-        Files.createDirectories(CONFIG_DIR);
-        Properties prop = new Properties();
-        if (Files.exists(CONFIG_FILE)) {
-            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-                prop.load(in);
-            }
-        }
-        prop.setProperty("selectedService", serviceId.trim());
-        try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
-            prop.store(out, "RO LootManager config");
-        }
-    }
-
-    public boolean getQuickLaunchOnlyMode() throws IOException {
-        if (!Files.exists(CONFIG_FILE)) {
-            return false;
-        }
-        Properties prop = new Properties();
-        try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-            prop.load(in);
-        }
-        return Boolean.parseBoolean(prop.getProperty(QUICK_LAUNCH_ONLY_MODE_KEY, "false").trim());
-    }
-
-    public void saveQuickLaunchOnlyMode(boolean enabled) throws IOException {
-        Files.createDirectories(CONFIG_DIR);
-        Properties prop = new Properties();
-        if (Files.exists(CONFIG_FILE)) {
-            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-                prop.load(in);
-            }
-        }
-        prop.setProperty(QUICK_LAUNCH_ONLY_MODE_KEY, String.valueOf(enabled));
-        try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
-            prop.store(out, "RO LootManager config");
-        }
     }
 
     public boolean getIgnoreConfigWarnings() throws IOException {
@@ -252,7 +119,7 @@ public class LootManagerService {
 
         for (String branch : branches) {
             String zipUrl = buildZipUrl(repoUrl, branch);
-            log("Trying branch: " + branch + " -> " + zipUrl);
+            log.info("Trying branch: " + branch + " -> " + zipUrl);
             try {
                 Path tmp = Files.createTempFile("repo-", ".zip");
                 try (InputStream in = openUrlStream(zipUrl)) {
@@ -264,7 +131,7 @@ public class LootManagerService {
                 return;
             } catch (IOException e) {
                 lastException = e;
-                log("Failed branch " + branch + ": " + e.getMessage());
+                log.info("Failed branch " + branch + ": " + e.getMessage());
             }
         }
         throw lastException != null ? lastException : new IOException("Failed to download repository zip");
@@ -308,7 +175,7 @@ public class LootManagerService {
                         while ((len = zis.read(buf)) > 0) os.write(buf, 0, len);
                     }
                 }
-                log("Extracted: " + relative);
+                log.info("Extracted: " + relative);
                 zis.closeEntry();
             }
         }
@@ -327,7 +194,7 @@ public class LootManagerService {
                             } else {
                                 Files.createDirectories(targetPath.getParent());
                                 Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                                log("Copied: " + targetPath.toAbsolutePath());
+                                log.info("Copied: " + targetPath.toAbsolutePath());
                             }
                         } catch (IOException e) {
                             throw new UncheckedIOException(e);
@@ -360,7 +227,7 @@ public class LootManagerService {
             @Override
             public java.nio.file.FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
                 Files.deleteIfExists(file);
-                log("Deleted file: " + file.toAbsolutePath());
+                log.info("Deleted file: " + file.toAbsolutePath());
                 return java.nio.file.FileVisitResult.CONTINUE;
             }
 
@@ -368,7 +235,7 @@ public class LootManagerService {
             public java.nio.file.FileVisitResult postVisitDirectory(Path visitedDir, IOException exc) throws IOException {
                 if (!visitedDir.equals(dir)) {
                     Files.deleteIfExists(visitedDir);
-                    log("Deleted dir: " + visitedDir.toAbsolutePath());
+                    log.info("Deleted dir: " + visitedDir.toAbsolutePath());
                 }
                 return java.nio.file.FileVisitResult.CONTINUE;
             }
@@ -386,10 +253,10 @@ public class LootManagerService {
                 if (Files.isDirectory(entry)) {
                     deleteDirectoryContents(entry);
                     Files.deleteIfExists(entry);
-                    log("Deleted profile dir: " + entry.toAbsolutePath());
+                    log.info("Deleted profile dir: " + entry.toAbsolutePath());
                 } else {
                     Files.deleteIfExists(entry);
-                    log("Deleted resource file: " + entry.toAbsolutePath());
+                    log.info("Deleted resource file: " + entry.toAbsolutePath());
                 }
             }
         }
@@ -483,7 +350,7 @@ public class LootManagerService {
                     .filter(Objects::nonNull)
                     .toList();
         } catch (IOException e) {
-            log("Failed to load preview images from " + previewDir.toAbsolutePath() + ": " + e.getMessage());
+            log.info("Failed to load preview images from " + previewDir.toAbsolutePath() + ": " + e.getMessage());
             return List.of();
         }
     }
@@ -510,7 +377,7 @@ public class LootManagerService {
             }
             return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
         } catch (IOException e) {
-            log("Failed to encode preview image " + file.toAbsolutePath() + ": " + e.getMessage());
+            log.info("Failed to encode preview image " + file.toAbsolutePath() + ": " + e.getMessage());
             return null;
         }
     }
@@ -540,6 +407,7 @@ public class LootManagerService {
         Set<String> seen = new LinkedHashSet<>();
         List<Path> roots = new ArrayList<>();
         roots.add(RESOURCES_DIR);
+        Path selectedGameBase = getSelectedGameBase();
         if (selectedGameBase != null) {
             roots.add(selectedGameBase.resolveSibling(RESOURCES_DIR.getFileName()));
         }
@@ -645,13 +513,13 @@ public class LootManagerService {
                 // Disable: rename folder to disabled_*
                 if (Files.exists(target) && Files.isDirectory(target)) {
                     moveDirectoryReplacingExisting(target, disabledPath);
-                    log("Disabled managed subfolder: " + target.toAbsolutePath());
+                    log.info("Disabled managed subfolder: " + target.toAbsolutePath());
                 }
             } else if (!shouldBeDisabled && isCurrentlyDisabled) {
                 // Enable: rename folder back from disabled_*
                 if (Files.exists(disabledPath) && Files.isDirectory(disabledPath)) {
                     moveDirectoryReplacingExisting(disabledPath, target);
-                    log("Enabled managed subfolder: " + disabledPath.toAbsolutePath());
+                    log.info("Enabled managed subfolder: " + disabledPath.toAbsolutePath());
                 }
             }
         }
@@ -862,25 +730,25 @@ public class LootManagerService {
             if (subfolder == null || subfolder.isBlank()) continue;
             Path relative = Paths.get(subfolder).normalize();
             if (relative.isAbsolute() || relative.startsWith("..")) {
-                log("Skipping invalid managedSubfolder path: " + subfolder);
+                log.info("Skipping invalid managedSubfolder path: " + subfolder);
                 continue;
             }
             Path target = baseDir.resolve(relative).normalize();
             if (!target.startsWith(baseDir)) {
-                log("Skipping out-of-scope managedSubfolder path: " + subfolder);
+                log.info("Skipping out-of-scope managedSubfolder path: " + subfolder);
                 continue;
             }
             if (Files.exists(target) && Files.isDirectory(target)) {
                 deleteDirectoryContents(target);
                 Files.deleteIfExists(target);
-                log("Deleted managed subfolder: " + target.toAbsolutePath());
+                log.info("Deleted managed subfolder: " + target.toAbsolutePath());
             }
 
             Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
             if (disabledTarget != null && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
                 deleteDirectoryContents(disabledTarget);
                 Files.deleteIfExists(disabledTarget);
-                log("Deleted disabled managed subfolder: " + disabledTarget.toAbsolutePath());
+                log.info("Deleted disabled managed subfolder: " + disabledTarget.toAbsolutePath());
             }
         }
     }
@@ -944,7 +812,7 @@ public class LootManagerService {
                         : "Resources are up to date (v" + localVersion + ").";
                 return new ResourcesUpdateCheckResult(localVersion, remoteVersion, localExists, updateAvailable, true, message);
             } catch (Exception e) {
-                log("Remote manifest check failed for branch " + branch + ": " + e.getMessage());
+                log.info("Remote manifest check failed for branch " + branch + ": " + e.getMessage());
             }
         }
         return new ResourcesUpdateCheckResult(localVersion, "unknown", localExists, false, false,

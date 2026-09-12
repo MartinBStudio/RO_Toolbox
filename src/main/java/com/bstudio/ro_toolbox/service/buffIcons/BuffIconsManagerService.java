@@ -1,7 +1,10 @@
 package com.bstudio.ro_toolbox.service.buffIcons;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.bstudio.ro_toolbox.service.common.GameResourceService;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.util.AppDataPaths;
+import com.bstudio.ro_toolbox.util.RuntimeDirectories;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -26,45 +29,22 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 @Service
-public class BuffIconsManagerService {
+@Slf4j
+public class BuffIconsManagerService implements GameResourceService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_BuffIcons_resources";
     private static final String RESOURCE_MANIFEST_FILE_NAME = "manifest.json";
     private static final String PROFILE_MANIFEST_FILE_NAME = "manifestBuffIcons.json";
-    private static final Path APP_DATA_ROOT = resolveAppDataRoot();
+    private static final Path APP_DATA_ROOT = AppDataPaths.resolveRoToolboxAppDataRoot();
     private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("buffIcons");
     private static final Path GAME_SUFFIX = Paths.get("");
 
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
-    private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
 
-    private static Path resolveAppDataRoot() {
-        String appData = System.getenv("APPDATA");
-        if (appData != null && !appData.isBlank()) {
-            return Paths.get(appData, "RO_Toolbox");
-        }
-        return Paths.get(System.getProperty("user.home"), ".ro_toolbox");
-    }
+    private final AppConfigService appConfigService;
 
-    private static final Logger LOG = LoggerFactory.getLogger(BuffIconsManagerService.class);
-
-    private volatile Path selectedGameBase = null;
-
-    public BuffIconsManagerService() {
-        ensureRuntimeDirs();
-        loadConfig();
-    }
-
-    private void ensureRuntimeDirs() {
-        try {
-            Files.createDirectories(APP_DATA_ROOT);
-            Files.createDirectories(CONFIG_DIR);
-            Files.createDirectories(RESOURCES_DIR);
-        } catch (IOException ignored) {
-        }
-    }
-
-    private void log(String s) {
-        LOG.info(s);
+    public BuffIconsManagerService(AppConfigService appConfigService) {
+        this.appConfigService = appConfigService;
+        RuntimeDirectories.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
     }
 
     public Path getResourcesDir() {
@@ -72,85 +52,12 @@ public class BuffIconsManagerService {
     }
 
     public Path getSelectedGameBase() {
-        return selectedGameBase;
+        return appConfigService.getSelectedGameBase();
     }
 
     public Path getSelectedGameItemFolder() {
+        Path selectedGameBase = getSelectedGameBase();
         return selectedGameBase == null ? null : selectedGameBase.resolve(GAME_SUFFIX);
-    }
-
-    private void loadConfig() {
-        try {
-            if (!Files.exists(CONFIG_FILE)) {
-                return;
-            }
-            Properties properties = new Properties();
-            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-                properties.load(in);
-            }
-            String selected = properties.getProperty("selectedGame");
-            if (selected != null && !selected.isBlank()) {
-                Path candidate = Paths.get(selected.trim());
-                if (Files.exists(candidate)) {
-                    selectedGameBase = candidate;
-                }
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    public void saveSelectedGame(Path base) {
-        try {
-            if (base == null) {
-                clearSelectedGame();
-                return;
-            }
-
-            Files.createDirectories(CONFIG_DIR);
-            Properties properties = new Properties();
-            if (Files.exists(CONFIG_FILE)) {
-                try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-                    properties.load(in);
-                }
-            }
-            properties.setProperty("selectedGame", base.toAbsolutePath().toString());
-            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
-                properties.store(out, "RO BuffIcons config");
-            }
-            selectedGameBase = base.toAbsolutePath().normalize();
-            log("Selected game base saved: " + selectedGameBase);
-        } catch (Exception ex) {
-            log("Failed to save selected game base: " + ex.getMessage());
-            throw new IllegalStateException("Unable to save selected game base to config.", ex);
-        }
-    }
-
-    public void clearSelectedGame() {
-        try {
-            Files.createDirectories(CONFIG_DIR);
-            Properties properties = new Properties();
-            if (Files.exists(CONFIG_FILE)) {
-                try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-                    properties.load(in);
-                }
-            }
-            properties.remove("selectedGame");
-            try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
-                properties.store(out, "RO BuffIcons config");
-            }
-            selectedGameBase = null;
-            log("Selected game base cleared.");
-        } catch (Exception ex) {
-            log("Failed to clear selected game base: " + ex.getMessage());
-            throw new IllegalStateException("Unable to clear selected game base from config.", ex);
-        }
-    }
-
-    public void clearAppConfig() throws IOException {
-        if (Files.exists(CONFIG_FILE)) {
-            Files.deleteIfExists(CONFIG_FILE);
-            log("Deleted app config: " + CONFIG_FILE.toAbsolutePath());
-        }
     }
 
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
@@ -166,7 +73,7 @@ public class BuffIconsManagerService {
 
         for (String branch : branches) {
             String zipUrl = buildZipUrl(repoUrl, branch);
-            log("Trying branch: " + branch + " -> " + zipUrl);
+            log.info("Trying branch: " + branch + " -> " + zipUrl);
             try {
                 Path tmp = Files.createTempFile("repo-", ".zip");
                 try (InputStream in = openUrlStream(zipUrl)) {
@@ -180,7 +87,7 @@ public class BuffIconsManagerService {
                 return;
             } catch (IOException e) {
                 lastException = e;
-                log("Failed branch " + branch + ": " + e.getMessage());
+                log.info("Failed branch " + branch + ": " + e.getMessage());
             }
         }
         throw lastException != null ? lastException : new IOException("Failed to download repository zip");
@@ -230,7 +137,7 @@ public class BuffIconsManagerService {
                         }
                     }
                 }
-                log("Extracted: " + relative);
+                log.info("Extracted: " + relative);
                 zis.closeEntry();
             }
         }
@@ -251,7 +158,7 @@ public class BuffIconsManagerService {
                             } else {
                                 Files.createDirectories(targetPath.getParent());
                                 Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                                log("Copied: " + targetPath.toAbsolutePath());
+                                log.info("Copied: " + targetPath.toAbsolutePath());
                             }
                         } catch (IOException e) {
                             throw new UncheckedIOException(e);
@@ -286,7 +193,7 @@ public class BuffIconsManagerService {
             @Override
             public java.nio.file.FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
                 Files.deleteIfExists(file);
-                log("Deleted file: " + file.toAbsolutePath());
+                log.info("Deleted file: " + file.toAbsolutePath());
                 return java.nio.file.FileVisitResult.CONTINUE;
             }
 
@@ -294,7 +201,7 @@ public class BuffIconsManagerService {
             public java.nio.file.FileVisitResult postVisitDirectory(Path visitedDir, IOException exc) throws IOException {
                 if (!visitedDir.equals(dir)) {
                     Files.deleteIfExists(visitedDir);
-                    log("Deleted dir: " + visitedDir.toAbsolutePath());
+                    log.info("Deleted dir: " + visitedDir.toAbsolutePath());
                 }
                 return java.nio.file.FileVisitResult.CONTINUE;
             }
@@ -314,10 +221,10 @@ public class BuffIconsManagerService {
                 if (Files.isDirectory(entry)) {
                     deleteDirectoryContents(entry);
                     Files.deleteIfExists(entry);
-                    log("Deleted profile dir: " + entry.toAbsolutePath());
+                    log.info("Deleted profile dir: " + entry.toAbsolutePath());
                 } else {
                     Files.deleteIfExists(entry);
-                    log("Deleted resource file: " + entry.toAbsolutePath());
+                    log.info("Deleted resource file: " + entry.toAbsolutePath());
                 }
             }
         }
@@ -402,7 +309,7 @@ public class BuffIconsManagerService {
                     .filter(Objects::nonNull)
                     .toList();
         } catch (IOException e) {
-            log("Failed to load preview images from " + previewDir.toAbsolutePath() + ": " + e.getMessage());
+            log.info("Failed to load preview images from " + previewDir.toAbsolutePath() + ": " + e.getMessage());
             return List.of();
         }
     }
@@ -435,7 +342,7 @@ public class BuffIconsManagerService {
             }
             return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
         } catch (IOException e) {
-            log("Failed to encode preview image " + file.toAbsolutePath() + ": " + e.getMessage());
+            log.info("Failed to encode preview image " + file.toAbsolutePath() + ": " + e.getMessage());
             return null;
         }
     }
@@ -465,6 +372,7 @@ public class BuffIconsManagerService {
         Set<String> seen = new LinkedHashSet<>();
         List<Path> roots = new ArrayList<>();
         roots.add(RESOURCES_DIR);
+        Path selectedGameBase = getSelectedGameBase();
         if (selectedGameBase != null) {
             roots.add(selectedGameBase.resolveSibling(RESOURCES_DIR.getFileName()));
         }
@@ -654,7 +562,7 @@ public class BuffIconsManagerService {
                         : "Resources are up to date (v" + localVersion + ").";
                 return new ResourcesUpdateCheckResult(localVersion, remoteVersion, localExists, updateAvailable, true, message);
             } catch (Exception e) {
-                log("Remote manifest check failed for branch " + branch + ": " + e.getMessage());
+                log.info("Remote manifest check failed for branch " + branch + ": " + e.getMessage());
             }
         }
 
