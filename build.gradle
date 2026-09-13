@@ -27,7 +27,14 @@ java {
         languageVersion = JavaLanguageVersion.of(21)
     }
 }
-
+spotless {
+    java {
+        googleJavaFormat('1.28.0')
+        removeUnusedImports()
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
 repositories {
     mavenCentral()
 }

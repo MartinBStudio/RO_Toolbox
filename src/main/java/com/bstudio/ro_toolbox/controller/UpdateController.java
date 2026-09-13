@@ -17,37 +17,37 @@ import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBo
 @RequiredArgsConstructor
 public class UpdateController {
 
-    private final UpdaterService updaterService;
+  private final UpdaterService updaterService;
 
-    @GetMapping("/check")
-    public UpdaterService.UpdateCheckResult checkForUpdate() {
-        return updaterService.checkForUpdate();
+  @GetMapping("/check")
+  public UpdaterService.UpdateCheckResult checkForUpdate() {
+    return updaterService.checkForUpdate();
+  }
+
+  @GetMapping("/latest-release/download")
+  public ResponseEntity<StreamingResponseBody> downloadLatestRelease() throws java.io.IOException {
+    UpdaterService.ReleaseDownload download = updaterService.openLatestReleaseDownload();
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.parseMediaType(download.contentType()));
+    headers.setContentDisposition(
+        ContentDisposition.attachment().filename(download.fileName()).build());
+    if (download.contentLength() >= 0) {
+      headers.setContentLength(download.contentLength());
     }
 
-    @GetMapping("/latest-release/download")
-    public ResponseEntity<StreamingResponseBody> downloadLatestRelease() throws java.io.IOException {
-        UpdaterService.ReleaseDownload download = updaterService.openLatestReleaseDownload();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.parseMediaType(download.contentType()));
-        headers.setContentDisposition(ContentDisposition.attachment().filename(download.fileName()).build());
-        if (download.contentLength() >= 0) {
-            headers.setContentLength(download.contentLength());
-        }
-
-        StreamingResponseBody body = outputStream -> {
-            try (download) {
-                download.inputStream().transferTo(outputStream);
-            }
+    StreamingResponseBody body =
+        outputStream -> {
+          try (download) {
+            download.inputStream().transferTo(outputStream);
+          }
         };
 
-        return ResponseEntity.ok()
-                .headers(headers)
-                .body(body);
-    }
+    return ResponseEntity.ok().headers(headers).body(body);
+  }
 
-    @PostMapping("/install")
-    public UpdaterService.UpdateInstallResult installUpdate() {
-        return updaterService.installUpdate(updaterService.checkForUpdate());
-    }
+  @PostMapping("/install")
+  public UpdaterService.UpdateInstallResult installUpdate() {
+    return updaterService.installUpdate(updaterService.checkForUpdate());
+  }
 }

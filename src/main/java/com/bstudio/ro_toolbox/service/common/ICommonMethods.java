@@ -22,9 +22,12 @@ public interface ICommonMethods {
             return List.of();
         }
         try (var stream = Files.walk(previewDir)) {
-            return stream.filter(Files::isRegularFile)
+            return stream
+                    .filter(Files::isRegularFile)
                     .filter(this::isSupportedPreviewImage)
-                    .sorted(Comparator.comparing(path -> path.getFileName().toString(), String.CASE_INSENSITIVE_ORDER))
+                    .sorted(
+                            Comparator.comparing(
+                                    path -> path.getFileName().toString(), String.CASE_INSENSITIVE_ORDER))
                     .map(this::toDataUrl)
                     .filter(Objects::nonNull)
                     .toList();
@@ -39,7 +42,11 @@ public interface ICommonMethods {
             return false;
         }
         String name = file.getFileName().toString().toLowerCase();
-        return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif") || name.endsWith(".webp");
+        return name.endsWith(".png")
+                || name.endsWith(".jpg")
+                || name.endsWith(".jpeg")
+                || name.endsWith(".gif")
+                || name.endsWith(".webp");
     }
 
     private String toDataUrl(Path file) {
@@ -60,7 +67,8 @@ public interface ICommonMethods {
         }
     }
 
-    default List<AvailablePackage> listAvailableProfiles(Path resourcesDir, Path selectedGameBase, String manifestFileName) {
+    default List<AvailablePackage> listAvailableProfiles(
+            Path resourcesDir, Path selectedGameBase, String manifestFileName) {
         List<AvailablePackage> results = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         List<Path> roots = new ArrayList<>();
@@ -79,7 +87,18 @@ public interface ICommonMethods {
                     Path manifest = resolveManifestPath(p, manifestFileName);
                     if (manifest == null) continue;
                     if (seen.add(name)) {
-                        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(p)).source(p).build();
+                        AvailablePackage availablePackage =
+                                AvailablePackage.builder()
+                                        .id(readManifestName(manifest))
+                                        .name(readManifestName(manifest))
+                                        .author(readManifestAuthor(manifest))
+                                        .description(readManifestDescription(manifest))
+                                        .url(readManifestUrl(manifest))
+                                        .createdAt(readManifestCreatedAt(manifest))
+                                        .version(readManifestVersion(manifest))
+                                        .previewImages(loadPreviewImages(p))
+                                        .source(p)
+                                        .build();
                         results.add(availablePackage);
                     }
                 }
@@ -87,46 +106,55 @@ public interface ICommonMethods {
             }
         }
 
-        results.sort((a, b) -> {
-            int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
-            if (versionDiff != 0) return versionDiff;
-            return a.getId().compareToIgnoreCase(b.getId());
-        });
+        results.sort(
+                (a, b) -> {
+                    int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
+                    if (versionDiff != 0) return versionDiff;
+                    return a.getId().compareToIgnoreCase(b.getId());
+                });
         return results;
     }
-    default List<String> listDownloadedProfiles(Path resourcesDir,String manifestFileName) {
+
+    default List<String> listDownloadedProfiles(Path resourcesDir, String manifestFileName) {
         List<String> profiles = new ArrayList<>();
         if (resourcesDir == null || !Files.exists(resourcesDir) || !Files.isDirectory(resourcesDir)) {
             return profiles;
         }
         try (var stream = Files.list(resourcesDir)) {
-            stream.filter(Files::isDirectory)
-                    .forEach(p -> {
-                        String name = p.getFileName().toString();
-                        if (name.startsWith(".")) {
-                            return;
-                        }
-                        if (hasProfileAssets(p, manifestFileName)) {
-                            profiles.add(p.getFileName().toString());
-                        }
-                    });
+            stream
+                    .filter(Files::isDirectory)
+                    .forEach(
+                            p -> {
+                                String name = p.getFileName().toString();
+                                if (name.startsWith(".")) {
+                                    return;
+                                }
+                                if (hasProfileAssets(p, manifestFileName)) {
+                                    profiles.add(p.getFileName().toString());
+                                }
+                            });
         } catch (IOException ignored) {
         }
         profiles.sort(String::compareToIgnoreCase);
         return profiles;
     }
-    default boolean hasProfileAssets(Path directory,String manifestFileName) {
+
+    default boolean hasProfileAssets(Path directory, String manifestFileName) {
         if (directory == null || !Files.isDirectory(directory)) {
             return false;
         }
         return resolveManifestPath(directory, manifestFileName) != null;
     }
+
     default String readManifestDescription(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"description\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            java.util.regex.Matcher matcher =
+                    java.util.regex.Pattern.compile("\"description\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
+                            .matcher(content);
             if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            String value =
+                    matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
             return value.trim();
         } catch (Exception e) {
             return null;
@@ -136,9 +164,12 @@ public interface ICommonMethods {
     default String readManifestUrl(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"url\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            java.util.regex.Matcher matcher =
+                    java.util.regex.Pattern.compile("\"url\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
+                            .matcher(content);
             if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            String value =
+                    matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
             return value.trim();
         } catch (Exception e) {
             return null;
@@ -148,9 +179,12 @@ public interface ICommonMethods {
     default String readManifestAuthor(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"author\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            java.util.regex.Matcher matcher =
+                    java.util.regex.Pattern.compile("\"author\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
+                            .matcher(content);
             if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            String value =
+                    matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
             return value.trim();
         } catch (Exception e) {
             return null;
@@ -160,9 +194,12 @@ public interface ICommonMethods {
     default String readManifestCreatedAt(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"createdAt\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            java.util.regex.Matcher matcher =
+                    java.util.regex.Pattern.compile("\"createdAt\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
+                            .matcher(content);
             if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
+            String value =
+                    matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
             return value.trim();
         } catch (Exception e) {
             return null;
@@ -172,7 +209,9 @@ public interface ICommonMethods {
     default String readManifestVersion(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
+            java.util.regex.Matcher matcher =
+                    java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
+                            .matcher(content);
             if (!matcher.find()) return "0.0.0";
             return matcher.group(1).trim();
         } catch (Exception e) {
@@ -180,8 +219,12 @@ public interface ICommonMethods {
         }
     }
 
-    default List<String> readManifestDisabledManagedSubfolders(Path itemFolder, List<String> managedSubfolders) {
-        if (itemFolder == null || !Files.exists(itemFolder) || managedSubfolders == null || managedSubfolders.isEmpty()) {
+    default List<String> readManifestDisabledManagedSubfolders(
+            Path itemFolder, List<String> managedSubfolders) {
+        if (itemFolder == null
+                || !Files.exists(itemFolder)
+                || managedSubfolders == null
+                || managedSubfolders.isEmpty()) {
             return List.of();
         }
 
@@ -194,12 +237,15 @@ public interface ICommonMethods {
             Path target = itemFolder.resolve(relative).normalize();
             Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
 
-            if (disabledTarget != null && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
+            if (disabledTarget != null
+                    && Files.exists(disabledTarget)
+                    && Files.isDirectory(disabledTarget)) {
                 disabled.add(subfolder);
             }
         }
         return disabled;
     }
+
     default Path resolveDisabledManagedSubfolderPath(Path target) {
         if (target == null || target.getFileName() == null) {
             return null;
@@ -212,6 +258,7 @@ public interface ICommonMethods {
 
         return parent.resolve("disabled_" + target.getFileName());
     }
+
     default List<String> readManifestManagedSubfolders(Path manifestFile) {
         List<String> subfolders = new ArrayList<>();
         if (manifestFile == null || !Files.exists(manifestFile) || !Files.isRegularFile(manifestFile)) {
@@ -219,22 +266,23 @@ public interface ICommonMethods {
         }
         try {
             String content = Files.readString(manifestFile);
-            java.util.regex.Matcher arrayMatcher = java.util.regex.Pattern.compile(
-                    "\"managedSubfolders\"\\s*:\\s*\\[(.*?)]",
-                    java.util.regex.Pattern.DOTALL
-            ).matcher(content);
+            java.util.regex.Matcher arrayMatcher =
+                    java.util.regex.Pattern.compile(
+                                    "\"managedSubfolders\"\\s*:\\s*\\[(.*?)]", java.util.regex.Pattern.DOTALL)
+                            .matcher(content);
             if (!arrayMatcher.find()) return null;
 
             String arrayContent = arrayMatcher.group(1);
-            java.util.regex.Matcher itemMatcher = java.util.regex.Pattern.compile(
-                    "\"((?:\\\\.|[^\"\\\\])*)\""
-            ).matcher(arrayContent);
+            java.util.regex.Matcher itemMatcher =
+                    java.util.regex.Pattern.compile("\"((?:\\\\.|[^\"\\\\])*)\"").matcher(arrayContent);
             while (itemMatcher.find()) {
-                String raw = itemMatcher.group(1)
-                        .replace("\\n", "\n")
-                        .replace("\\\"", "\"")
-                        .replace("\\\\", "\\")
-                        .trim();
+                String raw =
+                        itemMatcher
+                                .group(1)
+                                .replace("\\n", "\n")
+                                .replace("\\\"", "\"")
+                                .replace("\\\\", "\\")
+                                .trim();
                 if (!raw.isEmpty()) subfolders.add(raw);
             }
             return subfolders;
@@ -250,11 +298,19 @@ public interface ICommonMethods {
                 if (key == null || key.isBlank()) {
                     continue;
                 }
-                java.util.regex.Matcher matcher = java.util.regex.Pattern
-                        .compile("\"" + java.util.regex.Pattern.quote(key) + "\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
-                        .matcher(content);
+                java.util.regex.Matcher matcher =
+                        java.util.regex.Pattern.compile(
+                                        "\""
+                                                + java.util.regex.Pattern.quote(key)
+                                                + "\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
+                                .matcher(content);
                 if (matcher.find()) {
-                    return matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\").trim();
+                    return matcher
+                            .group(1)
+                            .replace("\\n", "\n")
+                            .replace("\\\"", "\"")
+                            .replace("\\\\", "\\")
+                            .trim();
                 }
             }
             return null;
@@ -270,28 +326,32 @@ public interface ICommonMethods {
     default Path resolveManifestPath(Path directory, String manifestFileName) {
         return directory.resolve(manifestFileName);
     }
+
     default void copyDirectoryContents(Path src, Path dst) throws IOException {
         if (!Files.exists(src) || !Files.isDirectory(src)) return;
         try (java.util.stream.Stream<Path> stream = Files.walk(src)) {
-            stream.filter(sourcePath -> !isHiddenPathInTree(src, sourcePath))
-                    .forEach(sourcePath -> {
-                        try {
-                            Path rel = src.relativize(sourcePath);
-                            Path targetPath = dst.resolve(rel);
-                            if (Files.isDirectory(sourcePath)) {
-                                Files.createDirectories(targetPath);
-                            } else {
-                                Files.createDirectories(targetPath.getParent());
-                                Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                            }
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
+            stream
+                    .filter(sourcePath -> !isHiddenPathInTree(src, sourcePath))
+                    .forEach(
+                            sourcePath -> {
+                                try {
+                                    Path rel = src.relativize(sourcePath);
+                                    Path targetPath = dst.resolve(rel);
+                                    if (Files.isDirectory(sourcePath)) {
+                                        Files.createDirectories(targetPath);
+                                    } else {
+                                        Files.createDirectories(targetPath.getParent());
+                                        Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                                    }
+                                } catch (IOException e) {
+                                    throw new UncheckedIOException(e);
+                                }
+                            });
         } catch (UncheckedIOException e) {
             throw e.getCause();
         }
     }
+
     private boolean isHiddenPathInTree(Path root, Path path) {
         if (path == null || root == null) {
             return false;
@@ -307,24 +367,54 @@ public interface ICommonMethods {
         }
         return false;
     }
+
     default void deleteDirectoryContents(Path dir) throws IOException {
         if (!Files.exists(dir) || !Files.isDirectory(dir)) {
             return;
         }
-        Files.walkFileTree(dir, new java.nio.file.SimpleFileVisitor<Path>() {
-            @Override
-            public java.nio.file.FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
-                Files.deleteIfExists(file);
-                return java.nio.file.FileVisitResult.CONTINUE;
-            }
+        Files.walkFileTree(
+                dir,
+                new java.nio.file.SimpleFileVisitor<Path>() {
+                    @Override
+                    public java.nio.file.FileVisitResult visitFile(
+                            Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
+                        Files.deleteIfExists(file);
+                        return java.nio.file.FileVisitResult.CONTINUE;
+                    }
 
-            @Override
-            public java.nio.file.FileVisitResult postVisitDirectory(Path visitedDir, IOException exc) throws IOException {
-                if (!visitedDir.equals(dir)) {
-                    Files.deleteIfExists(visitedDir);
+                    @Override
+                    public java.nio.file.FileVisitResult postVisitDirectory(Path visitedDir, IOException exc)
+                            throws IOException {
+                        if (!visitedDir.equals(dir)) {
+                            Files.deleteIfExists(visitedDir);
+                        }
+                        return java.nio.file.FileVisitResult.CONTINUE;
+                    }
+                });
+    }
+
+    default void deleteManifestFiles(Path directory, String... manifestNames) throws IOException {
+        for (String manifestName : manifestNames) {
+            if (manifestName == null || manifestName.isBlank()) continue;
+            Files.deleteIfExists(directory.resolve(manifestName));
+        }
+    }
+
+    default void clearResources(Path resourcesDir) throws IOException {
+        if (!Files.exists(resourcesDir) || !Files.isDirectory(resourcesDir)) return;
+        try (var stream = Files.list(resourcesDir)) {
+            for (Path entry : (Iterable<Path>) stream::iterator) {
+                String name = entry.getFileName().toString();
+                if (".default".equals(name)) {
+                    continue;
                 }
-                return java.nio.file.FileVisitResult.CONTINUE;
+                if (Files.isDirectory(entry)) {
+                    deleteDirectoryContents(entry);
+                    Files.deleteIfExists(entry);
+                } else {
+                    Files.deleteIfExists(entry);
+                }
             }
-        });
+        }
     }
 }
