@@ -4,7 +4,7 @@ import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
-import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
+import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/bufficons")
@@ -26,14 +25,12 @@ public class BuffIconsServiceController extends BaseController {
     @GetMapping("/status")
     public PackageServiceStatusResponse status() {
         var installed = iconsManagerService.getInstalledProfileInfo();
-        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(iconsManagerService.getSelectedGameItemFolder())).installedProfile(installed).downloadedProfiles(iconsManagerService.listDownloadedProfiles()).availableProfiles(iconsManagerService.listAvailableProfiles()).build();
+        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(iconsManagerService.getGameDataDir())).installedProfile(installed).downloadedProfiles(iconsManagerService.listDownloadedProfiles()).availableProfiles(iconsManagerService.listAvailableProfiles()).build();
     }
 
     @PostMapping("/download")
     public MessageResponse downloadProfiles() throws IOException {
-        Path dest = iconsManagerService.getResourcesDir();
-        Files.createDirectories(dest);
-        iconsManagerService.downloadAndExtract(null, dest);
+        iconsManagerService.downloadAndExtract();
         return MessageResponse.builder().message("Profiles downloaded.").build();
     }
 
@@ -59,7 +56,7 @@ public class BuffIconsServiceController extends BaseController {
     }
 
     @GetMapping("/check-update")
-    public IconsManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
         return iconsManagerService.checkResourcesUpdate();
     }
 
@@ -73,7 +70,7 @@ public class BuffIconsServiceController extends BaseController {
 
     @PostMapping("/folders/open/item")
     public MessageResponse openItemFolder() throws IOException {
-        Path item = iconsManagerService.getSelectedGameItemFolder();
+        Path item = iconsManagerService.getGameDataDir();
         if (item == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
