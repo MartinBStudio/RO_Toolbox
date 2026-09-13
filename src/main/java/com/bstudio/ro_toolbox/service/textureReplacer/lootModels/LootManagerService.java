@@ -36,7 +36,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
     private static final Path CONFIG_FILE = CONFIG_DIR.resolve("config.properties");
     private static final String IGNORE_CONFIG_WARNINGS_KEY = "ignoreConfigWarnings";
-    private static final String USEFUL_STUFF_COLLAPSED_KEY = "usefulStuffCollapsed";
 
     private final AppConfigService appConfigService;
     private final ResourcesUpdater resourcesUpdater;
@@ -55,14 +54,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     public Path getGameDataDir() {
         Path selectedGameBase = getSelectedGameBase();
         return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
-    }
-
-    public String getCurrentLootProfile() {
-        return currentLootProfile;
-    }
-
-    public void setCurrentLootProfile(String profile) {
-        currentLootProfile = (profile == null || profile.isBlank()) ? null : profile;
     }
 
     public boolean getIgnoreConfigWarnings() throws IOException {
@@ -90,31 +81,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         }
     }
 
-    public boolean getUsefulStuffCollapsed() throws IOException {
-        if (!Files.exists(CONFIG_FILE)) {
-            return false;
-        }
-        Properties prop = new Properties();
-        try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-            prop.load(in);
-        }
-        return Boolean.parseBoolean(prop.getProperty(USEFUL_STUFF_COLLAPSED_KEY, "false").trim());
-    }
-
-    public void saveUsefulStuffCollapsed(boolean collapsed) throws IOException {
-        Files.createDirectories(CONFIG_DIR);
-        Properties prop = new Properties();
-        if (Files.exists(CONFIG_FILE)) {
-            try (InputStream in = Files.newInputStream(CONFIG_FILE)) {
-                prop.load(in);
-            }
-        }
-        prop.setProperty(USEFUL_STUFF_COLLAPSED_KEY, String.valueOf(collapsed));
-        try (OutputStream out = Files.newOutputStream(CONFIG_FILE)) {
-            prop.store(out, "RO LootManager config");
-        }
-    }
-
     public void downloadAndExtract() throws IOException {
         RepositoryZipDownloader.downloadAndExtract(
                 DEFAULT_REPO,
@@ -124,66 +90,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         );
     }
 
-    public void copyDirectoryContents(Path src, Path dst) throws IOException {
-        if (!Files.exists(src) || !Files.isDirectory(src)) return;
-        try (java.util.stream.Stream<Path> stream = Files.walk(src)) {
-            stream.filter(sourcePath -> !isHiddenPathInTree(src, sourcePath))
-                    .forEach(sourcePath -> {
-                        try {
-                            Path rel = src.relativize(sourcePath);
-                            Path targetPath = dst.resolve(rel);
-                            if (Files.isDirectory(sourcePath)) {
-                                Files.createDirectories(targetPath);
-                            } else {
-                                Files.createDirectories(targetPath.getParent());
-                                Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                                log.info("Copied: " + targetPath.toAbsolutePath());
-                            }
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
-        }
-    }
 
-    private boolean isHiddenPathInTree(Path root, Path path) {
-        if (path == null || root == null) {
-            return false;
-        }
-        Path relative = root.relativize(path).normalize();
-        if (relative.toString().isEmpty()) {
-            return false;
-        }
-        for (Path segment : relative) {
-            if (segment.toString().startsWith(".")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void deleteDirectoryContents(Path dir) throws IOException {
-        if (!Files.exists(dir) || !Files.isDirectory(dir)) return;
-        Files.walkFileTree(dir, new java.nio.file.SimpleFileVisitor<Path>() {
-            @Override
-            public java.nio.file.FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
-                Files.deleteIfExists(file);
-                log.info("Deleted file: " + file.toAbsolutePath());
-                return java.nio.file.FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public java.nio.file.FileVisitResult postVisitDirectory(Path visitedDir, IOException exc) throws IOException {
-                if (!visitedDir.equals(dir)) {
-                    Files.deleteIfExists(visitedDir);
-                    log.info("Deleted dir: " + visitedDir.toAbsolutePath());
-                }
-                return java.nio.file.FileVisitResult.CONTINUE;
-            }
-        });
-    }
 
     public void clearResources() throws IOException {
         if (!Files.exists(RESOURCES_DIR) || !Files.isDirectory(RESOURCES_DIR)) return;
@@ -210,7 +117,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         Path itemFolder = getGameDataDir();
         if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
 
-        Path manifest = resolveManifestPath(itemFolder);
+        Path manifest = resolveManifestPath(itemFolder,MANIFEST_FILE_NAME);
         List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
         if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
             deleteManagedSubfolders(itemFolder, managedSubfolders);
@@ -241,10 +148,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         }
     }
 
-    private Path resolveManifestPath(Path directory) {
-        return directory.resolve(MANIFEST_FILE_NAME);
-    }
-
     private void deleteManifestFiles(Path directory, String... manifestNames) throws IOException {
         for (String manifestName : manifestNames) {
             if (manifestName == null || manifestName.isBlank()) continue;
@@ -252,17 +155,12 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         }
     }
 
-
     public List<String> listDownloadedProfiles() {
         return listDownloadedProfiles(RESOURCES_DIR, MANIFEST_FILE_NAME);
     }
 
     public List<AvailablePackage> listAvailableProfiles() {
         return listAvailableProfiles(RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
-    }
-
-    public void installProfile(String profileId) throws IOException {
-        installProfile(profileId, List.of());
     }
 
     public void installProfile(String profileId, List<String> disabledManagedSubfolders) throws IOException {
@@ -275,7 +173,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         removeInstalledProfileFiles(destination);
         copyDirectoryContents(selected.getSource(), destination);
         normalizeInstalledManifest(destination);
-        setCurrentLootProfile(selected.getId());
 
         if (disabledManagedSubfolders != null && !disabledManagedSubfolders.isEmpty()) {
             manageInstalledProfile(profileId, disabledManagedSubfolders);
@@ -288,7 +185,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
             throw new IllegalStateException("No game installation folder is selected.");
         }
 
-        Path manifest = resolveManifestPath(destination);
+        Path manifest = resolveManifestPath(destination,MANIFEST_FILE_NAME);
         if (!Files.exists(manifest)) {
             throw new IllegalStateException("No installed profile found.");
         }
@@ -369,7 +266,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
             return null;
         }
 
-        Path manifest = resolveManifestPath(itemFolder);
+        Path manifest = resolveManifestPath(itemFolder, MANIFEST_FILE_NAME);
         if (manifest == null || !Files.isRegularFile(manifest)) {
             return null;
         }
@@ -377,8 +274,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
 
         return availablePackage;
     }
-
-
 
 
     private void deleteManagedSubfolders(Path baseDir, List<String> managedSubfolders) throws IOException {

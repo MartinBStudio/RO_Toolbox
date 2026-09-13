@@ -196,7 +196,7 @@ public class SettingsController {
 
     @GetMapping("/useful-stuff-collapsed")
     public UsefulStuffCollapsedResponse getUsefulStuffCollapsed() throws IOException {
-        return new UsefulStuffCollapsedResponse(lootManagerService.getUsefulStuffCollapsed());
+        return new UsefulStuffCollapsedResponse(appConfigService.getUsefulStuffCollapsed());
     }
 
     @PostMapping("/useful-stuff-collapsed")
@@ -204,7 +204,7 @@ public class SettingsController {
         if (request == null) {
             throw new IllegalArgumentException("Collapsed value is required.");
         }
-        lootManagerService.saveUsefulStuffCollapsed(request.collapsed());
+        appConfigService.saveUsefulStuffCollapsed(request.collapsed());
         return new UsefulStuffCollapsedResponse(request.collapsed());
     }
 

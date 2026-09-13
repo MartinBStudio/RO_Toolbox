@@ -18,7 +18,7 @@ public class AppConfigService {
     private static final String SELECTED_SERVICE_KEY = "selectedService";
     private static final String QUICK_LAUNCH_ONLY_MODE_KEY = "quickLaunchOnlyMode";
     private static final String CONFIG_COMMENT = "RO Toolbox config";
-
+    private static final String USEFUL_STUFF_COLLAPSED_KEY = "usefulStuffCollapsed";
     private final Path configDir;
     private final Path configFile;
 
@@ -127,5 +127,13 @@ public class AppConfigService {
         try (OutputStream out = Files.newOutputStream(configFile)) {
             properties.store(out, CONFIG_COMMENT);
         }
+    }
+
+    public boolean getUsefulStuffCollapsed() throws IOException {
+        return Boolean.parseBoolean(getProperty(USEFUL_STUFF_COLLAPSED_KEY));
+    }
+
+    public void saveUsefulStuffCollapsed(boolean collapsed) throws IOException {
+        setProperty(USEFUL_STUFF_COLLAPSED_KEY, String.valueOf(collapsed));
     }
 }

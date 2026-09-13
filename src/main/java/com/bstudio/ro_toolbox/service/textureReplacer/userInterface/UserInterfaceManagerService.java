@@ -33,7 +33,6 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
 
     private final AppConfigService appConfigService;
     private final ResourcesUpdater resourcesUpdater;
-    private volatile String currentUserInterfaceProfile = null;
 
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
@@ -41,11 +40,6 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     public Path getGameDataDir() {
         Path selectedGameBase = appConfigService.getSelectedGameBase();
         return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
-    }
-
-
-    public void setCurrentUserInterfaceProfile(String profile) {
-        currentUserInterfaceProfile = (profile == null || profile.isBlank()) ? null : profile;
     }
 
     public void downloadAndExtract() throws IOException {
@@ -57,66 +51,7 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
         );
     }
 
-    public void copyDirectoryContents(Path src, Path dst) throws IOException {
-        if (!Files.exists(src) || !Files.isDirectory(src)) return;
-        try (java.util.stream.Stream<Path> stream = Files.walk(src)) {
-            stream.filter(sourcePath -> !isHiddenPathInTree(src, sourcePath))
-                    .forEach(sourcePath -> {
-                        try {
-                            Path rel = src.relativize(sourcePath);
-                            Path targetPath = dst.resolve(rel);
-                            if (Files.isDirectory(sourcePath)) {
-                                Files.createDirectories(targetPath);
-                            } else {
-                                Files.createDirectories(targetPath.getParent());
-                                Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                                log.info("Copied: " + targetPath.toAbsolutePath());
-                            }
-                        } catch (IOException e) {
-                            throw new UncheckedIOException(e);
-                        }
-                    });
-        } catch (UncheckedIOException e) {
-            throw e.getCause();
-        }
-    }
-
-    private boolean isHiddenPathInTree(Path root, Path path) {
-        if (path == null || root == null) {
-            return false;
-        }
-        Path relative = root.relativize(path).normalize();
-        if (relative.toString().isEmpty()) {
-            return false;
-        }
-        for (Path segment : relative) {
-            if (segment.toString().startsWith(".")) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public void deleteDirectoryContents(Path dir) throws IOException {
-        if (!Files.exists(dir) || !Files.isDirectory(dir)) return;
-        Files.walkFileTree(dir, new java.nio.file.SimpleFileVisitor<Path>() {
-            @Override
-            public java.nio.file.FileVisitResult visitFile(Path file, java.nio.file.attribute.BasicFileAttributes attrs) throws IOException {
-                Files.deleteIfExists(file);
-                log.info("Deleted file: " + file.toAbsolutePath());
-                return java.nio.file.FileVisitResult.CONTINUE;
-            }
-
-            @Override
-            public java.nio.file.FileVisitResult postVisitDirectory(Path visitedDir, IOException exc) throws IOException {
-                if (!visitedDir.equals(dir)) {
-                    Files.deleteIfExists(visitedDir);
-                    log.info("Deleted dir: " + visitedDir.toAbsolutePath());
-                }
-                return java.nio.file.FileVisitResult.CONTINUE;
-            }
-        });
-    }
+    
 
     public void clearResources() throws IOException {
         if (!Files.exists(RESOURCES_DIR) || !Files.isDirectory(RESOURCES_DIR)) return;
@@ -144,7 +79,6 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
 
         // Always clear the installed manifest so the app no longer shows the profile as installed
         deleteManifestFiles(gameBase, MANIFEST_FILE_NAME, LEGACY_MANIFEST_FILE_NAME);
-        setCurrentUserInterfaceProfile(null);
 
         // Restore original files from .default if available
         Path defaultProfile = RESOURCES_DIR.resolve(".default");
@@ -262,7 +196,6 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
         removeInstalledProfileFiles(destination);
         copyDirectoryContents(selected.getSource(), destination);
         normalizeInstalledManifest(destination);
-        setCurrentUserInterfaceProfile(selected.getId());
     }
 
     private AvailablePackage findAvailableProfile(String profileId) {

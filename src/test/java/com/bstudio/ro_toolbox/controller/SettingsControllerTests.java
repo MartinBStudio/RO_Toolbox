@@ -217,15 +217,15 @@ class SettingsControllerTests {
 
     @Test
     void readsUsefulStuffCollapsedSetting() throws IOException {
-        LootManagerService loot = mock(LootManagerService.class);
-        when(loot.getUsefulStuffCollapsed()).thenReturn(true);
+        AppConfigService appConfig = mock(AppConfigService.class);
+        when(appConfig.getUsefulStuffCollapsed()).thenReturn(true);
         SettingsController controller = new SettingsController(
-                loot,
+                mock(LootManagerService.class),
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
                 mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
-                mock(AppConfigService.class),
+                appConfig,
                 mock(LoginManagerService.class)
         );
 

@@ -63,7 +63,6 @@ public class LootServiceController extends BaseController {
     @PostMapping("/clear-installed")
     public MessageResponse clearInstalled() throws IOException {
         lootManagerService.clearSelectedItemFolder();
-        lootManagerService.setCurrentLootProfile(null);
         return MessageResponse.builder().message("Installed models cleared.").build();
     }
 
