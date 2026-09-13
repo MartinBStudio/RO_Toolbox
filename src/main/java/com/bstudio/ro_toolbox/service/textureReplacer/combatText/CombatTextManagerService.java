@@ -52,16 +52,12 @@ public class CombatTextManagerService implements GameResourceService, ICommonMet
     Path itemFolder = getGameDataDir();
     if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
 
-    Path manifest = resolveManifestPath(itemFolder);
+    Path manifest = resolveManifestPath(itemFolder, MANIFEST_FILE_NAME);
     List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
     if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
       deleteManagedSubfolders(itemFolder, managedSubfolders);
     }
     deleteManifestFiles(itemFolder, MANIFEST_FILE_NAME);
-  }
-
-  private Path resolveManifestPath(Path directory) {
-    return directory.resolve(MANIFEST_FILE_NAME);
   }
 
   public List<String> listDownloadedProfiles() {
@@ -90,7 +86,7 @@ public class CombatTextManagerService implements GameResourceService, ICommonMet
       return null;
     }
 
-    Path manifest = resolveManifestPath(itemFolder);
+    Path manifest = resolveManifestPath(itemFolder, MANIFEST_FILE_NAME);
     if (!Files.isRegularFile(manifest)) {
       return null;
     }

@@ -54,10 +54,10 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) return;
 
     // Always clear the installed manifest so the app no longer shows the profile as installed
-    deleteManifestFiles(gameBase, MANIFEST_FILE_NAME, LEGACY_MANIFEST_FILE_NAME);
+    deleteManifestFiles(gameBase, MANIFEST_FILE_NAME);
 
     // Restore original files from .default if available
-    Path defaultProfile = RESOURCES_DIR.resolve(".default");
+    Path defaultProfile = resolveManifestPath(gameBase,MANIFEST_FILE_NAME);
     if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) return;
 
     List<Path> managedFiles = readDefaultFileList(defaultProfile.resolve("FILE_LIST.txt"));
@@ -76,10 +76,6 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
         log.info("Deleted managed file (no default available): " + target.toAbsolutePath());
       }
     }
-  }
-
-  private Path resolveManifestPath(Path directory) {
-    return directory.resolve(MANIFEST_FILE_NAME);
   }
 
   public List<String> listDownloadedProfiles() {
@@ -108,7 +104,7 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
       return null;
     }
 
-    Path manifest = resolveManifestPath(itemFolder);
+    Path manifest = itemFolder.resolve(MANIFEST_FILE_NAME);
     if (manifest == null || !Files.isRegularFile(manifest)) {
       return null;
     }
