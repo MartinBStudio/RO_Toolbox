@@ -1,5 +1,6 @@
 package com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations;
 
+import com.bstudio.ro_toolbox.service.common.ICommonMethods;
 import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
@@ -23,7 +24,7 @@ import java.util.Set;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class BuffsManagerService implements GameResourceService {
+public class BuffsManagerService implements GameResourceService, ICommonMethods {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_BuffAnimations_Resources.git";
     private static final String MANIFEST_FILE_NAME = "manifestBuffAnimations.json";
     private static final String LEGACY_MANIFEST_FILE_NAME = "manifest.json";
@@ -287,57 +288,6 @@ public class BuffsManagerService implements GameResourceService {
     }
 
 
-    public List<String> loadPreviewImages(Path profileDir) {
-        Path previewDir = profileDir == null ? null : profileDir.resolve(".preview");
-        if (previewDir == null || !Files.isDirectory(previewDir)) {
-            return List.of();
-        }
-        try (var stream = Files.walk(previewDir)) {
-            return stream.filter(Files::isRegularFile)
-                    .filter(this::isSupportedPreviewImage)
-                    .sorted(Comparator.comparing(path -> path.getFileName().toString(), String.CASE_INSENSITIVE_ORDER))
-                    .map(this::toDataUrl)
-                    .filter(Objects::nonNull)
-                    .toList();
-        } catch (IOException e) {
-            log.info("Failed to load preview images from " + previewDir.toAbsolutePath() + ": " + e.getMessage());
-            return List.of();
-        }
-    }
-
-    private boolean isSupportedPreviewImage(Path file) {
-        if (file == null || !Files.isRegularFile(file)) {
-            return false;
-        }
-        String name = file.getFileName().toString().toLowerCase();
-        return name.endsWith(".png") || name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".gif") || name.endsWith(".webp");
-    }
-
-    private String toDataUrl(Path file) {
-        try (InputStream in = Files.newInputStream(file)) {
-            byte[] bytes = in.readAllBytes();
-            String mimeType = Files.probeContentType(file);
-            if (mimeType == null) {
-                String name = file.getFileName().toString().toLowerCase();
-                if (name.endsWith(".png")) {
-                    mimeType = "image/png";
-                } else if (name.endsWith(".jpg") || name.endsWith(".jpeg")) {
-                    mimeType = "image/jpeg";
-                } else if (name.endsWith(".gif")) {
-                    mimeType = "image/gif";
-                } else if (name.endsWith(".webp")) {
-                    mimeType = "image/webp";
-                } else {
-                    return null;
-                }
-            }
-            return "data:" + mimeType + ";base64," + Base64.getEncoder().encodeToString(bytes);
-        } catch (IOException e) {
-            log.info("Failed to encode preview image " + file.toAbsolutePath() + ": " + e.getMessage());
-            return null;
-        }
-    }
-
     public List<String> listDownloadedProfiles() {
         List<String> profiles = new ArrayList<>();
         if (RESOURCES_DIR == null || !Files.exists(RESOURCES_DIR) || !Files.isDirectory(RESOURCES_DIR)) {
@@ -387,9 +337,9 @@ public class BuffsManagerService implements GameResourceService {
                     if (manifest == null) {
                         continue;
                     }
-                    AvailablePackage availablePackage = AvailablePackage.builder().id(name).name(name).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(p)).source(p).build();
 
                     if (seen.add(name)) {
+                        AvailablePackage availablePackage = AvailablePackage.builder().id(name).name(name).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(p)).source(p).build();
                         results.add(availablePackage);
                     }
                 }
@@ -431,23 +381,6 @@ public class BuffsManagerService implements GameResourceService {
                 .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
     }
 
-    public static final class ProfileInfo {
-        public final String name;
-        public final String author;
-        public final String description;
-        public final String url;
-        public final String createdAt;
-        public final String version;
-
-        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version) {
-            this.name = name;
-            this.author = author;
-            this.description = description;
-            this.url = url;
-            this.createdAt = createdAt;
-            this.version = version;
-        }
-    }
 
     public AvailablePackage getInstalledProfileInfo() {
         Path itemFolder = getSelectedGameItemFolder();
