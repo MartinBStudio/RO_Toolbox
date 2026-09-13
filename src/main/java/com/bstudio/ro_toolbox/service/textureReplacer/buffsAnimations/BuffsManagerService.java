@@ -83,16 +83,7 @@ public class BuffsManagerService implements GameResourceService, ICommonMethods 
     }
   }
 
-  private void removeInstalledProfileFiles(Path destination) throws IOException {
-    Path manifest = resolveManifestPath(destination, MANIFEST_FILE_NAME);
-    if (manifest != null) {
-      List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
-      if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
-        deleteManagedSubfolders(destination, managedSubfolders);
-      }
-    }
-    deleteManifestFiles(destination, MANIFEST_FILE_NAME);
-  }
+
 
   private void normalizeInstalledManifest(Path destination) throws IOException {
     Path currentManifest = destination.resolve(MANIFEST_FILE_NAME);
@@ -180,7 +171,7 @@ public class BuffsManagerService implements GameResourceService, ICommonMethods 
     }
     AvailablePackage selected = findAvailableProfile(profileId);
 
-    removeInstalledProfileFiles(destination);
+    clearSelectedItemFolder();
     copyDirectoryContents(selected.getSource(), destination);
     normalizeInstalledManifest(destination);
   }

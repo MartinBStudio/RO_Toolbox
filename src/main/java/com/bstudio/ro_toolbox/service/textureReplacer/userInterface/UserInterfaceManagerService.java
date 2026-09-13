@@ -81,41 +81,13 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     }
   }
 
-  private void removeInstalledProfileFiles(Path destination) throws IOException {
-    Path manifest = resolveProfileManifestPath(destination);
-    if (manifest != null) {
-      List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
-      if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
-        deleteManagedSubfolders(destination, managedSubfolders);
-      }
-    }
-    deleteManifestFiles(destination, MANIFEST_FILE_NAME, LEGACY_MANIFEST_FILE_NAME);
-  }
 
-  private void normalizeInstalledManifest(Path destination) throws IOException {
-    Path currentManifest = destination.resolve(MANIFEST_FILE_NAME);
-    Path legacyManifest = destination.resolve(LEGACY_MANIFEST_FILE_NAME);
-    if (Files.exists(legacyManifest) && Files.isRegularFile(legacyManifest)) {
-      if (!Files.exists(currentManifest) || !Files.isRegularFile(currentManifest)) {
-        Files.move(legacyManifest, currentManifest, StandardCopyOption.REPLACE_EXISTING);
-      } else {
-        Files.deleteIfExists(legacyManifest);
-      }
-    }
-  }
 
   private Path resolveManifestPath(Path directory) {
     return directory.resolve(MANIFEST_FILE_NAME);
   }
 
-  private Path resolveProfileManifestPath(Path directory) {
-    if (directory == null) return null;
-    Path custom = directory.resolve(MANIFEST_FILE_NAME);
-    if (Files.exists(custom) && Files.isRegularFile(custom)) {
-      return custom;
-    }
-    return null;
-  }
+
 
   private List<Path> readDefaultFileList(Path fileListPath) throws IOException {
     if (fileListPath == null || !Files.exists(fileListPath) || !Files.isRegularFile(fileListPath)) {
@@ -161,9 +133,9 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     }
     AvailablePackage selected = findAvailableProfile(profileId);
 
-    removeInstalledProfileFiles(destination);
+    clearSelectedItemFolder();
     copyDirectoryContents(selected.getSource(), destination);
-    normalizeInstalledManifest(destination);
+
   }
 
   private AvailablePackage findAvailableProfile(String profileId) {
@@ -205,28 +177,7 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     return availablePackage;
   }
 
-  private void deleteManagedSubfolders(Path baseDir, List<String> managedSubfolders)
-      throws IOException {
-    if (managedSubfolders == null || managedSubfolders.isEmpty()) return;
-    for (String subfolder : managedSubfolders) {
-      if (subfolder == null || subfolder.isBlank()) continue;
-      Path relative = Paths.get(subfolder).normalize();
-      if (relative.isAbsolute() || relative.startsWith("..")) {
-        log.info("Skipping invalid managedSubfolder path: " + subfolder);
-        continue;
-      }
-      Path target = baseDir.resolve(relative).normalize();
-      if (!target.startsWith(baseDir)) {
-        log.info("Skipping out-of-scope managedSubfolder path: " + subfolder);
-        continue;
-      }
-      if (Files.exists(target) && Files.isDirectory(target)) {
-        deleteDirectoryContents(target);
-        Files.deleteIfExists(target);
-        log.info("Deleted managed subfolder: " + target.toAbsolutePath());
-      }
-    }
-  }
+
 
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
     return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);

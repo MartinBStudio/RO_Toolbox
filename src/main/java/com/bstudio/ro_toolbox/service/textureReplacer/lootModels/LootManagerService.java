@@ -100,29 +100,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     deleteManifestFiles(itemFolder, MANIFEST_FILE_NAME);
   }
 
-  private void removeInstalledProfileFiles(Path destination) throws IOException {
-    Path manifest = destination.resolve(MANIFEST_FILE_NAME);
-    if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
-      List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
-      if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
-        deleteManagedSubfolders(destination, managedSubfolders);
-      }
-    }
-    deleteManifestFiles(destination, MANIFEST_FILE_NAME);
-  }
-
-  private void normalizeInstalledManifest(Path destination) throws IOException {
-    Path currentManifest = destination.resolve(MANIFEST_FILE_NAME);
-    Path legacyManifest = destination.resolve(LEGACY_MANIFEST_FILE_NAME);
-    if (Files.exists(legacyManifest) && Files.isRegularFile(legacyManifest)) {
-      if (!Files.exists(currentManifest) || !Files.isRegularFile(currentManifest)) {
-        Files.move(legacyManifest, currentManifest, StandardCopyOption.REPLACE_EXISTING);
-      } else {
-        Files.deleteIfExists(legacyManifest);
-      }
-    }
-  }
-
   public List<String> listDownloadedProfiles() {
     return listDownloadedProfiles(RESOURCES_DIR, MANIFEST_FILE_NAME);
   }
@@ -140,9 +117,9 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     }
     AvailablePackage selected = findAvailableProfile(profileId);
 
-    removeInstalledProfileFiles(destination);
+    clearSelectedItemFolder();
     copyDirectoryContents(selected.getSource(), destination);
-    normalizeInstalledManifest(destination);
+
 
     if (disabledManagedSubfolders != null && !disabledManagedSubfolders.isEmpty()) {
       manageInstalledProfile(profileId, disabledManagedSubfolders);

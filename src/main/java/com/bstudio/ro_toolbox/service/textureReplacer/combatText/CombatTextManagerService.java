@@ -62,28 +62,9 @@ public class CombatTextManagerService implements GameResourceService, ICommonMet
     deleteManifestFiles(itemFolder, MANIFEST_FILE_NAME);
   }
 
-  private void removeInstalledProfileFiles(Path destination) throws IOException {
-    Path manifest = destination.resolve(MANIFEST_FILE_NAME);
-    if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
-      List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
-      if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
-        deleteManagedSubfolders(destination, managedSubfolders);
-      }
-    }
-    deleteManifestFiles(destination, MANIFEST_FILE_NAME);
-  }
 
-  private void normalizeInstalledManifest(Path destination) throws IOException {
-    Path currentManifest = destination.resolve(MANIFEST_FILE_NAME);
-    Path legacyManifest = destination.resolve(LEGACY_MANIFEST_FILE_NAME);
-    if (Files.exists(legacyManifest) && Files.isRegularFile(legacyManifest)) {
-      if (!Files.exists(currentManifest) || !Files.isRegularFile(currentManifest)) {
-        Files.move(legacyManifest, currentManifest, StandardCopyOption.REPLACE_EXISTING);
-      } else {
-        Files.deleteIfExists(legacyManifest);
-      }
-    }
-  }
+
+
 
   private Path resolveManifestPath(Path directory) {
     return directory.resolve(MANIFEST_FILE_NAME);
@@ -105,9 +86,9 @@ public class CombatTextManagerService implements GameResourceService, ICommonMet
     }
     AvailablePackage selected = findAvailableProfile(profileId);
 
-    removeInstalledProfileFiles(destination);
+    clearSelectedItemFolder();
     copyDirectoryContents(selected.getSource(), destination);
-    normalizeInstalledManifest(destination);
+
   }
 
   private AvailablePackage findAvailableProfile(String profileId) {
