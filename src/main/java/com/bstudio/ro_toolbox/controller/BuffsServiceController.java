@@ -4,6 +4,7 @@ import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
@@ -27,14 +28,12 @@ public class BuffsServiceController extends BaseController {
     @GetMapping("/status")
     public PackageServiceStatusResponse status() {
         var installed = buffsManagerService.getInstalledProfileInfo();
-        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(buffsManagerService.getSelectedGameItemFolder())).installedProfile(installed).downloadedProfiles(buffsManagerService.listDownloadedProfiles()).availableProfiles(buffsManagerService.listAvailableProfiles()).build();
+        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(buffsManagerService.getGameDataDir())).installedProfile(installed).downloadedProfiles(buffsManagerService.listDownloadedProfiles()).availableProfiles(buffsManagerService.listAvailableProfiles()).build();
     }
 
     @PostMapping("/download")
     public MessageResponse downloadProfiles() throws IOException {
-        Path dest = buffsManagerService.getResourcesDir();
-        Files.createDirectories(dest);
-        buffsManagerService.downloadAndExtract(null, dest);
+        buffsManagerService.downloadAndExtract();
         return MessageResponse.builder().message("Profiles downloaded.").build();
     }
 
@@ -60,7 +59,7 @@ public class BuffsServiceController extends BaseController {
     }
 
     @GetMapping("/check-update")
-    public BuffsManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
         return buffsManagerService.checkResourcesUpdate();
     }
 
@@ -74,7 +73,7 @@ public class BuffsServiceController extends BaseController {
 
     @PostMapping("/folders/open/item")
     public MessageResponse openItemFolder() throws IOException {
-        Path item = buffsManagerService.getSelectedGameItemFolder();
+        Path item = buffsManagerService.getGameDataDir();
         if (item == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }

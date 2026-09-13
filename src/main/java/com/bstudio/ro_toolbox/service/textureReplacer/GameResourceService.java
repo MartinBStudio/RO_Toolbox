@@ -5,9 +5,9 @@ import java.nio.file.Path;
 
 public interface GameResourceService {
     void clearSelectedItemFolder() throws IOException;
-    void downloadAndExtract(String repoUrl, Path destDir) throws IOException;
+    void downloadAndExtract() throws IOException;
     Path getResourcesDir();
-    Path getSelectedGameItemFolder();
+    Path getGameDataDir();
     void clearResources() throws IOException;
     AvailablePackage getInstalledProfileInfo();
 }

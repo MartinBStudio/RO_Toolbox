@@ -18,7 +18,6 @@ public final class RepositoryZipDownloader {
     }
 
     public static void downloadAndExtract(
-            String repoUrl,
             String defaultRepoUrl,
             Path destinationDir,
             String userAgent,
@@ -28,7 +27,7 @@ public final class RepositoryZipDownloader {
         Objects.requireNonNull(destinationDir, "destinationDir is required.");
         Objects.requireNonNull(userAgent, "userAgent is required.");
 
-        String effectiveRepo = sanitizeRepositoryUrl((repoUrl == null || repoUrl.isBlank()) ? defaultRepoUrl : repoUrl);
+        String effectiveRepo = sanitizeRepositoryUrl(defaultRepoUrl);
         Files.createDirectories(destinationDir);
 
         String[] branches = {"main", "master"};

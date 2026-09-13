@@ -3,7 +3,8 @@ package com.bstudio.ro_toolbox.controller;
 import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
-import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +16,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/loot")
@@ -23,18 +23,16 @@ import java.util.List;
 public class LootServiceController extends BaseController {
 
     private final LootManagerService lootManagerService;
-
+    private final AppConfigService appConfigService;
 
     @GetMapping("/status")
     public PackageServiceStatusResponse status() {
         var installed = lootManagerService.getInstalledProfileInfo();
-        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(lootManagerService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(lootManagerService.getSelectedGameItemFolder())).installedProfile(installed).downloadedProfiles(lootManagerService.listDownloadedProfiles()).availableProfiles(lootManagerService.listAvailableProfiles()).build();
+        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(lootManagerService.getGameDataDir())).installedProfile(installed).downloadedProfiles(lootManagerService.listDownloadedProfiles()).availableProfiles(lootManagerService.listAvailableProfiles()).build();
     }
     @PostMapping("/download")
     public MessageResponse downloadProfiles() throws IOException {
-        Path dest = lootManagerService.getResourcesDir();
-        Files.createDirectories(dest);
-        lootManagerService.downloadAndExtract(null, dest);
+        lootManagerService.downloadAndExtract();
         return MessageResponse.builder().message("Profiles downloaded.").build();
     }
 
@@ -70,7 +68,7 @@ public class LootServiceController extends BaseController {
     }
 
     @GetMapping("/check-update")
-    public LootManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
         return lootManagerService.checkResourcesUpdate();
     }
 
@@ -84,7 +82,7 @@ public class LootServiceController extends BaseController {
 
     @PostMapping("/folders/open/item")
     public MessageResponse openItemFolder() throws IOException {
-        Path item = lootManagerService.getSelectedGameItemFolder();
+        Path item = lootManagerService.getGameDataDir();
         if (item == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }

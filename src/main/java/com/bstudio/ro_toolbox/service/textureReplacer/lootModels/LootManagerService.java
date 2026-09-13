@@ -1,6 +1,7 @@
 package com.bstudio.ro_toolbox.service.textureReplacer.lootModels;
 
 import com.bstudio.ro_toolbox.service.common.ICommonMethods;
+import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
@@ -8,13 +9,12 @@ import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
-import java.util.Base64;
-import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
@@ -24,6 +24,7 @@ import java.util.Set;
 @Service
 @Slf4j
 @RequiredArgsConstructor
+@DependsOn("appConfigService")
 public class LootManagerService implements GameResourceService, ICommonMethods {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
     private static final String MANIFEST_FILE_NAME = "manifestLoot.json";
@@ -38,7 +39,10 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     private static final String USEFUL_STUFF_COLLAPSED_KEY = "usefulStuffCollapsed";
 
     private final AppConfigService appConfigService;
+    private final ResourcesUpdater resourcesUpdater;
     private volatile String currentLootProfile = null;
+
+
 
     public Path getResourcesDir() {
         return RESOURCES_DIR;
@@ -48,7 +52,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         return appConfigService.getSelectedGameBase();
     }
 
-    public Path getSelectedGameItemFolder() {
+    public Path getGameDataDir() {
         Path selectedGameBase = getSelectedGameBase();
         return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
     }
@@ -111,11 +115,10 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         }
     }
 
-    public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
+    public void downloadAndExtract() throws IOException {
         RepositoryZipDownloader.downloadAndExtract(
-                repoUrl,
                 DEFAULT_REPO,
-                destDir,
+                RESOURCES_DIR,
                 "RO_LootManager/1.0",
                 log::info
         );
@@ -204,7 +207,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     }
 
     public void clearSelectedItemFolder() throws IOException {
-        Path itemFolder = getSelectedGameItemFolder();
+        Path itemFolder = getGameDataDir();
         if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
 
         Path manifest = resolveManifestPath(itemFolder);
@@ -251,27 +254,11 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
 
 
     public List<String> listDownloadedProfiles() {
-        List<String> profiles = new ArrayList<>();
-        if (RESOURCES_DIR == null || !Files.exists(RESOURCES_DIR) || !Files.isDirectory(RESOURCES_DIR)) {
-            return profiles;
-        }
-        try (var stream = Files.list(RESOURCES_DIR)) {
-            stream.filter(Files::isDirectory)
-                    .filter(p -> !p.getFileName().toString().startsWith("."))
-                    .forEach(p -> {
-                        Path manifest = resolveManifestPath(p);
-                        if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
-                            profiles.add(p.getFileName().toString());
-                        }
-                    });
-        } catch (IOException ignored) {
-        }
-        profiles.sort(String::compareToIgnoreCase);
-        return profiles;
+        return listDownloadedProfiles(RESOURCES_DIR, MANIFEST_FILE_NAME);
     }
 
     public List<AvailablePackage> listAvailableProfiles() {
-        return listAvailableProfiles(RESOURCES_DIR, getSelectedGameBase(), MANIFEST_FILE_NAME);
+        return listAvailableProfiles(RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
     }
 
     public void installProfile(String profileId) throws IOException {
@@ -279,7 +266,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     }
 
     public void installProfile(String profileId, List<String> disabledManagedSubfolders) throws IOException {
-        Path destination = getSelectedGameItemFolder();
+        Path destination = getGameDataDir();
         if (destination == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
@@ -296,7 +283,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     }
 
     public void manageInstalledProfile(String profileId, List<String> disabledManagedSubfolders) throws IOException {
-        Path destination = getSelectedGameItemFolder();
+        Path destination = getGameDataDir();
         if (destination == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
@@ -377,7 +364,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     }
 
     public AvailablePackage getInstalledProfileInfo() {
-        Path itemFolder = getSelectedGameItemFolder();
+        Path itemFolder = getGameDataDir();
         if (itemFolder == null || !Files.exists(itemFolder)) {
             return null;
         }
@@ -425,67 +412,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
 
 
 
-    private long normalizeVersion(String version) {
-        if (version == null || version.isBlank()) return 0L;
-        String cleaned = version.trim().replaceFirst("(?i)^v", "");
-        String[] parts = cleaned.split("[.-]");
-        long value = 0L;
-        long multiplier = 1_000_000_000L;
-        for (String part : parts) {
-            if (part == null || part.isBlank()) continue;
-            String digits = part.replaceAll("[^0-9]", "");
-            if (digits.isEmpty()) continue;
-            value += Long.parseLong(digits) * multiplier;
-            multiplier /= 1000L;
-        }
-        return value;
+    public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
+        return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);
     }
-
-    public ResourcesUpdateCheckResult checkResourcesUpdate() {
-        Path localManifest = RESOURCES_DIR.resolve("manifest.json");
-        boolean localExists = Files.exists(localManifest) && Files.isRegularFile(localManifest);
-        String localVersion = localExists ? readManifestVersion(localManifest) : "none";
-
-        String[] branches = {"main", "master"};
-        String repoUrl = DEFAULT_REPO;
-        if (repoUrl.endsWith("/")) repoUrl = repoUrl.substring(0, repoUrl.length() - 1);
-        String rawBase = repoUrl
-                .replace("https://github.com/", "https://raw.githubusercontent.com/");
-
-        for (String branch : branches) {
-            String remoteUrl = rawBase + "/" + branch + "/manifest.json";
-            try {
-                InputStream in = RepositoryZipDownloader.openUrlStream(remoteUrl, "RO_LootManager/1.0");
-                if (in == null) continue;
-                String content;
-                try (java.io.InputStreamReader reader = new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)) {
-                    content = new java.io.BufferedReader(reader).lines().collect(java.util.stream.Collectors.joining("\n"));
-                }
-                java.util.regex.Matcher matcher = java.util.regex.Pattern
-                        .compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
-                        .matcher(content);
-                String remoteVersion = matcher.find() ? matcher.group(1).trim() : "0.0.0";
-                boolean updateAvailable = !localExists || normalizeVersion(remoteVersion) > normalizeVersion(localVersion);
-                String message = updateAvailable
-                        ? "New resources available: v" + remoteVersion + (localExists ? " (local: v" + localVersion + ")" : " (not downloaded)")
-                        : "Resources are up to date (v" + localVersion + ").";
-                return new ResourcesUpdateCheckResult(localVersion, remoteVersion, localExists, updateAvailable, true, message);
-            } catch (Exception e) {
-                log.info("Remote manifest check failed for branch " + branch + ": " + e.getMessage());
-            }
-        }
-        return new ResourcesUpdateCheckResult(localVersion, "unknown", localExists, false, false,
-                "Unable to check remote manifest.");
-    }
-
-    public record ResourcesUpdateCheckResult(
-            String localVersion,
-            String remoteVersion,
-            boolean localExists,
-            boolean updateAvailable,
-            boolean success,
-            String message
-    ) {
-    }
-
 }

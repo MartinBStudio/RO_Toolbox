@@ -92,7 +92,33 @@ public interface ICommonMethods {
         });
         return results;
     }
-
+    default List<String> listDownloadedProfiles(Path resourcesDir,String manifestFileName) {
+        List<String> profiles = new ArrayList<>();
+        if (resourcesDir == null || !Files.exists(resourcesDir) || !Files.isDirectory(resourcesDir)) {
+            return profiles;
+        }
+        try (var stream = Files.list(resourcesDir)) {
+            stream.filter(Files::isDirectory)
+                    .forEach(p -> {
+                        String name = p.getFileName().toString();
+                        if (name.startsWith(".")) {
+                            return;
+                        }
+                        if (hasProfileAssets(p, manifestFileName)) {
+                            profiles.add(p.getFileName().toString());
+                        }
+                    });
+        } catch (IOException ignored) {
+        }
+        profiles.sort(String::compareToIgnoreCase);
+        return profiles;
+    }
+    default boolean hasProfileAssets(Path directory,String manifestFileName) {
+        if (directory == null || !Files.isDirectory(directory)) {
+            return false;
+        }
+        return resolveManifestPath(directory, manifestFileName) != null;
+    }
     default String readManifestDescription(Path manifestFile) {
         try {
             String content = Files.readString(manifestFile);

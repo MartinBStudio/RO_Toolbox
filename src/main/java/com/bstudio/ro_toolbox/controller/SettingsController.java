@@ -107,7 +107,7 @@ public class SettingsController {
 
     @PostMapping("/quick-launch")
     public MessageResponse quickLaunch() throws IOException {
-        Path gameBase = lootManagerService.getSelectedGameBase();
+        Path gameBase = appConfigService.getSelectedGameBase();
         if (gameBase == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }

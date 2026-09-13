@@ -4,6 +4,7 @@ import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
@@ -27,15 +28,13 @@ public class CombatTextServiceController extends BaseController {
     @GetMapping("/status")
     public PackageServiceStatusResponse status() {
         var installed = combatTextManagerService.getInstalledProfileInfo();
-        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getSelectedGameItemFolder())).installedProfile(installed).downloadedProfiles(combatTextManagerService.listDownloadedProfiles()).availableProfiles(combatTextManagerService.listAvailableProfiles()).build();
+        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getGameDataDir())).installedProfile(installed).downloadedProfiles(combatTextManagerService.listDownloadedProfiles()).availableProfiles(combatTextManagerService.listAvailableProfiles()).build();
     }
 
 
     @PostMapping("/download")
     public MessageResponse downloadProfiles() throws IOException {
-        Path dest = combatTextManagerService.getResourcesDir();
-        Files.createDirectories(dest);
-        combatTextManagerService.downloadAndExtract(null, dest);
+        combatTextManagerService.downloadAndExtract();
         return MessageResponse.builder().message("Profiles downloaded.").build();
     }
 
@@ -62,7 +61,7 @@ public class CombatTextServiceController extends BaseController {
     }
 
     @GetMapping("/check-update")
-    public CombatTextManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
         return combatTextManagerService.checkResourcesUpdate();
     }
 
@@ -76,7 +75,7 @@ public class CombatTextServiceController extends BaseController {
 
     @PostMapping("/folders/open/item")
     public MessageResponse openItemFolder() throws IOException {
-        Path item = combatTextManagerService.getSelectedGameItemFolder();
+        Path item = combatTextManagerService.getGameDataDir();
         if (item == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
