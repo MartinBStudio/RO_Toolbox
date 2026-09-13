@@ -2,6 +2,8 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -22,33 +24,12 @@ public class LootServiceController extends BaseController {
 
     private final LootManagerService lootManagerService;
 
-    @GetMapping("/status")
-    public LootStatusResponse status() {
-        LootManagerService.ProfileInfo installed = lootManagerService.getInstalledProfileInfo();
-        return new LootStatusResponse(
-                absoluteOrNull(lootManagerService.getSelectedGameBase()),
-                absoluteOrNull(lootManagerService.getSelectedGameItemFolder()),
-                installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version,
-                        installed.managedSubfolders, installed.disabledManagedSubfolders
-                ),
-                lootManagerService.listDownloadedProfiles(),
-                lootManagerService.listAvailableProfiles().stream()
-                        .map(profile -> new AvailableProfileResponse(
-                                profile.id(),
-                                profile.name(),
-                                profile.author(),
-                                profile.description(),
-                                profile.url(),
-                                profile.createdAt(),
-                                profile.version(),
-                                profile.managedSubfolders(),
-                                profile.previewImages()
-                        ))
-                        .toList()
-        );
-    }
 
+    @GetMapping("/status")
+    public PackageServiceStatusResponse status() {
+        var installed = lootManagerService.getInstalledProfileInfo();
+        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(lootManagerService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(lootManagerService.getSelectedGameItemFolder())).installedProfile(installed).downloadedProfiles(lootManagerService.listDownloadedProfiles()).availableProfiles(lootManagerService.listAvailableProfiles()).build();
+    }
     @PostMapping("/download")
     public MessageResponse downloadProfiles() throws IOException {
         Path dest = lootManagerService.getResourcesDir();
@@ -120,20 +101,12 @@ public class LootServiceController extends BaseController {
         );
     }
 
-
-
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version, List<String> managedSubfolders, List<String> disabledManagedSubfolders) {
-    }
-
-    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> managedSubfolders, List<String> previewImages) {
-    }
-
     public record LootStatusResponse(
             String selectedGameBase,
             String selectedGameItemFolder,
-            ProfileInfoResponse installedProfile,
+            AvailablePackage installedProfile,
             List<String> downloadedProfiles,
-            List<AvailableProfileResponse> availableProfiles
+            List<AvailablePackage> availableProfiles
     ) {
     }
 }

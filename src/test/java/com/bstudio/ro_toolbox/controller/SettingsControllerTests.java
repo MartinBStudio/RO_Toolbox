@@ -1,6 +1,6 @@
 package com.bstudio.ro_toolbox.controller;
 
-import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.BuffIconsManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
@@ -65,7 +65,7 @@ class SettingsControllerTests {
                 mock(LootManagerService.class),
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
-                mock(BuffIconsManagerService.class),
+                mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
                 mock(AppConfigService.class),
                 mock(LoginManagerService.class)
@@ -111,7 +111,7 @@ class SettingsControllerTests {
         LootManagerService loot = mock(LootManagerService.class);
         CombatTextManagerService combat = mock(CombatTextManagerService.class);
         UserInterfaceManagerService ui = mock(UserInterfaceManagerService.class);
-        BuffIconsManagerService buff = mock(BuffIconsManagerService.class);
+        IconsManagerService buff = mock(IconsManagerService.class);
         BuffsManagerService buffs = mock(BuffsManagerService.class);
         AppConfigService appConfig = mock(AppConfigService.class);
         LoginManagerService login = mock(LoginManagerService.class);
@@ -134,7 +134,7 @@ class SettingsControllerTests {
                 mock(LootManagerService.class),
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
-                mock(BuffIconsManagerService.class),
+                mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
                 mock(AppConfigService.class),
                 mock(LoginManagerService.class)
@@ -162,7 +162,7 @@ class SettingsControllerTests {
                 loot,
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
-                mock(BuffIconsManagerService.class),
+                mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
                 appConfig,
                 mock(LoginManagerService.class)
@@ -184,7 +184,7 @@ class SettingsControllerTests {
                 loot,
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
-                mock(BuffIconsManagerService.class),
+                mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
                 appConfig,
                 mock(LoginManagerService.class)
@@ -202,7 +202,7 @@ class SettingsControllerTests {
                 loot,
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
-                mock(BuffIconsManagerService.class),
+                mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
                 mock(AppConfigService.class),
                 mock(LoginManagerService.class)
@@ -223,7 +223,7 @@ class SettingsControllerTests {
                 loot,
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
-                mock(BuffIconsManagerService.class),
+                mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
                 mock(AppConfigService.class),
                 mock(LoginManagerService.class)
@@ -241,7 +241,7 @@ class SettingsControllerTests {
                 loot,
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
-                mock(BuffIconsManagerService.class),
+                mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
                 mock(AppConfigService.class),
                 mock(LoginManagerService.class)
@@ -262,7 +262,7 @@ class SettingsControllerTests {
                 loot,
                 mock(CombatTextManagerService.class),
                 mock(UserInterfaceManagerService.class),
-                mock(BuffIconsManagerService.class),
+                mock(IconsManagerService.class),
                 mock(BuffsManagerService.class),
                 mock(AppConfigService.class),
                 mock(LoginManagerService.class)

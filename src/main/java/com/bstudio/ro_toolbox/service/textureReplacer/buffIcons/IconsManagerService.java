@@ -1,15 +1,17 @@
 package com.bstudio.ro_toolbox.service.textureReplacer.buffIcons;
 
-import com.bstudio.ro_toolbox.service.common.GameResourceService;
+import com.bstudio.ro_toolbox.config.GeneralConstants;
+import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
+import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -21,45 +23,33 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 
 @Service
 @Slf4j
-public class BuffIconsManagerService implements GameResourceService {
-    private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_BuffIcons_resources";
-    private static final String RESOURCE_MANIFEST_FILE_NAME = "manifest.json";
-    private static final String PROFILE_MANIFEST_FILE_NAME = "manifestBuffIcons.json";
-    private static final Path APP_DATA_ROOT = AppDataPaths.resolveRoToolboxAppDataRoot();
-    private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("buffIcons");
+@RequiredArgsConstructor
+public class IconsManagerService implements GameResourceService {
+    private static final String ICONS_REMOTE_REPOSITORY = "https://github.com/MartinBStudio/RO_BuffIcons_resources";
+    private static final String PACKAGE_MANIFEST_FILE = "manifestBuffIcons.json";
+
+    private static final Path RESOURCES_DIR = AppDataPaths.resolveRoToolboxAppDataRoot().resolve("resources").resolve("buffIcons");
     private static final Path GAME_SUFFIX = Paths.get("");
 
-    private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
-
     private final AppConfigService appConfigService;
-
-    public BuffIconsManagerService(AppConfigService appConfigService) {
-        this.appConfigService = appConfigService;
-        AppDataPaths.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
-    }
 
     public Path getResourcesDir() {
         return RESOURCES_DIR;
     }
 
-    public Path getSelectedGameBase() {
-        return appConfigService.getSelectedGameBase();
-    }
-
     public Path getSelectedGameItemFolder() {
-        Path selectedGameBase = getSelectedGameBase();
+        Path selectedGameBase = appConfigService.getSelectedGameBase();
         return selectedGameBase == null ? null : selectedGameBase.resolve(GAME_SUFFIX);
     }
 
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
         RepositoryZipDownloader.downloadAndExtract(
                 repoUrl,
-                DEFAULT_REPO,
+                ICONS_REMOTE_REPOSITORY,
                 destDir,
                 "RO_BuffIconsManager/1.0",
                 log::info
@@ -154,7 +144,7 @@ public class BuffIconsManagerService implements GameResourceService {
     }
 
     public void clearSelectedItemFolder() throws IOException {
-        Path gameBase = getSelectedGameBase();
+        Path gameBase = appConfigService.getSelectedGameBase();
         if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) {
             return;
         }
@@ -167,27 +157,27 @@ public class BuffIconsManagerService implements GameResourceService {
         if (destination == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
-        AvailableProfile selected = findAvailableProfile(profileId);
+        AvailablePackage selected = findAvailableProfile(profileId);
 
         deleteInstalledFiles(destination);
-        copyDirectoryContents(selected.source(), destination);
+        copyDirectoryContents(selected.getSource(), destination);
     }
 
     private void deleteInstalledFiles(Path baseDir) throws IOException {
         if (baseDir == null) {
             return;
         }
-        Files.deleteIfExists(baseDir.resolve(PROFILE_MANIFEST_FILE_NAME));
+        Files.deleteIfExists(baseDir.resolve(PACKAGE_MANIFEST_FILE));
         Files.deleteIfExists(baseDir.resolve(Paths.get("3ddata", "control", "Res", "stateicon.dds")));
     }
 
-    private AvailableProfile findAvailableProfile(String profileId) {
+    private AvailablePackage findAvailableProfile(String profileId) {
         String normalizedProfileId = profileId == null ? "" : profileId.trim();
         if (normalizedProfileId.isEmpty()) {
             throw new IllegalArgumentException("profileId is required.");
         }
         return listAvailableProfiles().stream()
-                .filter(profile -> profile.id().equals(normalizedProfileId))
+                .filter(profile -> profile.getId().equals(normalizedProfileId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
     }
@@ -279,7 +269,7 @@ public class BuffIconsManagerService implements GameResourceService {
             stream.filter(Files::isDirectory)
                     .filter(p -> !p.getFileName().toString().startsWith("."))
                     .forEach(p -> {
-                        Path manifest = p.resolve(PROFILE_MANIFEST_FILE_NAME);
+                        Path manifest = p.resolve(PACKAGE_MANIFEST_FILE);
                         if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
                             profiles.add(p.getFileName().toString());
                         }
@@ -290,12 +280,12 @@ public class BuffIconsManagerService implements GameResourceService {
         return profiles;
     }
 
-    public List<AvailableProfile> listAvailableProfiles() {
-        List<AvailableProfile> results = new ArrayList<>();
+    public List<AvailablePackage> listAvailableProfiles() {
+        List<AvailablePackage> results = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         List<Path> roots = new ArrayList<>();
         roots.add(RESOURCES_DIR);
-        Path selectedGameBase = getSelectedGameBase();
+        Path selectedGameBase = appConfigService.getSelectedGameBase();
         if (selectedGameBase != null) {
             roots.add(selectedGameBase.resolveSibling(RESOURCES_DIR.getFileName()));
         }
@@ -313,23 +303,13 @@ public class BuffIconsManagerService implements GameResourceService {
                     if (name.startsWith(".")) {
                         continue;
                     }
-                    Path manifest = p.resolve(PROFILE_MANIFEST_FILE_NAME);
+                    Path manifest = p.resolve(PACKAGE_MANIFEST_FILE);
                     if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) {
                         continue;
                     }
                     if (seen.add(name)) {
-                        results.add(new AvailableProfile(
-                                name,
-                                readManifestName(manifest),
-                                readManifestAuthor(manifest),
-                                readManifestDescription(manifest),
-                                readManifestUrl(manifest),
-                                readManifestCreatedAt(manifest),
-                                readManifestVersion(manifest),
-                                normalizeVersion(readManifestVersion(manifest)),
-                                p,
-                                loadPreviewImages(p)
-                        ));
+                        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
+                        results.add(availablePackage);
                     }
                 }
             } catch (IOException ignored) {
@@ -337,52 +317,28 @@ public class BuffIconsManagerService implements GameResourceService {
         }
 
         results.sort((a, b) -> {
-            int versionDiff = Long.compare(b.normalizedVersion(), a.normalizedVersion());
+            int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
             if (versionDiff != 0) {
                 return versionDiff;
             }
-            return a.id().compareToIgnoreCase(b.id());
+            return a.getId().compareToIgnoreCase(b.getId());
         });
         return results;
     }
 
-    public static final class ProfileInfo {
-        public final String name;
-        public final String author;
-        public final String description;
-        public final String url;
-        public final String createdAt;
-        public final String version;
-
-        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version) {
-            this.name = name;
-            this.author = author;
-            this.description = description;
-            this.url = url;
-            this.createdAt = createdAt;
-            this.version = version;
-        }
-    }
-
-    public ProfileInfo getInstalledProfileInfo() {
+    public AvailablePackage getInstalledProfileInfo() {
         Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder)) {
             return null;
         }
 
-        Path manifest = itemFolder.resolve(PROFILE_MANIFEST_FILE_NAME);
-        if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) {
+        Path manifest = itemFolder.resolve(PACKAGE_MANIFEST_FILE);
+        if (manifest == null || !Files.isRegularFile(manifest)) {
             return null;
         }
+        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
 
-        return new ProfileInfo(
-                readManifestName(manifest),
-                readManifestAuthor(manifest),
-                readManifestDescription(manifest),
-                readManifestUrl(manifest),
-                readManifestCreatedAt(manifest),
-                readManifestVersion(manifest)
-        );
+        return availablePackage;
     }
 
     private String readManifestField(Path manifestFile, String... keys) {
@@ -453,19 +409,19 @@ public class BuffIconsManagerService implements GameResourceService {
     }
 
     public ResourcesUpdateCheckResult checkResourcesUpdate() {
-        Path localManifest = RESOURCES_DIR.resolve(RESOURCE_MANIFEST_FILE_NAME);
+        Path localManifest = RESOURCES_DIR.resolve(GeneralConstants.RESOURCE_MANIFEST_FILE_NAME);
         boolean localExists = Files.exists(localManifest) && Files.isRegularFile(localManifest);
         String localVersion = localExists ? readManifestVersion(localManifest) : "none";
 
         String[] branches = {"main", "master"};
-        String repoUrl = DEFAULT_REPO;
+        String repoUrl = ICONS_REMOTE_REPOSITORY;
         if (repoUrl.endsWith("/")) {
             repoUrl = repoUrl.substring(0, repoUrl.length() - 1);
         }
         String rawBase = repoUrl.replace("https://github.com/", "https://raw.githubusercontent.com/");
 
         for (String branch : branches) {
-            String remoteUrl = rawBase + "/" + branch + "/manifest.json?cb=" + System.currentTimeMillis();
+            String remoteUrl = rawBase + "/" + branch + "/" + GeneralConstants.RESOURCE_MANIFEST_FILE_NAME + "?cb=" + System.currentTimeMillis();
             try {
                 InputStream in = RepositoryZipDownloader.openUrlStream(remoteUrl, "RO_BuffIconsManager/1.0");
                 if (in == null) {

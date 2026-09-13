@@ -1,9 +1,11 @@
 package com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations;
 
-import com.bstudio.ro_toolbox.service.common.GameResourceService;
+import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
+import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -20,23 +22,18 @@ import java.util.Set;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class BuffsManagerService implements GameResourceService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_BuffAnimations_Resources.git";
     private static final String MANIFEST_FILE_NAME = "manifestBuffAnimations.json";
     private static final String LEGACY_MANIFEST_FILE_NAME = "manifest.json";
     private static final String LEGACY_BUFFS_MANIFEST_FILE_NAME = "manifestBuffs.json";
-    private static final Path APP_DATA_ROOT = AppDataPaths.resolveRoToolboxAppDataRoot();
-    private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("buffs");
+    private static final Path RESOURCES_DIR = AppDataPaths.resolveRoToolboxAppDataRoot().resolve("resources").resolve("buffs");
     private static final Path GAME_SUFFIX = Paths.get("");
-    private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
 
     private final AppConfigService appConfigService;
     private volatile String currentBuffsProfile = null;
 
-    public BuffsManagerService(AppConfigService appConfigService) {
-        this.appConfigService = appConfigService;
-        AppDataPaths.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
-    }
 
     public Path getResourcesDir() {
         return RESOURCES_DIR;
@@ -51,9 +48,6 @@ public class BuffsManagerService implements GameResourceService {
         return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
     }
 
-    public String getCurrentBuffsProfile() {
-        return currentBuffsProfile;
-    }
 
     public void setCurrentBuffsProfile(String profile) {
         currentBuffsProfile = (profile == null || profile.isBlank()) ? null : profile;
@@ -69,7 +63,7 @@ public class BuffsManagerService implements GameResourceService {
         );
     }
 
-    public void copyDirectoryContents(Path src, Path dst) throws IOException {
+    private void copyDirectoryContents(Path src, Path dst) throws IOException {
         if (!Files.exists(src) || !Files.isDirectory(src)) {
             return;
         }
@@ -292,32 +286,6 @@ public class BuffsManagerService implements GameResourceService {
         return target;
     }
 
-    public record AvailableProfile(
-            String id,
-            String name,
-            String author,
-            String description,
-            String url,
-            String createdAt,
-            String version,
-            long normalizedVersion,
-            Path source,
-            List<String> previewImages
-    ) {
-        public AvailableProfile(
-                String id,
-                String name,
-                String author,
-                String description,
-                String url,
-                String createdAt,
-                String version,
-                long normalizedVersion,
-                Path source
-        ) {
-            this(id, name, author, description, url, createdAt, version, normalizedVersion, source, List.of());
-        }
-    }
 
     public List<String> loadPreviewImages(Path profileDir) {
         Path previewDir = profileDir == null ? null : profileDir.resolve(".preview");
@@ -392,8 +360,8 @@ public class BuffsManagerService implements GameResourceService {
         return profiles;
     }
 
-    public List<AvailableProfile> listAvailableProfiles() {
-        List<AvailableProfile> results = new ArrayList<>();
+    public List<AvailablePackage> listAvailableProfiles() {
+        List<AvailablePackage> results = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         List<Path> roots = new ArrayList<>();
         roots.add(RESOURCES_DIR);
@@ -419,19 +387,10 @@ public class BuffsManagerService implements GameResourceService {
                     if (manifest == null) {
                         continue;
                     }
+                    AvailablePackage availablePackage = AvailablePackage.builder().id(name).name(name).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(p)).source(p).build();
+
                     if (seen.add(name)) {
-                        results.add(new AvailableProfile(
-                                name,
-                                readManifestName(manifest),
-                                readManifestAuthor(manifest),
-                                readManifestDescription(manifest),
-                                readManifestUrl(manifest),
-                                readManifestCreatedAt(manifest),
-                                readManifestVersion(manifest),
-                                normalizeVersion(readManifestVersion(manifest)),
-                                p,
-                                loadPreviewImages(p)
-                        ));
+                        results.add(availablePackage);
                     }
                 }
             } catch (IOException ignored) {
@@ -439,11 +398,11 @@ public class BuffsManagerService implements GameResourceService {
         }
 
         results.sort((a, b) -> {
-            int versionDiff = Long.compare(b.normalizedVersion(), a.normalizedVersion());
+            int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
             if (versionDiff != 0) {
                 return versionDiff;
             }
-            return a.id().compareToIgnoreCase(b.id());
+            return a.getId().compareToIgnoreCase(b.getId());
         });
         return results;
     }
@@ -453,21 +412,21 @@ public class BuffsManagerService implements GameResourceService {
         if (destination == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
-        AvailableProfile selected = findAvailableProfile(profileId);
+        AvailablePackage selected = findAvailableProfile(profileId);
 
         removeInstalledProfileFiles(destination);
-        copyDirectoryContents(selected.source(), destination);
+        copyDirectoryContents(selected.getSource(), destination);
         normalizeInstalledManifest(destination);
-        setCurrentBuffsProfile(selected.id());
+        setCurrentBuffsProfile(selected.getId());
     }
 
-    private AvailableProfile findAvailableProfile(String profileId) {
+    private AvailablePackage findAvailableProfile(String profileId) {
         String normalizedProfileId = profileId == null ? "" : profileId.trim();
         if (normalizedProfileId.isEmpty()) {
             throw new IllegalArgumentException("profileId is required.");
         }
         return listAvailableProfiles().stream()
-                .filter(profile -> profile.id().equals(normalizedProfileId))
+                .filter(profile -> profile.getId().equals(normalizedProfileId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
     }
@@ -490,7 +449,7 @@ public class BuffsManagerService implements GameResourceService {
         }
     }
 
-    public ProfileInfo getInstalledProfileInfo() {
+    public AvailablePackage getInstalledProfileInfo() {
         Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder)) {
             return null;
@@ -500,15 +459,9 @@ public class BuffsManagerService implements GameResourceService {
         if (manifest == null || !Files.isRegularFile(manifest)) {
             return null;
         }
+        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
 
-        return new ProfileInfo(
-                readManifestName(manifest),
-                readManifestAuthor(manifest),
-                readManifestDescription(manifest),
-                readManifestUrl(manifest),
-                readManifestCreatedAt(manifest),
-                readManifestVersion(manifest)
-        );
+        return availablePackage;
     }
 
     private String readManifestName(Path manifestFile) {
@@ -735,5 +688,6 @@ public class BuffsManagerService implements GameResourceService {
             boolean updateAvailable,
             boolean success,
             String message
-    ) {}
+    ) {
+    }
 }

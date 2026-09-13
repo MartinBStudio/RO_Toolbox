@@ -2,6 +2,9 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -18,30 +21,13 @@ import java.util.List;
 public class BuffsServiceController extends BaseController {
 
     private final BuffsManagerService buffsManagerService;
+    private final AppConfigService appConfigService;
+
 
     @GetMapping("/status")
-    public BuffsStatusResponse status() {
-        BuffsManagerService.ProfileInfo installed = buffsManagerService.getInstalledProfileInfo();
-        return new BuffsStatusResponse(
-                absoluteOrNull(buffsManagerService.getSelectedGameBase()),
-                absoluteOrNull(buffsManagerService.getSelectedGameItemFolder()),
-                installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
-                ),
-                buffsManagerService.listDownloadedProfiles(),
-                buffsManagerService.listAvailableProfiles().stream()
-                        .map(profile -> new AvailableProfileResponse(
-                                profile.id(),
-                                profile.name(),
-                                profile.author(),
-                                profile.description(),
-                                profile.url(),
-                                profile.createdAt(),
-                                profile.version(),
-                                profile.previewImages()
-                        ))
-                        .toList()
-        );
+    public PackageServiceStatusResponse status() {
+        var installed = buffsManagerService.getInstalledProfileInfo();
+        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(buffsManagerService.getSelectedGameItemFolder())).installedProfile(installed).downloadedProfiles(buffsManagerService.listDownloadedProfiles()).availableProfiles(buffsManagerService.listAvailableProfiles()).build();
     }
 
     @PostMapping("/download")
@@ -98,20 +84,12 @@ public class BuffsServiceController extends BaseController {
     }
 
 
-
-
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
-    }
-
-    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> previewImages) {
-    }
-
     public record BuffsStatusResponse(
             String selectedGameBase,
             String selectedGameItemFolder,
-            ProfileInfoResponse installedProfile,
+            AvailablePackage installedProfile,
             List<String> downloadedProfiles,
-            List<AvailableProfileResponse> availableProfiles
+            List<AvailablePackage> availableProfiles
     ) {
     }
 }

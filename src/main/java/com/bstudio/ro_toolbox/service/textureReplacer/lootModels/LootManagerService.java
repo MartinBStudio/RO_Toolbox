@@ -1,9 +1,11 @@
 package com.bstudio.ro_toolbox.service.textureReplacer.lootModels;
 
-import com.bstudio.ro_toolbox.service.common.GameResourceService;
+import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
+import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -20,6 +22,7 @@ import java.util.Set;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class LootManagerService implements GameResourceService {
     private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_LootFilter_resources";
     private static final String MANIFEST_FILE_NAME = "manifestLoot.json";
@@ -35,11 +38,6 @@ public class LootManagerService implements GameResourceService {
 
     private final AppConfigService appConfigService;
     private volatile String currentLootProfile = null;
-
-    public LootManagerService(AppConfigService appConfigService) {
-        this.appConfigService = appConfigService;
-        AppDataPaths.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
-    }
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
 
@@ -337,8 +335,8 @@ public class LootManagerService implements GameResourceService {
         return profiles;
     }
 
-    public List<AvailableProfile> listAvailableProfiles() {
-        List<AvailableProfile> results = new ArrayList<>();
+    public List<AvailablePackage> listAvailableProfiles() {
+        List<AvailablePackage> results = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         List<Path> roots = new ArrayList<>();
         roots.add(RESOURCES_DIR);
@@ -357,19 +355,9 @@ public class LootManagerService implements GameResourceService {
                     Path manifest = resolveManifestPath(p);
                     if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
                     if (seen.add(name)) {
-                        results.add(new AvailableProfile(
-                                name,
-                                readManifestName(manifest),
-                                readManifestAuthor(manifest),
-                                readManifestDescription(manifest),
-                                readManifestUrl(manifest),
-                                readManifestCreatedAt(manifest),
-                                readManifestVersion(manifest),
-                                normalizeVersion(readManifestVersion(manifest)),
-                                p,
-                                readManifestManagedSubfolders(manifest),
-                                loadPreviewImages(p)
-                        ));
+                        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
+
+                        results.add(availablePackage);
                     }
                 }
             } catch (IOException ignored) {
@@ -377,9 +365,9 @@ public class LootManagerService implements GameResourceService {
         }
 
         results.sort((a, b) -> {
-            int versionDiff = Long.compare(b.normalizedVersion(), a.normalizedVersion());
+            int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
             if (versionDiff != 0) return versionDiff;
-            return a.id().compareToIgnoreCase(b.id());
+            return a.getId().compareToIgnoreCase(b.getId());
         });
         return results;
     }
@@ -393,12 +381,12 @@ public class LootManagerService implements GameResourceService {
         if (destination == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
-        AvailableProfile selected = findAvailableProfile(profileId);
+        AvailablePackage selected = findAvailableProfile(profileId);
 
         removeInstalledProfileFiles(destination);
-        copyDirectoryContents(selected.source(), destination);
+        copyDirectoryContents(selected.getSource(), destination);
         normalizeInstalledManifest(destination);
-        setCurrentLootProfile(selected.id());
+        setCurrentLootProfile(selected.getId());
 
         if (disabledManagedSubfolders != null && !disabledManagedSubfolders.isEmpty()) {
             manageInstalledProfile(profileId, disabledManagedSubfolders);
@@ -475,13 +463,13 @@ public class LootManagerService implements GameResourceService {
         Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
     }
 
-    private AvailableProfile findAvailableProfile(String profileId) {
+    private AvailablePackage findAvailableProfile(String profileId) {
         String normalizedProfileId = profileId == null ? "" : profileId.trim();
         if (normalizedProfileId.isEmpty()) {
             throw new IllegalArgumentException("profileId is required.");
         }
         return listAvailableProfiles().stream()
-                .filter(profile -> profile.id().equals(normalizedProfileId))
+                .filter(profile -> profile.getId().equals(normalizedProfileId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
     }
@@ -512,28 +500,19 @@ public class LootManagerService implements GameResourceService {
         }
     }
 
-    public ProfileInfo getInstalledProfileInfo() {
+    public AvailablePackage getInstalledProfileInfo() {
         Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder)) {
             return null;
         }
 
         Path manifest = resolveManifestPath(itemFolder);
-        if (!Files.exists(manifest)) {
+        if (manifest == null || !Files.isRegularFile(manifest)) {
             return null;
         }
+        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
 
-        List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
-        return new ProfileInfo(
-            readManifestName(manifest),
-            readManifestAuthor(manifest),
-            readManifestDescription(manifest),
-            readManifestUrl(manifest),
-            readManifestCreatedAt(manifest),
-            readManifestVersion(manifest),
-            managedSubfolders,
-            readManifestDisabledManagedSubfolders(itemFolder, managedSubfolders)
-        );
+        return availablePackage;
     }
 
     private String readManifestName(Path manifestFile) {

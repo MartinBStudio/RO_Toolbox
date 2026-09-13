@@ -2,6 +2,9 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -18,31 +21,15 @@ import java.util.List;
 public class CombatTextServiceController extends BaseController {
 
     private final CombatTextManagerService combatTextManagerService;
+    private final AppConfigService appConfigService;
+
 
     @GetMapping("/status")
-    public CombatTextStatusResponse status() {
-        CombatTextManagerService.ProfileInfo installed = combatTextManagerService.getInstalledProfileInfo();
-        return new CombatTextStatusResponse(
-                absoluteOrNull(combatTextManagerService.getSelectedGameBase()),
-                absoluteOrNull(combatTextManagerService.getSelectedGameItemFolder()),
-                installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
-                ),
-                combatTextManagerService.listDownloadedProfiles(),
-                combatTextManagerService.listAvailableProfiles().stream()
-                        .map(profile -> new AvailableProfileResponse(
-                                profile.id(),
-                                profile.name(),
-                                profile.author(),
-                                profile.description(),
-                                profile.url(),
-                                profile.createdAt(),
-                                profile.version(),
-                                profile.previewImages()
-                        ))
-                        .toList()
-        );
+    public PackageServiceStatusResponse status() {
+        var installed = combatTextManagerService.getInstalledProfileInfo();
+        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getSelectedGameItemFolder())).installedProfile(installed).downloadedProfiles(combatTextManagerService.listDownloadedProfiles()).availableProfiles(combatTextManagerService.listAvailableProfiles()).build();
     }
+
 
     @PostMapping("/download")
     public MessageResponse downloadProfiles() throws IOException {
@@ -102,8 +89,7 @@ public class CombatTextServiceController extends BaseController {
 
 
 
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
-    }
+
 
     public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> previewImages) {
     }
@@ -111,9 +97,9 @@ public class CombatTextServiceController extends BaseController {
     public record CombatTextStatusResponse(
             String selectedGameBase,
             String selectedGameItemFolder,
-            ProfileInfoResponse installedProfile,
+            AvailablePackage installedProfile,
             List<String> downloadedProfiles,
-            List<AvailableProfileResponse> availableProfiles
+            List<AvailablePackage> availableProfiles
     ) {
     }
 }

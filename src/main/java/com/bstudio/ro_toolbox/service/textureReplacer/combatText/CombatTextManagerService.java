@@ -1,6 +1,7 @@
 package com.bstudio.ro_toolbox.service.textureReplacer.combatText;
 
-import com.bstudio.ro_toolbox.service.common.GameResourceService;
+import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
+import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
@@ -15,7 +16,6 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
 
 @Service
@@ -38,16 +38,22 @@ public class CombatTextManagerService implements GameResourceService {
         AppDataPaths.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
     }
 
-    public Path getResourcesDir() { return RESOURCES_DIR; }
+    public Path getResourcesDir() {
+        return RESOURCES_DIR;
+    }
 
-    public Path getSelectedGameBase() { return appConfigService.getSelectedGameBase(); }
+    public Path getSelectedGameBase() {
+        return appConfigService.getSelectedGameBase();
+    }
 
     public Path getSelectedGameItemFolder() {
         Path selectedGameBase = getSelectedGameBase();
         return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
     }
 
-    public String getCurrentCombatTextProfile() { return currentCombatTextProfile; }
+    public String getCurrentCombatTextProfile() {
+        return currentCombatTextProfile;
+    }
 
     public void setCurrentCombatTextProfile(String profile) {
         currentCombatTextProfile = (profile == null || profile.isBlank()) ? null : profile;
@@ -283,8 +289,8 @@ public class CombatTextManagerService implements GameResourceService {
         return profiles;
     }
 
-    public List<AvailableProfile> listAvailableProfiles() {
-        List<AvailableProfile> results = new ArrayList<>();
+    public List<AvailablePackage> listAvailableProfiles() {
+        List<AvailablePackage> results = new ArrayList<>();
         Set<String> seen = new LinkedHashSet<>();
         List<Path> roots = new ArrayList<>();
         roots.add(RESOURCES_DIR);
@@ -303,18 +309,8 @@ public class CombatTextManagerService implements GameResourceService {
                     Path manifest = resolveManifestPath(p);
                     if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
                     if (seen.add(name)) {
-                        results.add(new AvailableProfile(
-                                name,
-                                readManifestName(manifest),
-                                readManifestAuthor(manifest),
-                                readManifestDescription(manifest),
-                                readManifestUrl(manifest),
-                                readManifestCreatedAt(manifest),
-                                readManifestVersion(manifest),
-                                normalizeVersion(readManifestVersion(manifest)),
-                                p,
-                                loadPreviewImages(p)
-                        ));
+                        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
+                        results.add(availablePackage);
                     }
                 }
             } catch (IOException ignored) {
@@ -322,9 +318,9 @@ public class CombatTextManagerService implements GameResourceService {
         }
 
         results.sort((a, b) -> {
-            int versionDiff = Long.compare(b.normalizedVersion(), a.normalizedVersion());
+            int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
             if (versionDiff != 0) return versionDiff;
-            return a.id().compareToIgnoreCase(b.id());
+            return a.getId().compareToIgnoreCase(b.getId());
         });
         return results;
     }
@@ -334,62 +330,40 @@ public class CombatTextManagerService implements GameResourceService {
         if (destination == null) {
             throw new IllegalStateException("No game installation folder is selected.");
         }
-        AvailableProfile selected = findAvailableProfile(profileId);
+        AvailablePackage selected = findAvailableProfile(profileId);
 
         removeInstalledProfileFiles(destination);
-        copyDirectoryContents(selected.source(), destination);
+        copyDirectoryContents(selected.getSource(), destination);
         normalizeInstalledManifest(destination);
-        setCurrentCombatTextProfile(selected.id());
+        setCurrentCombatTextProfile(selected.getId());
     }
 
-    private AvailableProfile findAvailableProfile(String profileId) {
+    private AvailablePackage findAvailableProfile(String profileId) {
         String normalizedProfileId = profileId == null ? "" : profileId.trim();
         if (normalizedProfileId.isEmpty()) {
             throw new IllegalArgumentException("profileId is required.");
         }
         return listAvailableProfiles().stream()
-                .filter(profile -> profile.id().equals(normalizedProfileId))
+                .filter(profile -> profile.getId().equals(normalizedProfileId))
                 .findFirst()
                 .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
     }
 
-    public static final class ProfileInfo {
-        public final String name;
-        public final String author;
-        public final String description;
-        public final String url;
-        public final String createdAt;
-        public final String version;
 
-        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version) {
-            this.name = name;
-            this.author = author;
-            this.description = description;
-            this.url = url;
-            this.createdAt = createdAt;
-            this.version = version;
-        }
-    }
 
-    public ProfileInfo getInstalledProfileInfo() {
+    public AvailablePackage getInstalledProfileInfo() {
         Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder)) {
             return null;
         }
 
         Path manifest = resolveManifestPath(itemFolder);
-        if (!Files.exists(manifest)) {
+        if (manifest == null || !Files.isRegularFile(manifest)) {
             return null;
         }
+        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
 
-        return new ProfileInfo(
-                readManifestName(manifest),
-                readManifestAuthor(manifest),
-                readManifestDescription(manifest),
-                readManifestUrl(manifest),
-                readManifestCreatedAt(manifest),
-                readManifestVersion(manifest)
-        );
+        return availablePackage;
     }
 
     private String readManifestName(Path manifestFile) {
@@ -576,5 +550,6 @@ public class CombatTextManagerService implements GameResourceService {
             boolean updateAvailable,
             boolean success,
             String message
-    ) {}
+    ) {
+    }
 }

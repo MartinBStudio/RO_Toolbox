@@ -2,6 +2,8 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -19,31 +21,12 @@ public class UserInterfaceServiceController {
 
     private final UserInterfaceManagerService userInterfaceManagerService;
 
-    @GetMapping("/status")
-    public UserInterfaceStatusResponse status() {
-        UserInterfaceManagerService.ProfileInfo installed = userInterfaceManagerService.getInstalledProfileInfo();
-        return new UserInterfaceStatusResponse(
-                absoluteOrNull(userInterfaceManagerService.getSelectedGameBase()),
-                absoluteOrNull(userInterfaceManagerService.getSelectedGameItemFolder()),
-                installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
-                ),
-                userInterfaceManagerService.listDownloadedProfiles(),
-                userInterfaceManagerService.listAvailableProfiles().stream()
-                        .map(profile -> new AvailableProfileResponse(
-                                profile.id(),
-                                profile.name(),
-                                profile.author(),
-                                profile.description(),
-                                profile.url(),
-                                profile.createdAt(),
-                                profile.version(),
-                                profile.previewImages()
-                        ))
-                        .toList()
-        );
-    }
 
+    @GetMapping("/status")
+    public PackageServiceStatusResponse status() {
+        var installed = userInterfaceManagerService.getInstalledProfileInfo();
+        return PackageServiceStatusResponse.builder().selectedGameBase(absoluteOrNull(userInterfaceManagerService.getSelectedGameBase())).selectedGameItemFolder(absoluteOrNull(userInterfaceManagerService.getSelectedGameItemFolder())).installedProfile(installed).downloadedProfiles(userInterfaceManagerService.listDownloadedProfiles()).availableProfiles(userInterfaceManagerService.listAvailableProfiles()).build();
+    }
     @PostMapping("/download")
     public MessageResponse downloadProfiles() throws IOException {
         Path dest = userInterfaceManagerService.getResourcesDir();
@@ -103,8 +86,7 @@ public class UserInterfaceServiceController {
 
 
 
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
-    }
+
 
     public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> previewImages) {
     }
@@ -112,9 +94,9 @@ public class UserInterfaceServiceController {
     public record UserInterfaceStatusResponse(
             String selectedGameBase,
             String selectedGameItemFolder,
-            ProfileInfoResponse installedProfile,
+            AvailablePackage installedProfile,
             List<String> downloadedProfiles,
-            List<AvailableProfileResponse> availableProfiles
+            List<AvailablePackage> availableProfiles
     ) {
     }
 }

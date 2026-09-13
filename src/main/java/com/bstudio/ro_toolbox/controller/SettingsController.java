@@ -1,12 +1,12 @@
 package com.bstudio.ro_toolbox.controller;
 
-import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.BuffIconsManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
-import com.bstudio.ro_toolbox.service.common.GameResourceService;
+import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public class SettingsController {
     private final LootManagerService lootManagerService;
     private final CombatTextManagerService combatTextManagerService;
     private final UserInterfaceManagerService userInterfaceManagerService;
-    private final BuffIconsManagerService buffIconsManagerService;
+    private final IconsManagerService iconsManagerService;
     private final BuffsManagerService buffsManagerService;
     private final AppConfigService appConfigService;
     private final LoginManagerService loginManagerService;
@@ -236,7 +236,7 @@ public class SettingsController {
                 lootManagerService,
                 combatTextManagerService,
                 userInterfaceManagerService,
-                buffIconsManagerService,
+                iconsManagerService,
                 buffsManagerService
         );
     }
