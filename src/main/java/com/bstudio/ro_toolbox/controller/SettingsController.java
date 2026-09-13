@@ -88,12 +88,12 @@ public class SettingsController {
   public MessageResponse factoryReset() throws IOException {
     // Step 1: Clear installed profiles from game folder
     for (GameResourceService service : managedServices()) {
-      service.clearSelectedItemFolder();
+      service.clearInstalledPackage();
     }
 
     // Step 2: Clear downloaded resources (.default is preserved for recovery)
     for (GameResourceService service : managedServices()) {
-      service.clearResources();
+      service.clearDownloadedPackages();
     }
 
     // Step 3: Clear game folder selection and app config

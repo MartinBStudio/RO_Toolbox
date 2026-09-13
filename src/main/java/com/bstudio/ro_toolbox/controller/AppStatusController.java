@@ -3,7 +3,7 @@ package com.bstudio.ro_toolbox.controller;
 import com.bstudio.ro_toolbox.RoToolboxApplication;
 import com.bstudio.ro_toolbox.service.app.AppNotificationService;
 import com.bstudio.ro_toolbox.service.app.TroseExecutableMonitor;
-import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
+import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
 import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
@@ -31,11 +31,11 @@ public class AppStatusController {
 
   @GetMapping("/status")
   public AppStatusResponse status() {
-    var installedLoot = lootManagerService.getInstalledProfileInfo();
-    var installedCombatText = combatTextManagerService.getInstalledProfileInfo();
-    var installedUserInterface = userInterfaceManagerService.getInstalledProfileInfo();
-    var installedBuffIcons = iconsManagerService.getInstalledProfileInfo();
-    var installedBuffs = buffsManagerService.getInstalledProfileInfo();
+    var installedLoot = lootManagerService.getInstalledPackageInfo();
+    var installedCombatText = combatTextManagerService.getInstalledPackageInfo();
+    var installedUserInterface = userInterfaceManagerService.getInstalledPackageInfo();
+    var installedBuffIcons = iconsManagerService.getInstalledPackageInfo();
+    var installedBuffs = buffsManagerService.getInstalledPackageInfo();
     return new AppStatusResponse(
         app.getVersion(),
         troseExecutableMonitor.isTroseRunning(),
@@ -81,7 +81,7 @@ public class AppStatusController {
       PackageServiceSummary buffsService,
       List<ServiceEndpointResponse> services) {}
 
-  public record PackageServiceSummary(String endpoint, AvailablePackage activeProfile) {}
+  public record PackageServiceSummary(String endpoint, ResourcePackage activeProfile) {}
 
   public record ServiceEndpointResponse(String key, String endpoint, String description) {}
 

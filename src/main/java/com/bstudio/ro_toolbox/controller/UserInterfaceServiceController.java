@@ -5,7 +5,6 @@ import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
-import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
@@ -27,7 +26,7 @@ public class UserInterfaceServiceController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = userInterfaceManagerService.getInstalledProfileInfo();
+    var installed = userInterfaceManagerService.getInstalledPackageInfo();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(userInterfaceManagerService.getGameDataDir()))
@@ -49,7 +48,7 @@ public class UserInterfaceServiceController {
     if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
       throw new IllegalArgumentException("profileId is required.");
     }
-    userInterfaceManagerService.installProfile(request.getProfileId().trim());
+    userInterfaceManagerService.installPackage(request.getProfileId().trim(), List.of());
     return MessageResponse.builder()
         .message("Profile installed: " + request.getProfileId().trim())
         .build();
@@ -57,13 +56,13 @@ public class UserInterfaceServiceController {
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    userInterfaceManagerService.clearResources();
+    userInterfaceManagerService.clearDownloadedPackages();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    userInterfaceManagerService.clearSelectedItemFolder();
+    userInterfaceManagerService.clearInstalledPackage();
     return MessageResponse.builder().message("Installed models cleared.").build();
   }
 
@@ -94,21 +93,4 @@ public class UserInterfaceServiceController {
   private String absoluteOrNull(Path path) {
     return path == null ? null : path.toAbsolutePath().normalize().toString();
   }
-
-  public record AvailableProfileResponse(
-      String id,
-      String name,
-      String author,
-      String description,
-      String url,
-      String createdAt,
-      String version,
-      List<String> previewImages) {}
-
-  public record UserInterfaceStatusResponse(
-      String selectedGameBase,
-      String selectedGameItemFolder,
-      AvailablePackage installedProfile,
-      List<String> downloadedProfiles,
-      List<AvailablePackage> availableProfiles) {}
 }

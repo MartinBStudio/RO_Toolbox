@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Builder
 @Data
-public class AvailablePackage {
+public class ResourcePackage {
   private String id;
   private String name;
   private String author;

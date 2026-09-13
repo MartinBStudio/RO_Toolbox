@@ -3,14 +3,12 @@ package com.bstudio.ro_toolbox.service.textureReplacer.userInterface;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ICommonMethods;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
-import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
+import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
 import java.io.*;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +18,6 @@ import org.springframework.stereotype.Service;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@DependsOn("appConfigService")
 public class UserInterfaceManagerService implements GameResourceService, ICommonMethods {
   private static final String DEFAULT_REPO =
       "https://github.com/MartinBStudio/RO_UserInterface_resources";
@@ -48,11 +45,11 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
         DEFAULT_REPO, RESOURCES_DIR, "RO_UserInterfaceManager/1.0", log::info);
   }
 
-  public void clearResources() throws IOException {
+  public void clearDownloadedPackages() throws IOException {
     clearResources(RESOURCES_DIR);
   }
 
-  public void clearSelectedItemFolder() throws IOException {
+  public void clearInstalledPackage() throws IOException {
     Path gameBase = appConfigService.getSelectedGameBase();
     if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) return;
 
@@ -81,76 +78,31 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     }
   }
 
-
-
   private Path resolveManifestPath(Path directory) {
     return directory.resolve(MANIFEST_FILE_NAME);
-  }
-
-
-
-  private List<Path> readDefaultFileList(Path fileListPath) throws IOException {
-    if (fileListPath == null || !Files.exists(fileListPath) || !Files.isRegularFile(fileListPath)) {
-      return Collections.emptyList();
-    }
-    List<Path> files = new ArrayList<>();
-    for (String line : Files.readAllLines(fileListPath)) {
-      if (line == null) continue;
-      String trimmed = line.trim();
-      if (trimmed.isEmpty()) continue;
-      Path relative = Paths.get(trimmed.replace("\\", "/")).normalize();
-      if (relative.isAbsolute() || relative.startsWith("..")) {
-        log.info("Skipping invalid FILE_LIST entry: " + trimmed);
-        continue;
-      }
-      files.add(relative);
-    }
-    return files;
-  }
-
-  private Path resolveManagedFile(Path root, Path relative) {
-    Path target = root.resolve(relative).normalize();
-    if (!target.startsWith(root)) {
-      throw new IllegalStateException(
-          "Resolved path escapes root for FILE_LIST entry: " + relative);
-    }
-    return target;
   }
 
   public List<String> listDownloadedProfiles() {
     return listDownloadedProfiles(RESOURCES_DIR, MANIFEST_FILE_NAME);
   }
 
-  public List<AvailablePackage> listAvailableProfiles() {
+  public List<ResourcePackage> listAvailableProfiles() {
     return listAvailableProfiles(
         RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
   }
 
-  public void installProfile(String profileId) throws IOException {
+  public void installPackage(String profileId, List<String> disabledPackages) throws IOException {
     Path destination = getGameDataDir();
     if (destination == null) {
       throw new IllegalStateException("No game installation folder is selected.");
     }
-    AvailablePackage selected = findAvailableProfile(profileId);
+    ResourcePackage selected = findSelectedProfile(profileId, listAvailableProfiles());
 
-    clearSelectedItemFolder();
+    clearInstalledPackage();
     copyDirectoryContents(selected.getSource(), destination);
-
   }
 
-  private AvailablePackage findAvailableProfile(String profileId) {
-    String normalizedProfileId = profileId == null ? "" : profileId.trim();
-    if (normalizedProfileId.isEmpty()) {
-      throw new IllegalArgumentException("profileId is required.");
-    }
-    return listAvailableProfiles().stream()
-        .filter(profile -> profile.getId().equals(normalizedProfileId))
-        .findFirst()
-        .orElseThrow(
-            () -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
-  }
-
-  public AvailablePackage getInstalledProfileInfo() {
+  public ResourcePackage getInstalledPackageInfo() {
     Path itemFolder = getGameDataDir();
     if (itemFolder == null || !Files.exists(itemFolder)) {
       return null;
@@ -160,8 +112,8 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     if (manifest == null || !Files.isRegularFile(manifest)) {
       return null;
     }
-    AvailablePackage availablePackage =
-        AvailablePackage.builder()
+    ResourcePackage resourcePackage =
+        ResourcePackage.builder()
             .id(readManifestName(manifest))
             .name(readManifestName(manifest))
             .author(readManifestAuthor(manifest))
@@ -174,10 +126,8 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
             .managedSubfolders(readManifestManagedSubfolders(manifest))
             .build();
 
-    return availablePackage;
+    return resourcePackage;
   }
-
-
 
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
     return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);

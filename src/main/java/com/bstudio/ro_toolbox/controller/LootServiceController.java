@@ -26,7 +26,7 @@ public class LootServiceController extends BaseController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = lootManagerService.getInstalledProfileInfo();
+    var installed = lootManagerService.getInstalledPackageInfo();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(lootManagerService.getGameDataDir()))
@@ -48,7 +48,7 @@ public class LootServiceController extends BaseController {
     if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
       throw new IllegalArgumentException("profileId is required.");
     }
-    lootManagerService.installProfile(
+    lootManagerService.installPackage(
         request.getProfileId().trim(), request.getDisabledManagedSubfolders());
     return MessageResponse.builder()
         .message("Profile installed: " + request.getProfileId().trim())
@@ -68,13 +68,13 @@ public class LootServiceController extends BaseController {
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    lootManagerService.clearResources();
+    lootManagerService.clearDownloadedPackages();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    lootManagerService.clearSelectedItemFolder();
+    lootManagerService.clearInstalledPackage();
     return MessageResponse.builder().message("Installed models cleared.").build();
   }
 

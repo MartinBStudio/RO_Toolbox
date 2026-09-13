@@ -5,7 +5,7 @@ import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
-import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
+import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
@@ -25,7 +25,7 @@ public class CombatTextServiceController extends BaseController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = combatTextManagerService.getInstalledProfileInfo();
+    var installed = combatTextManagerService.getInstalledPackageInfo();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getGameDataDir()))
@@ -47,7 +47,7 @@ public class CombatTextServiceController extends BaseController {
     if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
       throw new IllegalArgumentException("profileId is required.");
     }
-    combatTextManagerService.installProfile(request.getProfileId().trim());
+    combatTextManagerService.installPackage(request.getProfileId().trim(), List.of());
     return MessageResponse.builder()
         .message("Profile installed: " + request.getProfileId().trim())
         .build();
@@ -55,13 +55,13 @@ public class CombatTextServiceController extends BaseController {
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    combatTextManagerService.clearResources();
+    combatTextManagerService.clearDownloadedPackages();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    combatTextManagerService.clearSelectedItemFolder();
+    combatTextManagerService.clearInstalledPackage();
     return MessageResponse.builder().message("Installed models cleared.").build();
   }
 
@@ -102,7 +102,7 @@ public class CombatTextServiceController extends BaseController {
   public record CombatTextStatusResponse(
       String selectedGameBase,
       String selectedGameItemFolder,
-      AvailablePackage installedProfile,
+      ResourcePackage installedProfile,
       List<String> downloadedProfiles,
-      List<AvailablePackage> availableProfiles) {}
+      List<ResourcePackage> availableProfiles) {}
 }

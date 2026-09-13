@@ -3,8 +3,8 @@ package com.bstudio.ro_toolbox.service.textureReplacer.lootModels;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ICommonMethods;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
-import com.bstudio.ro_toolbox.service.textureReplacer.AvailablePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
+import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
 import java.io.*;
@@ -16,18 +16,15 @@ import java.util.Properties;
 import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
-@DependsOn("appConfigService")
 public class LootManagerService implements GameResourceService, ICommonMethods {
   private static final String DEFAULT_REPO =
       "https://github.com/MartinBStudio/RO_LootFilter_resources";
   private static final String MANIFEST_FILE_NAME = "manifestLoot.json";
-  private static final String LEGACY_MANIFEST_FILE_NAME = "manifest.json";
   private static final Path APP_DATA_ROOT = AppDataPaths.resolveRoToolboxAppDataRoot();
   private static final Path RESOURCES_DIR =
       APP_DATA_ROOT.resolve("resources").resolve("lootManager");
@@ -39,7 +36,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
 
   private final AppConfigService appConfigService;
   private final ResourcesUpdater resourcesUpdater;
-  private volatile String currentLootProfile = null;
 
   public Path getResourcesDir() {
     return RESOURCES_DIR;
@@ -84,11 +80,11 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         DEFAULT_REPO, RESOURCES_DIR, "RO_LootManager/1.0", log::info);
   }
 
-  public void clearResources() throws IOException {
+  public void clearDownloadedPackages() throws IOException {
     clearResources(RESOURCES_DIR);
   }
 
-  public void clearSelectedItemFolder() throws IOException {
+  public void clearInstalledPackage() throws IOException {
     Path itemFolder = getGameDataDir();
     if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
 
@@ -104,22 +100,21 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     return listDownloadedProfiles(RESOURCES_DIR, MANIFEST_FILE_NAME);
   }
 
-  public List<AvailablePackage> listAvailableProfiles() {
+  public List<ResourcePackage> listAvailableProfiles() {
     return listAvailableProfiles(
         RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
   }
 
-  public void installProfile(String profileId, List<String> disabledManagedSubfolders)
+  public void installPackage(String profileId, List<String> disabledManagedSubfolders)
       throws IOException {
     Path destination = getGameDataDir();
     if (destination == null) {
       throw new IllegalStateException("No game installation folder is selected.");
     }
-    AvailablePackage selected = findAvailableProfile(profileId);
+    ResourcePackage selected = findSelectedProfile(profileId, listAvailableProfiles());
 
-    clearSelectedItemFolder();
+    clearInstalledPackage();
     copyDirectoryContents(selected.getSource(), destination);
-
 
     if (disabledManagedSubfolders != null && !disabledManagedSubfolders.isEmpty()) {
       manageInstalledProfile(profileId, disabledManagedSubfolders);
@@ -199,19 +194,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
   }
 
-  private AvailablePackage findAvailableProfile(String profileId) {
-    String normalizedProfileId = profileId == null ? "" : profileId.trim();
-    if (normalizedProfileId.isEmpty()) {
-      throw new IllegalArgumentException("profileId is required.");
-    }
-    return listAvailableProfiles().stream()
-        .filter(profile -> profile.getId().equals(normalizedProfileId))
-        .findFirst()
-        .orElseThrow(
-            () -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
-  }
-
-  public AvailablePackage getInstalledProfileInfo() {
+  public ResourcePackage getInstalledPackageInfo() {
     Path itemFolder = getGameDataDir();
     if (itemFolder == null || !Files.exists(itemFolder)) {
       return null;
@@ -221,8 +204,8 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     if (manifest == null || !Files.isRegularFile(manifest)) {
       return null;
     }
-    AvailablePackage availablePackage =
-        AvailablePackage.builder()
+    ResourcePackage resourcePackage =
+        ResourcePackage.builder()
             .id(readManifestName(manifest))
             .name(readManifestName(manifest))
             .author(readManifestAuthor(manifest))
@@ -238,39 +221,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
                     itemFolder, readManifestManagedSubfolders(manifest)))
             .build();
 
-    return availablePackage;
-  }
-
-  private void deleteManagedSubfolders(Path baseDir, List<String> managedSubfolders)
-      throws IOException {
-    if (managedSubfolders == null || managedSubfolders.isEmpty()) return;
-    for (String subfolder : managedSubfolders) {
-      if (subfolder == null || subfolder.isBlank()) continue;
-      Path relative = Paths.get(subfolder).normalize();
-      if (relative.isAbsolute() || relative.startsWith("..")) {
-        log.info("Skipping invalid managedSubfolder path: " + subfolder);
-        continue;
-      }
-      Path target = baseDir.resolve(relative).normalize();
-      if (!target.startsWith(baseDir)) {
-        log.info("Skipping out-of-scope managedSubfolder path: " + subfolder);
-        continue;
-      }
-      if (Files.exists(target) && Files.isDirectory(target)) {
-        deleteDirectoryContents(target);
-        Files.deleteIfExists(target);
-        log.info("Deleted managed subfolder: " + target.toAbsolutePath());
-      }
-
-      Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
-      if (disabledTarget != null
-          && Files.exists(disabledTarget)
-          && Files.isDirectory(disabledTarget)) {
-        deleteDirectoryContents(disabledTarget);
-        Files.deleteIfExists(disabledTarget);
-        log.info("Deleted disabled managed subfolder: " + disabledTarget.toAbsolutePath());
-      }
-    }
+    return resourcePackage;
   }
 
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {

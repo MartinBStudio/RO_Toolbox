@@ -10,6 +10,7 @@ import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -23,7 +24,7 @@ public class BuffIconsServiceController extends BaseController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = iconsManagerService.getInstalledProfileInfo();
+    var installed = iconsManagerService.getInstalledPackageInfo();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(iconsManagerService.getGameDataDir()))
@@ -45,7 +46,7 @@ public class BuffIconsServiceController extends BaseController {
     if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
       throw new IllegalArgumentException("profileId is required.");
     }
-    iconsManagerService.installProfile(request.getProfileId().trim());
+    iconsManagerService.installPackage(request.getProfileId().trim(), List.of());
     return MessageResponse.builder()
         .message("Profile installed: " + request.getProfileId().trim())
         .build();
@@ -53,13 +54,13 @@ public class BuffIconsServiceController extends BaseController {
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    iconsManagerService.clearResources();
+    iconsManagerService.clearDownloadedPackages();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    iconsManagerService.clearSelectedItemFolder();
+    iconsManagerService.clearInstalledPackage();
     return MessageResponse.builder().message("Installed buff icons cleared.").build();
   }
 
