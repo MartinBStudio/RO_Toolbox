@@ -217,7 +217,7 @@ public class SettingsController {
 
   @GetMapping("/ignore-config-warnings")
   public IgnoreConfigWarningsResponse getIgnoreConfigWarnings() throws IOException {
-    return new IgnoreConfigWarningsResponse(lootManagerService.getIgnoreConfigWarnings());
+    return new IgnoreConfigWarningsResponse(appConfigService.getIgnoreConfigWarnings());
   }
 
   @PostMapping("/ignore-config-warnings")
@@ -226,7 +226,7 @@ public class SettingsController {
     if (request == null) {
       throw new IllegalArgumentException("Mode value is required.");
     }
-    lootManagerService.saveIgnoreConfigWarnings(request.enabled());
+    appConfigService.saveIgnoreConfigWarnings(request.enabled());
     return new IgnoreConfigWarningsResponse(request.enabled());
   }
 

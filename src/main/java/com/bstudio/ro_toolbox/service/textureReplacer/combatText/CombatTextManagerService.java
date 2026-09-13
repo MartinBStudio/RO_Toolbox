@@ -12,7 +12,6 @@ import java.nio.file.*;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -22,32 +21,31 @@ public class CombatTextManagerService implements GameResourceService, ICommonMet
   private static final String DEFAULT_REPO =
       "https://github.com/MartinBStudio/RO_CombatText_resources";
   private static final String MANIFEST_FILE_NAME = "manifestCombatText.json";
-  private static final Path APP_DATA_ROOT = AppDataPaths.resolveRoToolboxAppDataRoot();
   private static final Path RESOURCES_DIR =
-      APP_DATA_ROOT.resolve("resources").resolve("combatText");
-  private static final Path GAME_SUFFIX = Paths.get("3ddata");
+          AppDataPaths.resolveRoToolboxAppDataRoot().resolve("resources").resolve("combatText");
+  private static final Path GAME_DATA_DIR = Paths.get("3ddata");
 
   private final AppConfigService appConfigService;
   private final ResourcesUpdater resourcesUpdater;
-
+  @Override
   public Path getResourcesDir() {
     return RESOURCES_DIR;
   }
-
+  @Override
   public Path getGameDataDir() {
     Path selectedGameBase = appConfigService.getSelectedGameBase();
-    return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
+    return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_DATA_DIR);
   }
-
+  @Override
   public void downloadAndExtract() throws IOException {
     RepositoryZipDownloader.downloadAndExtract(
         DEFAULT_REPO, RESOURCES_DIR, "RO_CombatTextManager/1.0", log::info);
   }
-
+  @Override
   public void clearDownloadedPackages() throws IOException {
     clearResources(RESOURCES_DIR);
   }
-
+  @Override
   public void clearInstalledPackage() throws IOException {
     Path itemFolder = getGameDataDir();
     if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
@@ -59,27 +57,23 @@ public class CombatTextManagerService implements GameResourceService, ICommonMet
     }
     deleteManifestFiles(itemFolder, MANIFEST_FILE_NAME);
   }
-
-  public List<String> listDownloadedProfiles() {
-    return listDownloadedProfiles(RESOURCES_DIR, MANIFEST_FILE_NAME);
-  }
-
-  public List<ResourcePackage> listAvailableProfiles() {
-    return listAvailableProfiles(
+  @Override
+  public List<ResourcePackage> listAvailablePackages() {
+    return listAvailablePackages(
         RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
   }
-
+  @Override
   public void installPackage(String profileId, List<String> disabledPackages) throws IOException {
     Path destination = getGameDataDir();
     if (destination == null) {
       throw new IllegalStateException("No game installation folder is selected.");
     }
-    ResourcePackage selected = findSelectedProfile(profileId, listAvailableProfiles());
+    ResourcePackage selected = findSelectedProfile(profileId, listAvailablePackages());
 
     clearInstalledPackage();
     copyDirectoryContents(selected.getSource(), destination);
   }
-
+  @Override
   public ResourcePackage getInstalledPackageInfo() {
     Path itemFolder = getGameDataDir();
     if (itemFolder == null || !Files.exists(itemFolder)) {
@@ -106,7 +100,7 @@ public class CombatTextManagerService implements GameResourceService, ICommonMet
                 itemFolder, readManifestManagedSubfolders(manifest)))
         .build();
   }
-
+  @Override
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
     return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);
   }

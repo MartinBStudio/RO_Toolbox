@@ -6,6 +6,7 @@ import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
+import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
@@ -22,6 +23,7 @@ public class BuffsServiceController extends BaseController {
 
   private final BuffsManagerService buffsManagerService;
   private final AppConfigService appConfigService;
+  private final IconsManagerService iconsManagerService;
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
@@ -30,8 +32,13 @@ public class BuffsServiceController extends BaseController {
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(buffsManagerService.getGameDataDir()))
         .installedProfile(installed)
-        .downloadedProfiles(buffsManagerService.listDownloadedProfiles())
-        .availableProfiles(buffsManagerService.listAvailableProfiles())
+            .downloadedProfiles(
+                    List.of(buffsManagerService.listAvailablePackages()
+                            .stream()
+                            .map(ResourcePackage::getName)
+                            .toArray(String[]::new))
+            )
+        .availableProfiles(buffsManagerService.listAvailablePackages())
         .build();
   }
 

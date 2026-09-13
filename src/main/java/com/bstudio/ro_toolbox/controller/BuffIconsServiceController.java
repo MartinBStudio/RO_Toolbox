@@ -5,6 +5,7 @@ import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
@@ -29,8 +30,13 @@ public class BuffIconsServiceController extends BaseController {
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(iconsManagerService.getGameDataDir()))
         .installedProfile(installed)
-        .downloadedProfiles(iconsManagerService.listDownloadedProfiles())
-        .availableProfiles(iconsManagerService.listAvailableProfiles())
+            .downloadedProfiles(
+                    List.of(iconsManagerService.listAvailablePackages()
+                            .stream()
+                            .map(ResourcePackage::getName)
+                            .toArray(String[]::new))
+            )
+        .availableProfiles(iconsManagerService.listAvailablePackages())
         .build();
   }
 

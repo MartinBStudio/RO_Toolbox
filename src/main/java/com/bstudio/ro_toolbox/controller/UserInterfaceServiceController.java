@@ -5,6 +5,7 @@ import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
@@ -31,8 +32,13 @@ public class UserInterfaceServiceController {
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(userInterfaceManagerService.getGameDataDir()))
         .installedProfile(installed)
-        .downloadedProfiles(userInterfaceManagerService.listDownloadedProfiles())
-        .availableProfiles(userInterfaceManagerService.listAvailableProfiles())
+            .downloadedProfiles(
+                    List.of(userInterfaceManagerService.listAvailablePackages()
+                            .stream()
+                            .map(ResourcePackage::getName)
+                            .toArray(String[]::new))
+            )
+        .availableProfiles(userInterfaceManagerService.listAvailablePackages())
         .build();
   }
 

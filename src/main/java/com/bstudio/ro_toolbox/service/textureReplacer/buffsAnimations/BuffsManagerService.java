@@ -12,7 +12,6 @@ import java.nio.file.*;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -24,35 +23,30 @@ public class BuffsManagerService implements GameResourceService, ICommonMethods 
   private static final String MANIFEST_FILE_NAME = "manifestBuffAnimations.json";
   private static final Path RESOURCES_DIR =
       AppDataPaths.resolveRoToolboxAppDataRoot().resolve("resources").resolve("buffs");
-  private static final Path GAME_SUFFIX = Paths.get("");
 
   private final AppConfigService appConfigService;
   private final ResourcesUpdater resourcesUpdater;
-
+  @Override
   public Path getResourcesDir() {
     return RESOURCES_DIR;
   }
-
+  @Override
   public Path getGameDataDir() {
-    Path selectedGameBase = appConfigService.getSelectedGameBase();
-    return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
+      return appConfigService.getSelectedGameBase();
   }
 
-  public List<String> listDownloadedProfiles() {
-    return listDownloadedProfiles(RESOURCES_DIR, MANIFEST_FILE_NAME);
-  }
-
+  @Override
   public void downloadAndExtract() throws IOException {
     RepositoryZipDownloader.downloadAndExtract(
         DEFAULT_REPO, RESOURCES_DIR, "RO_BuffsManager/1.0", log::info);
   }
-
+  @Override
   public void clearDownloadedPackages() throws IOException {
     clearResources(RESOURCES_DIR);
   }
-
+  @Override
   public void clearInstalledPackage() throws IOException {
-    Path gameBase = appConfigService.getSelectedGameBase();
+    Path gameBase = getGameDataDir();
     if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) {
       return;
     }
@@ -79,24 +73,24 @@ public class BuffsManagerService implements GameResourceService, ICommonMethods 
       }
     }
   }
-
-  public List<ResourcePackage> listAvailableProfiles() {
-    return listAvailableProfiles(
+  @Override
+  public List<ResourcePackage> listAvailablePackages() {
+    return listAvailablePackages(
         RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
   }
-
+  @Override
   public void installPackage(String profileId, List<String> disabledManagedSubfolders)
       throws IOException {
     Path destination = getGameDataDir();
     if (destination == null) {
       throw new IllegalStateException("No game installation folder is selected.");
     }
-    ResourcePackage selected = findSelectedProfile(profileId, listAvailableProfiles());
+    ResourcePackage selected = findSelectedProfile(profileId, listAvailablePackages());
 
     clearInstalledPackage();
     copyDirectoryContents(selected.getSource(), destination);
   }
-
+  @Override
   public ResourcePackage getInstalledPackageInfo() {
     Path itemFolder = getGameDataDir();
     if (itemFolder == null || !Files.exists(itemFolder)) {
@@ -123,7 +117,7 @@ public class BuffsManagerService implements GameResourceService, ICommonMethods 
 
     return resourcePackage;
   }
-
+  @Override
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
     return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);
   }

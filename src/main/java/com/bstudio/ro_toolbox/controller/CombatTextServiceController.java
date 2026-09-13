@@ -30,8 +30,13 @@ public class CombatTextServiceController extends BaseController {
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getGameDataDir()))
         .installedProfile(installed)
-        .downloadedProfiles(combatTextManagerService.listDownloadedProfiles())
-        .availableProfiles(combatTextManagerService.listAvailableProfiles())
+            .downloadedProfiles(
+                    List.of(combatTextManagerService.listAvailablePackages()
+                            .stream()
+                            .map(ResourcePackage::getName)
+                            .toArray(String[]::new))
+            )
+        .availableProfiles(combatTextManagerService.listAvailablePackages())
         .build();
   }
 

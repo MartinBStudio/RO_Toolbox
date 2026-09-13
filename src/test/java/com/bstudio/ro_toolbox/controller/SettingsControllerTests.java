@@ -207,6 +207,7 @@ class SettingsControllerTests {
   @Test
   void savesUsefulStuffCollapsedSetting() throws IOException {
     LootManagerService loot = mock(LootManagerService.class);
+    AppConfigService appConfig = mock(AppConfigService.class);
     SettingsController controller =
         new SettingsController(
             loot,
@@ -214,14 +215,14 @@ class SettingsControllerTests {
             mock(UserInterfaceManagerService.class),
             mock(IconsManagerService.class),
             mock(BuffsManagerService.class),
-            mock(AppConfigService.class),
+            appConfig,
             mock(LoginManagerService.class));
 
     SettingsController.UsefulStuffCollapsedResponse response =
         controller.saveUsefulStuffCollapsed(
             new SettingsController.UsefulStuffCollapsedRequest(true));
 
-    verify(loot).saveUsefulStuffCollapsed(true);
+    verify(appConfig).saveUsefulStuffCollapsed(true);
     assertTrue(response.collapsed());
   }
 
@@ -247,6 +248,7 @@ class SettingsControllerTests {
   @Test
   void savesIgnoreConfigWarningsSetting() throws IOException {
     LootManagerService loot = mock(LootManagerService.class);
+    AppConfigService appConfig = mock(AppConfigService.class);
     SettingsController controller =
         new SettingsController(
             loot,
@@ -254,21 +256,22 @@ class SettingsControllerTests {
             mock(UserInterfaceManagerService.class),
             mock(IconsManagerService.class),
             mock(BuffsManagerService.class),
-            mock(AppConfigService.class),
+            appConfig,
             mock(LoginManagerService.class));
 
     SettingsController.IgnoreConfigWarningsResponse response =
         controller.saveIgnoreConfigWarnings(
             new SettingsController.IgnoreConfigWarningsRequest(true));
 
-    verify(loot).saveIgnoreConfigWarnings(true);
+    verify(appConfig).saveIgnoreConfigWarnings(true);
     assertTrue(response.enabled());
   }
 
   @Test
   void readsIgnoreConfigWarningsSetting() throws IOException {
     LootManagerService loot = mock(LootManagerService.class);
-    when(loot.getIgnoreConfigWarnings()).thenReturn(true);
+    AppConfigService appConfig = mock(AppConfigService.class);
+    when(appConfig.getIgnoreConfigWarnings()).thenReturn(true);
     SettingsController controller =
         new SettingsController(
             loot,
@@ -276,7 +279,7 @@ class SettingsControllerTests {
             mock(UserInterfaceManagerService.class),
             mock(IconsManagerService.class),
             mock(BuffsManagerService.class),
-            mock(AppConfigService.class),
+            appConfig,
             mock(LoginManagerService.class));
 
     SettingsController.IgnoreConfigWarningsResponse response = controller.getIgnoreConfigWarnings();

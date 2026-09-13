@@ -18,6 +18,8 @@ public class AppConfigService {
   private static final String QUICK_LAUNCH_ONLY_MODE_KEY = "quickLaunchOnlyMode";
   private static final String CONFIG_COMMENT = "RO Toolbox config";
   private static final String USEFUL_STUFF_COLLAPSED_KEY = "usefulStuffCollapsed";
+  private static final String IGNORE_CONFIG_WARNINGS_KEY = "ignoreConfigWarnings";
+
   private final Path configDir;
   private final Path configFile;
 
@@ -134,5 +136,12 @@ public class AppConfigService {
 
   public void saveUsefulStuffCollapsed(boolean collapsed) throws IOException {
     setProperty(USEFUL_STUFF_COLLAPSED_KEY, String.valueOf(collapsed));
+  }
+  public boolean getIgnoreConfigWarnings() throws IOException {
+    return Boolean.parseBoolean(getProperty(IGNORE_CONFIG_WARNINGS_KEY));
+  }
+
+  public void saveIgnoreConfigWarnings(boolean enabled) throws IOException {
+    setProperty(IGNORE_CONFIG_WARNINGS_KEY, String.valueOf(enabled));
   }
 }

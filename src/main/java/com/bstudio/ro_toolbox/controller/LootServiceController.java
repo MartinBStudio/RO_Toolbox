@@ -5,12 +5,15 @@ import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.http.MediaType;
@@ -31,8 +34,13 @@ public class LootServiceController extends BaseController {
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(lootManagerService.getGameDataDir()))
         .installedProfile(installed)
-        .downloadedProfiles(lootManagerService.listDownloadedProfiles())
-        .availableProfiles(lootManagerService.listAvailableProfiles())
+            .downloadedProfiles(
+                    List.of(lootManagerService.listAvailablePackages()
+                            .stream()
+                            .map(ResourcePackage::getName)
+                            .toArray(String[]::new))
+            )
+        .availableProfiles(lootManagerService.listAvailablePackages())
         .build();
   }
 
