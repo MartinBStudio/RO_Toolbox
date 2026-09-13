@@ -2,7 +2,7 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
-import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ResourceLoader;

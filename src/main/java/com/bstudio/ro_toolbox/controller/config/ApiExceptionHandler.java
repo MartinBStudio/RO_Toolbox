@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.controller;
+package com.bstudio.ro_toolbox.controller.config;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;

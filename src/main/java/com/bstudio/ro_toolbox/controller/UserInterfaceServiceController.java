@@ -2,7 +2,7 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
-import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

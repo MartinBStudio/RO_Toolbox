@@ -1,8 +1,8 @@
 package com.bstudio.ro_toolbox.controller;
 
-import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
-import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
-import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Path;

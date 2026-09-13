@@ -1,10 +1,9 @@
-package com.bstudio.ro_toolbox.service.userInterface;
+package com.bstudio.ro_toolbox.service.textureReplacer.combatText;
 
 import com.bstudio.ro_toolbox.service.common.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
-import com.bstudio.ro_toolbox.util.RuntimeDirectories;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -12,7 +11,6 @@ import java.io.*;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -22,22 +20,22 @@ import java.util.Set;
 
 @Service
 @Slf4j
-public class UserInterfaceManagerService implements GameResourceService {
-    private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_UserInterface_resources";
-    private static final String MANIFEST_FILE_NAME = "manifestUi.json";
+public class CombatTextManagerService implements GameResourceService {
+    private static final String DEFAULT_REPO = "https://github.com/MartinBStudio/RO_CombatText_resources";
+    private static final String MANIFEST_FILE_NAME = "manifestCombatText.json";
     private static final String LEGACY_MANIFEST_FILE_NAME = "manifest.json";
     private static final Path APP_DATA_ROOT = AppDataPaths.resolveRoToolboxAppDataRoot();
-    private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("userInterface");
-    private static final Path GAME_SUFFIX = Paths.get("");
+    private static final Path RESOURCES_DIR = APP_DATA_ROOT.resolve("resources").resolve("combatText");
+    private static final Path GAME_SUFFIX = Paths.get("3ddata");
 
     private static final Path CONFIG_DIR = APP_DATA_ROOT.resolve("config");
 
     private final AppConfigService appConfigService;
-    private volatile String currentUserInterfaceProfile = null;
+    private volatile String currentCombatTextProfile = null;
 
-    public UserInterfaceManagerService(AppConfigService appConfigService) {
+    public CombatTextManagerService(AppConfigService appConfigService) {
         this.appConfigService = appConfigService;
-        RuntimeDirectories.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
+        AppDataPaths.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
     }
 
     public Path getResourcesDir() { return RESOURCES_DIR; }
@@ -49,10 +47,10 @@ public class UserInterfaceManagerService implements GameResourceService {
         return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
     }
 
-    public String getCurrentUserInterfaceProfile() { return currentUserInterfaceProfile; }
+    public String getCurrentCombatTextProfile() { return currentCombatTextProfile; }
 
-    public void setCurrentUserInterfaceProfile(String profile) {
-        currentUserInterfaceProfile = (profile == null || profile.isBlank()) ? null : profile;
+    public void setCurrentCombatTextProfile(String profile) {
+        currentCombatTextProfile = (profile == null || profile.isBlank()) ? null : profile;
     }
 
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
@@ -60,7 +58,7 @@ public class UserInterfaceManagerService implements GameResourceService {
                 repoUrl,
                 DEFAULT_REPO,
                 destDir,
-                "RO_UserInterfaceManager/1.0",
+                "RO_CombatTextManager/1.0",
                 log::info
         );
     }
@@ -144,47 +142,30 @@ public class UserInterfaceManagerService implements GameResourceService {
                 }
             }
         }
+
     }
 
     public void clearSelectedItemFolder() throws IOException {
-        Path gameBase = getSelectedGameBase();
-        if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) return;
+        Path itemFolder = getSelectedGameItemFolder();
+        if (itemFolder == null || !Files.exists(itemFolder) || !Files.isDirectory(itemFolder)) return;
 
-        // Always clear the installed manifest so the app no longer shows the profile as installed
-        deleteManifestFiles(gameBase, MANIFEST_FILE_NAME, LEGACY_MANIFEST_FILE_NAME);
-        setCurrentUserInterfaceProfile(null);
-
-        // Restore original files from .default if available
-        Path defaultProfile = RESOURCES_DIR.resolve(".default");
-        if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) return;
-
-        List<Path> managedFiles = readDefaultFileList(defaultProfile.resolve("FILE_LIST.txt"));
-        for (Path relativeFile : managedFiles) {
-            Path defaultFile = defaultProfile.resolve(relativeFile);
-            Path target = resolveManagedFile(gameBase, relativeFile);
-            if (Files.isDirectory(target)) {
-                continue;
-            }
-            Files.deleteIfExists(target);
-            if (Files.isRegularFile(defaultFile)) {
-                Files.createDirectories(target.getParent());
-                Files.copy(defaultFile, target, StandardCopyOption.REPLACE_EXISTING);
-                log.info("Restored default file: " + target.toAbsolutePath());
-            } else {
-                log.info("Deleted managed file (no default available): " + target.toAbsolutePath());
-            }
+        Path manifest = resolveManifestPath(itemFolder);
+        List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
+        if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
+            deleteManagedSubfolders(itemFolder, managedSubfolders);
         }
+        deleteManifestFiles(itemFolder, MANIFEST_FILE_NAME);
     }
 
     private void removeInstalledProfileFiles(Path destination) throws IOException {
-        Path manifest = resolveProfileManifestPath(destination);
-        if (manifest != null) {
+        Path manifest = destination.resolve(MANIFEST_FILE_NAME);
+        if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
             List<String> managedSubfolders = readManifestManagedSubfolders(manifest);
             if (managedSubfolders != null && !managedSubfolders.isEmpty()) {
                 deleteManagedSubfolders(destination, managedSubfolders);
             }
         }
-        deleteManifestFiles(destination, MANIFEST_FILE_NAME, LEGACY_MANIFEST_FILE_NAME);
+        deleteManifestFiles(destination, MANIFEST_FILE_NAME);
     }
 
     private void normalizeInstalledManifest(Path destination) throws IOException {
@@ -203,52 +184,11 @@ public class UserInterfaceManagerService implements GameResourceService {
         return directory.resolve(MANIFEST_FILE_NAME);
     }
 
-    private Path resolveProfileManifestPath(Path directory) {
-        if (directory == null) return null;
-        Path custom = directory.resolve(MANIFEST_FILE_NAME);
-        if (Files.exists(custom) && Files.isRegularFile(custom)) {
-            return custom;
-        }
-        return null;
-    }
-
-    private boolean hasProfileAssets(Path directory) {
-        if (directory == null || !Files.isDirectory(directory)) return false;
-        return resolveProfileManifestPath(directory) != null;
-    }
-
     private void deleteManifestFiles(Path directory, String... manifestNames) throws IOException {
         for (String manifestName : manifestNames) {
             if (manifestName == null || manifestName.isBlank()) continue;
             Files.deleteIfExists(directory.resolve(manifestName));
         }
-    }
-
-    private List<Path> readDefaultFileList(Path fileListPath) throws IOException {
-        if (fileListPath == null || !Files.exists(fileListPath) || !Files.isRegularFile(fileListPath)) {
-            return Collections.emptyList();
-        }
-        List<Path> files = new ArrayList<>();
-        for (String line : Files.readAllLines(fileListPath)) {
-            if (line == null) continue;
-            String trimmed = line.trim();
-            if (trimmed.isEmpty()) continue;
-            Path relative = Paths.get(trimmed.replace("\\", "/")).normalize();
-            if (relative.isAbsolute() || relative.startsWith("..")) {
-                log.info("Skipping invalid FILE_LIST entry: " + trimmed);
-                continue;
-            }
-            files.add(relative);
-        }
-        return files;
-    }
-
-    private Path resolveManagedFile(Path root, Path relative) {
-        Path target = root.resolve(relative).normalize();
-        if (!target.startsWith(root)) {
-            throw new IllegalStateException("Resolved path escapes root for FILE_LIST entry: " + relative);
-        }
-        return target;
     }
 
     public record AvailableProfile(
@@ -330,12 +270,10 @@ public class UserInterfaceManagerService implements GameResourceService {
         }
         try (var stream = Files.list(RESOURCES_DIR)) {
             stream.filter(Files::isDirectory)
+                    .filter(p -> !p.getFileName().toString().startsWith("."))
                     .forEach(p -> {
-                        String name = p.getFileName().toString();
-                        if (name.startsWith(".")) {
-                            return;
-                        }
-                        if (hasProfileAssets(p)) {
+                        Path manifest = resolveManifestPath(p);
+                        if (Files.exists(manifest) && Files.isRegularFile(manifest)) {
                             profiles.add(p.getFileName().toString());
                         }
                     });
@@ -357,13 +295,13 @@ public class UserInterfaceManagerService implements GameResourceService {
 
         for (Path root : roots) {
             if (root == null || !Files.exists(root) || !Files.isDirectory(root)) continue;
-            try (var stream = Files.list(root)) {
+            try (var stream = Files.walk(root)) {
                 for (Path p : (Iterable<Path>) stream::iterator) {
                     if (!Files.isDirectory(p)) continue;
                     String name = p.getFileName().toString();
                     if (name.startsWith(".")) continue;
-                    Path manifest = resolveProfileManifestPath(p);
-                    if (manifest == null) continue;
+                    Path manifest = resolveManifestPath(p);
+                    if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
                     if (seen.add(name)) {
                         results.add(new AvailableProfile(
                                 name,
@@ -401,7 +339,7 @@ public class UserInterfaceManagerService implements GameResourceService {
         removeInstalledProfileFiles(destination);
         copyDirectoryContents(selected.source(), destination);
         normalizeInstalledManifest(destination);
-        setCurrentUserInterfaceProfile(selected.id());
+        setCurrentCombatTextProfile(selected.id());
     }
 
     private AvailableProfile findAvailableProfile(String profileId) {
@@ -440,7 +378,7 @@ public class UserInterfaceManagerService implements GameResourceService {
         }
 
         Path manifest = resolveManifestPath(itemFolder);
-        if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) {
+        if (!Files.exists(manifest)) {
             return null;
         }
 
@@ -595,9 +533,7 @@ public class UserInterfaceManagerService implements GameResourceService {
     }
 
     public ResourcesUpdateCheckResult checkResourcesUpdate() {
-        Path localManifest = Files.exists(RESOURCES_DIR.resolve(MANIFEST_FILE_NAME))
-                ? RESOURCES_DIR.resolve(MANIFEST_FILE_NAME)
-                : RESOURCES_DIR.resolve(LEGACY_MANIFEST_FILE_NAME);
+        Path localManifest = RESOURCES_DIR.resolve("manifest.json");
         boolean localExists = Files.exists(localManifest) && Files.isRegularFile(localManifest);
         String localVersion = localExists ? readManifestVersion(localManifest) : "none";
 
@@ -607,11 +543,10 @@ public class UserInterfaceManagerService implements GameResourceService {
         String rawBase = repoUrl
                 .replace("https://github.com/", "https://raw.githubusercontent.com/");
 
-        String bestRemoteVersion = null;
         for (String branch : branches) {
-            String remoteUrl = rawBase + "/" + branch + "/manifest.json?cb=" + System.currentTimeMillis();
+            String remoteUrl = rawBase + "/" + branch + "/manifest.json";
             try {
-                InputStream in = RepositoryZipDownloader.openUrlStream(remoteUrl, "RO_UserInterfaceManager/1.0");
+                InputStream in = RepositoryZipDownloader.openUrlStream(remoteUrl, "RO_CombatTextManager/1.0");
                 if (in == null) continue;
                 String content;
                 try (java.io.InputStreamReader reader = new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)) {
@@ -621,19 +556,14 @@ public class UserInterfaceManagerService implements GameResourceService {
                         .compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
                         .matcher(content);
                 String remoteVersion = matcher.find() ? matcher.group(1).trim() : "0.0.0";
-                if (bestRemoteVersion == null || normalizeVersion(remoteVersion) > normalizeVersion(bestRemoteVersion)) {
-                    bestRemoteVersion = remoteVersion;
-                }
+                boolean updateAvailable = !localExists || normalizeVersion(remoteVersion) > normalizeVersion(localVersion);
+                String message = updateAvailable
+                        ? "New resources available: v" + remoteVersion + (localExists ? " (local: v" + localVersion + ")" : " (not downloaded)")
+                        : "Resources are up to date (v" + localVersion + ").";
+                return new ResourcesUpdateCheckResult(localVersion, remoteVersion, localExists, updateAvailable, true, message);
             } catch (Exception e) {
                 log.info("Remote manifest check failed for branch " + branch + ": " + e.getMessage());
             }
-        }
-        if (bestRemoteVersion != null) {
-            boolean updateAvailable = !localExists || normalizeVersion(bestRemoteVersion) > normalizeVersion(localVersion);
-            String message = updateAvailable
-                    ? "New resources available: v" + bestRemoteVersion + (localExists ? " (local: v" + localVersion + ")" : " (not downloaded)")
-                    : "Resources are up to date (v" + localVersion + ").";
-            return new ResourcesUpdateCheckResult(localVersion, bestRemoteVersion, localExists, updateAvailable, true, message);
         }
         return new ResourcesUpdateCheckResult(localVersion, "unknown", localExists, false, false,
                 "Unable to check remote manifest.");

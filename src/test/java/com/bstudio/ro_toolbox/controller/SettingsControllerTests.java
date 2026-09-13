@@ -1,12 +1,12 @@
 package com.bstudio.ro_toolbox.controller;
 
-import com.bstudio.ro_toolbox.service.buffIcons.BuffIconsManagerService;
-import com.bstudio.ro_toolbox.service.buffs.BuffsManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.BuffIconsManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
-import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
-import com.bstudio.ro_toolbox.service.lootModels.LootManagerService;
-import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
+import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 

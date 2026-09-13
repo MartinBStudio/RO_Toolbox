@@ -1,10 +1,9 @@
-package com.bstudio.ro_toolbox.service.buffIcons;
+package com.bstudio.ro_toolbox.service.textureReplacer.buffIcons;
 
 import com.bstudio.ro_toolbox.service.common.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
-import com.bstudio.ro_toolbox.util.RuntimeDirectories;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +40,7 @@ public class BuffIconsManagerService implements GameResourceService {
 
     public BuffIconsManagerService(AppConfigService appConfigService) {
         this.appConfigService = appConfigService;
-        RuntimeDirectories.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
+        AppDataPaths.ensureRuntimeDirs(APP_DATA_ROOT, CONFIG_DIR, RESOURCES_DIR);
     }
 
     public Path getResourcesDir() {

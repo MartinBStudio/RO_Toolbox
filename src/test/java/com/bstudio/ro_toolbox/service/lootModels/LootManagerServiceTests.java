@@ -1,6 +1,7 @@
 package com.bstudio.ro_toolbox.service.lootModels;
 
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
