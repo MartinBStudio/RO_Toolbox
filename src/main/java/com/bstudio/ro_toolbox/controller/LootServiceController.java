@@ -101,12 +101,5 @@ public class LootServiceController extends BaseController {
         );
     }
 
-    public record LootStatusResponse(
-            String selectedGameBase,
-            String selectedGameItemFolder,
-            AvailablePackage installedProfile,
-            List<String> downloadedProfiles,
-            List<AvailablePackage> availableProfiles
-    ) {
-    }
+
 }

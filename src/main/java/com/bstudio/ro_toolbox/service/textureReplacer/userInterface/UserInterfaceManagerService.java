@@ -276,39 +276,7 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     }
 
     public List<AvailablePackage> listAvailableProfiles() {
-        List<AvailablePackage> results = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-        List<Path> roots = new ArrayList<>();
-        roots.add(RESOURCES_DIR);
-        Path selectedGameBase = getSelectedGameBase();
-        if (selectedGameBase != null) {
-            roots.add(selectedGameBase.resolveSibling(RESOURCES_DIR.getFileName()));
-        }
-
-        for (Path root : roots) {
-            if (root == null || !Files.exists(root) || !Files.isDirectory(root)) continue;
-            try (var stream = Files.list(root)) {
-                for (Path p : (Iterable<Path>) stream::iterator) {
-                    if (!Files.isDirectory(p)) continue;
-                    String name = p.getFileName().toString();
-                    if (name.startsWith(".")) continue;
-                    Path manifest = resolveProfileManifestPath(p);
-                    if (manifest == null) continue;
-                    if (seen.add(name)) {
-                        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(p)).source(p).build();
-                        results.add(availablePackage);
-                    }
-                }
-            } catch (IOException ignored) {
-            }
-        }
-
-        results.sort((a, b) -> {
-            int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
-            if (versionDiff != 0) return versionDiff;
-            return a.getId().compareToIgnoreCase(b.getId());
-        });
-        return results;
+        return listAvailableProfiles(RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
     }
 
     public void installProfile(String profileId) throws IOException {
@@ -347,112 +315,14 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
         if (manifest == null || !Files.isRegularFile(manifest)) {
             return null;
         }
-        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
+        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).managedSubfolders(readManifestManagedSubfolders(manifest)).build();
 
         return availablePackage;
     }
 
-    private String readManifestName(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"name\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
-    private String readManifestDescription(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"description\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
-    private String readManifestUrl(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"url\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
-    private String readManifestAuthor(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"author\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String readManifestCreatedAt(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"createdAt\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String readManifestVersion(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return "0.0.0";
-            return matcher.group(1).trim();
-        } catch (Exception e) {
-            return "0.0.0";
-        }
-    }
-
-    private List<String> readManifestManagedSubfolders(Path manifestFile) {
-        List<String> subfolders = new ArrayList<>();
-        if (manifestFile == null || !Files.exists(manifestFile) || !Files.isRegularFile(manifestFile)) {
-            return null;
-        }
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher arrayMatcher = java.util.regex.Pattern.compile(
-                    "\"managedSubfolders\"\\s*:\\s*\\[(.*?)]",
-                    java.util.regex.Pattern.DOTALL
-            ).matcher(content);
-            if (!arrayMatcher.find()) return null;
-
-            String arrayContent = arrayMatcher.group(1);
-            java.util.regex.Matcher itemMatcher = java.util.regex.Pattern.compile(
-                    "\"((?:\\\\.|[^\"\\\\])*)\""
-            ).matcher(arrayContent);
-            while (itemMatcher.find()) {
-                String raw = itemMatcher.group(1)
-                        .replace("\\n", "\n")
-                        .replace("\\\"", "\"")
-                        .replace("\\\\", "\\")
-                        .trim();
-                if (!raw.isEmpty()) subfolders.add(raw);
-            }
-            return subfolders;
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     private void deleteManagedSubfolders(Path baseDir, List<String> managedSubfolders) throws IOException {
         if (managedSubfolders == null || managedSubfolders.isEmpty()) return;

@@ -19,4 +19,6 @@ public class AvailablePackage {
     private long normalizedVersion;
     private Path source;
     private List<String> previewImages;
+    private List<String> managedSubfolders;
+    private List<String> disabledManagedSubfolders;
 }

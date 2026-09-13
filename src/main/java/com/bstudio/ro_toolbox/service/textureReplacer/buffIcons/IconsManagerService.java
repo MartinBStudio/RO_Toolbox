@@ -209,49 +209,7 @@ public class IconsManagerService implements GameResourceService, ICommonMethods 
     }
 
     public List<AvailablePackage> listAvailableProfiles() {
-        List<AvailablePackage> results = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-        List<Path> roots = new ArrayList<>();
-        roots.add(RESOURCES_DIR);
-        Path selectedGameBase = appConfigService.getSelectedGameBase();
-        if (selectedGameBase != null) {
-            roots.add(selectedGameBase.resolveSibling(RESOURCES_DIR.getFileName()));
-        }
-
-        for (Path root : roots) {
-            if (root == null || !Files.exists(root) || !Files.isDirectory(root)) {
-                continue;
-            }
-            try (var stream = Files.walk(root)) {
-                for (Path p : (Iterable<Path>) stream::iterator) {
-                    if (!Files.isDirectory(p)) {
-                        continue;
-                    }
-                    String name = p.getFileName().toString();
-                    if (name.startsWith(".")) {
-                        continue;
-                    }
-                    Path manifest = p.resolve(PACKAGE_MANIFEST_FILE);
-                    if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) {
-                        continue;
-                    }
-                    if (seen.add(name)) {
-                        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(p)).source(p).build();
-                        results.add(availablePackage);
-                    }
-                }
-            } catch (IOException ignored) {
-            }
-        }
-
-        results.sort((a, b) -> {
-            int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
-            if (versionDiff != 0) {
-                return versionDiff;
-            }
-            return a.getId().compareToIgnoreCase(b.getId());
-        });
-        return results;
+        return listAvailableProfiles(RESOURCES_DIR, appConfigService.getSelectedGameBase(), PACKAGE_MANIFEST_FILE);
     }
 
     public AvailablePackage getInstalledProfileInfo() {
@@ -264,55 +222,14 @@ public class IconsManagerService implements GameResourceService, ICommonMethods 
         if (manifest == null || !Files.isRegularFile(manifest)) {
             return null;
         }
-        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
+        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).managedSubfolders(readManifestManagedSubfolders(manifest)).build();
 
         return availablePackage;
     }
 
-    private String readManifestField(Path manifestFile, String... keys) {
-        try {
-            String content = Files.readString(manifestFile);
-            for (String key : keys) {
-                if (key == null || key.isBlank()) {
-                    continue;
-                }
-                java.util.regex.Matcher matcher = java.util.regex.Pattern
-                        .compile("\"" + java.util.regex.Pattern.quote(key) + "\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
-                        .matcher(content);
-                if (matcher.find()) {
-                    return matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\").trim();
-                }
-            }
-            return null;
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
-    private String readManifestName(Path manifestFile) {
-        return readManifestField(manifestFile, "name");
-    }
 
-    private String readManifestDescription(Path manifestFile) {
-        return readManifestField(manifestFile, "description");
-    }
 
-    private String readManifestUrl(Path manifestFile) {
-        return readManifestField(manifestFile, "url", "repository");
-    }
-
-    private String readManifestAuthor(Path manifestFile) {
-        return readManifestField(manifestFile, "author");
-    }
-
-    private String readManifestCreatedAt(Path manifestFile) {
-        return readManifestField(manifestFile, "createdAt", "timestamp");
-    }
-
-    private String readManifestVersion(Path manifestFile) {
-        String version = readManifestField(manifestFile, "version");
-        return version == null ? "0.0.0" : version;
-    }
 
     private long normalizeVersion(String version) {
         if (version == null || version.isBlank()) {

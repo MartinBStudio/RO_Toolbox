@@ -40,16 +40,22 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     private final AppConfigService appConfigService;
     private volatile String currentLootProfile = null;
 
-    public Path getResourcesDir() { return RESOURCES_DIR; }
+    public Path getResourcesDir() {
+        return RESOURCES_DIR;
+    }
 
-    public Path getSelectedGameBase() { return appConfigService.getSelectedGameBase(); }
+    public Path getSelectedGameBase() {
+        return appConfigService.getSelectedGameBase();
+    }
 
     public Path getSelectedGameItemFolder() {
         Path selectedGameBase = getSelectedGameBase();
         return (selectedGameBase == null) ? null : selectedGameBase.resolve(GAME_SUFFIX);
     }
 
-    public String getCurrentLootProfile() { return currentLootProfile; }
+    public String getCurrentLootProfile() {
+        return currentLootProfile;
+    }
 
     public void setCurrentLootProfile(String profile) {
         currentLootProfile = (profile == null || profile.isBlank()) ? null : profile;
@@ -244,11 +250,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     }
 
 
-
-
-
-
-
     public List<String> listDownloadedProfiles() {
         List<String> profiles = new ArrayList<>();
         if (RESOURCES_DIR == null || !Files.exists(RESOURCES_DIR) || !Files.isDirectory(RESOURCES_DIR)) {
@@ -270,40 +271,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
     }
 
     public List<AvailablePackage> listAvailableProfiles() {
-        List<AvailablePackage> results = new ArrayList<>();
-        Set<String> seen = new LinkedHashSet<>();
-        List<Path> roots = new ArrayList<>();
-        roots.add(RESOURCES_DIR);
-        Path selectedGameBase = getSelectedGameBase();
-        if (selectedGameBase != null) {
-            roots.add(selectedGameBase.resolveSibling(RESOURCES_DIR.getFileName()));
-        }
-
-        for (Path root : roots) {
-            if (root == null || !Files.exists(root) || !Files.isDirectory(root)) continue;
-            try (var stream = Files.walk(root)) {
-                for (Path p : (Iterable<Path>) stream::iterator) {
-                    if (!Files.isDirectory(p)) continue;
-                    String name = p.getFileName().toString();
-                    if (name.startsWith(".")) continue;
-                    Path manifest = resolveManifestPath(p);
-                    if (!Files.exists(manifest) || !Files.isRegularFile(manifest)) continue;
-                    if (seen.add(name)) {
-                        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(p)).source(p).build();
-
-                        results.add(availablePackage);
-                    }
-                }
-            } catch (IOException ignored) {
-            }
-        }
-
-        results.sort((a, b) -> {
-            int versionDiff = Long.compare(b.getNormalizedVersion(), a.getNormalizedVersion());
-            if (versionDiff != 0) return versionDiff;
-            return a.getId().compareToIgnoreCase(b.getId());
-        });
-        return results;
+        return listAvailableProfiles(RESOURCES_DIR, getSelectedGameBase(), MANIFEST_FILE_NAME);
     }
 
     public void installProfile(String profileId) throws IOException {
@@ -408,32 +376,6 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
                 .orElseThrow(() -> new IllegalArgumentException("Profile not found: " + normalizedProfileId));
     }
 
-    public static final class ProfileInfo {
-        public final String name;
-        public final String author;
-        public final String description;
-        public final String url;
-        public final String createdAt;
-        public final String version;
-        public final List<String> managedSubfolders;
-        public final List<String> disabledManagedSubfolders;
-
-        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version, List<String> managedSubfolders, List<String> disabledManagedSubfolders) {
-            this.name = name;
-            this.author = author;
-            this.description = description;
-            this.url = url;
-            this.createdAt = createdAt;
-            this.version = version;
-            this.managedSubfolders = managedSubfolders;
-            this.disabledManagedSubfolders = disabledManagedSubfolders;
-        }
-
-        public ProfileInfo(String name, String author, String description, String url, String createdAt, String version) {
-            this(name, author, description, url, createdAt, version, List.of(), List.of());
-        }
-    }
-
     public AvailablePackage getInstalledProfileInfo() {
         Path itemFolder = getSelectedGameItemFolder();
         if (itemFolder == null || !Files.exists(itemFolder)) {
@@ -444,133 +386,13 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         if (manifest == null || !Files.isRegularFile(manifest)) {
             return null;
         }
-        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).build();
+        AvailablePackage availablePackage = AvailablePackage.builder().id(readManifestName(manifest)).name(readManifestName(manifest)).author(readManifestAuthor(manifest)).description(readManifestDescription(manifest)).url(readManifestUrl(manifest)).createdAt(readManifestCreatedAt(manifest)).version(readManifestVersion(manifest)).previewImages(loadPreviewImages(manifest)).source(manifest).managedSubfolders(readManifestManagedSubfolders(manifest)).disabledManagedSubfolders(readManifestDisabledManagedSubfolders(itemFolder, readManifestManagedSubfolders(manifest))).build();
 
         return availablePackage;
     }
 
-    private String readManifestName(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"name\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
-    private String readManifestDescription(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"description\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
-    private String readManifestUrl(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"url\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String readManifestAuthor(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"author\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String readManifestCreatedAt(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"createdAt\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return null;
-            String value = matcher.group(1).replace("\\n", "\n").replace("\\\"", "\"").replace("\\\\", "\\");
-            return value.trim();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String readManifestVersion(Path manifestFile) {
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher matcher = java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"").matcher(content);
-            if (!matcher.find()) return "0.0.0";
-            return matcher.group(1).trim();
-        } catch (Exception e) {
-            return "0.0.0";
-        }
-    }
-
-    private List<String> readManifestManagedSubfolders(Path manifestFile) {
-        List<String> subfolders = new ArrayList<>();
-        if (manifestFile == null || !Files.exists(manifestFile) || !Files.isRegularFile(manifestFile)) {
-            return null;
-        }
-        try {
-            String content = Files.readString(manifestFile);
-            java.util.regex.Matcher arrayMatcher = java.util.regex.Pattern.compile(
-                    "\"managedSubfolders\"\\s*:\\s*\\[(.*?)]",
-                    java.util.regex.Pattern.DOTALL
-            ).matcher(content);
-            if (!arrayMatcher.find()) return null;
-
-            String arrayContent = arrayMatcher.group(1);
-            java.util.regex.Matcher itemMatcher = java.util.regex.Pattern.compile(
-                    "\"((?:\\\\.|[^\"\\\\])*)\""
-            ).matcher(arrayContent);
-            while (itemMatcher.find()) {
-                String raw = itemMatcher.group(1)
-                        .replace("\\n", "\n")
-                        .replace("\\\"", "\"")
-                        .replace("\\\\", "\\")
-                        .trim();
-                if (!raw.isEmpty()) subfolders.add(raw);
-            }
-            return subfolders;
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private List<String> readManifestDisabledManagedSubfolders(Path itemFolder, List<String> managedSubfolders) {
-        if (itemFolder == null || !Files.exists(itemFolder) || managedSubfolders == null || managedSubfolders.isEmpty()) {
-            return List.of();
-        }
-
-        List<String> disabled = new ArrayList<>();
-        for (String subfolder : managedSubfolders) {
-            if (subfolder == null || subfolder.isBlank()) continue;
-            Path relative = Paths.get(subfolder).normalize();
-            if (relative.isAbsolute() || relative.startsWith("..")) continue;
-
-            Path target = itemFolder.resolve(relative).normalize();
-            Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
-
-            if (disabledTarget != null && Files.exists(disabledTarget) && Files.isDirectory(disabledTarget)) {
-                disabled.add(subfolder);
-            }
-        }
-        return disabled;
-    }
 
     private void deleteManagedSubfolders(Path baseDir, List<String> managedSubfolders) throws IOException {
         if (managedSubfolders == null || managedSubfolders.isEmpty()) return;
@@ -601,18 +423,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
         }
     }
 
-    private Path resolveDisabledManagedSubfolderPath(Path target) {
-        if (target == null || target.getFileName() == null) {
-            return null;
-        }
 
-        Path parent = target.getParent();
-        if (parent == null) {
-            return null;
-        }
-
-        return parent.resolve("disabled_" + target.getFileName());
-    }
 
     private long normalizeVersion(String version) {
         if (version == null || version.isBlank()) return 0L;
@@ -674,6 +485,7 @@ public class LootManagerService implements GameResourceService, ICommonMethods {
             boolean updateAvailable,
             boolean success,
             String message
-    ) {}
+    ) {
+    }
 
 }
