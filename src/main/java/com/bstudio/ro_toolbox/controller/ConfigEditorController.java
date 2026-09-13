@@ -13,7 +13,7 @@ import java.nio.file.Path;
 @RestController
 @RequestMapping("/api/config-editor")
 @RequiredArgsConstructor
-public class ConfigEditorController {
+public class ConfigEditorController extends BaseController{
 
     private final ConfigEditorService configEditorService;
 

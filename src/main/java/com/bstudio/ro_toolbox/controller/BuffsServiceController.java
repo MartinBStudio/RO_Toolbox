@@ -1,5 +1,7 @@
 package com.bstudio.ro_toolbox.controller;
 
+import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
+import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.service.buffs.BuffsManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/buffs")
 @RequiredArgsConstructor
-public class BuffsServiceController {
+public class BuffsServiceController extends BaseController {
 
     private final BuffsManagerService buffsManagerService;
 
@@ -47,28 +49,28 @@ public class BuffsServiceController {
         Path dest = buffsManagerService.getResourcesDir();
         Files.createDirectories(dest);
         buffsManagerService.downloadAndExtract(null, dest);
-        return new MessageResponse("Profiles downloaded.");
+        return MessageResponse.builder().message("Profiles downloaded.").build();
     }
 
     @PostMapping("/install")
     public MessageResponse installProfile(@RequestBody InstallProfileRequest request) throws IOException {
-        if (request == null || request.profileId() == null || request.profileId().isBlank()) {
+        if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
             throw new IllegalArgumentException("profileId is required.");
         }
-        buffsManagerService.installProfile(request.profileId().trim());
-        return new MessageResponse("Profile installed: " + request.profileId().trim());
+        buffsManagerService.installProfile(request.getProfileId().trim());
+        return MessageResponse.builder().message("Profile installed: " + request.getProfileId().trim()).build();
     }
 
     @PostMapping("/clear-resources")
     public MessageResponse clearResources() throws IOException {
         buffsManagerService.clearResources();
-        return new MessageResponse("Downloaded resources cleared.");
+        return MessageResponse.builder().message("Downloaded resources cleared.").build();
     }
 
     @PostMapping("/clear-installed")
     public MessageResponse clearInstalled() throws IOException {
         buffsManagerService.clearSelectedItemFolder();
-        return new MessageResponse("Installed buffs cleared.");
+        return MessageResponse.builder().message("Installed buffs cleared.").build();
     }
 
     @GetMapping("/check-update")
@@ -81,7 +83,7 @@ public class BuffsServiceController {
         Path resources = buffsManagerService.getResourcesDir();
         Files.createDirectories(resources);
         DesktopFolderOpener.openInDesktop(resources);
-        return new MessageResponse("Opened resources folder.");
+        return MessageResponse.builder().message("Opened resources folder.").build();
     }
 
     @PostMapping("/folders/open/item")
@@ -92,18 +94,11 @@ public class BuffsServiceController {
         }
         Files.createDirectories(item);
         DesktopFolderOpener.openInDesktop(item);
-        return new MessageResponse("Opened item folder.");
+        return MessageResponse.builder().message("Opened item folder.").build();
     }
 
-    private String absoluteOrNull(Path path) {
-        return path == null ? null : path.toAbsolutePath().normalize().toString();
-    }
 
-    public record InstallProfileRequest(String profileId) {
-    }
 
-    public record MessageResponse(String message) {
-    }
 
     public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
     }

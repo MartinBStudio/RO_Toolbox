@@ -1,5 +1,7 @@
 package com.bstudio.ro_toolbox.controller;
 
+import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
+import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -47,28 +49,28 @@ public class UserInterfaceServiceController {
         Path dest = userInterfaceManagerService.getResourcesDir();
         Files.createDirectories(dest);
         userInterfaceManagerService.downloadAndExtract(null, dest);
-        return new MessageResponse("Profiles downloaded.");
+        return MessageResponse.builder().message("Profiles downloaded.").build();
     }
 
     @PostMapping("/install")
     public MessageResponse installProfile(@RequestBody InstallProfileRequest request) throws IOException {
-        if (request == null || request.profileId() == null || request.profileId().isBlank()) {
+        if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
             throw new IllegalArgumentException("profileId is required.");
         }
-        userInterfaceManagerService.installProfile(request.profileId().trim());
-        return new MessageResponse("Profile installed: " + request.profileId().trim());
+        userInterfaceManagerService.installProfile(request.getProfileId().trim());
+        return MessageResponse.builder().message("Profile installed: " + request.getProfileId().trim()).build();
     }
 
     @PostMapping("/clear-resources")
     public MessageResponse clearResources() throws IOException {
         userInterfaceManagerService.clearResources();
-        return new MessageResponse("Downloaded resources cleared.");
+        return MessageResponse.builder().message("Downloaded resources cleared.").build();
     }
 
     @PostMapping("/clear-installed")
     public MessageResponse clearInstalled() throws IOException {
         userInterfaceManagerService.clearSelectedItemFolder();
-        return new MessageResponse("Installed models cleared.");
+        return MessageResponse.builder().message("Installed models cleared.").build();
     }
 
     @GetMapping("/check-update")
@@ -81,7 +83,7 @@ public class UserInterfaceServiceController {
         Path resources = userInterfaceManagerService.getResourcesDir();
         Files.createDirectories(resources);
         DesktopFolderOpener.openInDesktop(resources);
-        return new MessageResponse("Opened resources folder.");
+        return MessageResponse.builder().message("Opened resources folder.").build();
     }
 
     @PostMapping("/folders/open/item")
@@ -92,18 +94,14 @@ public class UserInterfaceServiceController {
         }
         Files.createDirectories(item);
         DesktopFolderOpener.openInDesktop(item);
-        return new MessageResponse("Opened item folder.");
+        return MessageResponse.builder().message("Opened item folder.").build();
     }
 
     private String absoluteOrNull(Path path) {
         return path == null ? null : path.toAbsolutePath().normalize().toString();
     }
 
-    public record InstallProfileRequest(String profileId) {
-    }
 
-    public record MessageResponse(String message) {
-    }
 
     public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
     }

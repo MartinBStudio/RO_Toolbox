@@ -3,13 +3,12 @@ package com.bstudio.ro_toolbox.service.userInterface;
 import com.bstudio.ro_toolbox.service.common.GameResourceService;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
+import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
 import com.bstudio.ro_toolbox.util.RuntimeDirectories;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URL;
 import java.nio.file.*;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -20,8 +19,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipInputStream;
 
 @Service
 @Slf4j
@@ -59,74 +56,13 @@ public class UserInterfaceManagerService implements GameResourceService {
     }
 
     public void downloadAndExtract(String repoUrl, Path destDir) throws IOException {
-        if (repoUrl == null || repoUrl.isEmpty()) repoUrl = DEFAULT_REPO;
-        if (!Files.exists(destDir)) Files.createDirectories(destDir);
-
-        String[] branches = {"main", "master"};
-        IOException lastException = null;
-
-        for (String branch : branches) {
-            String zipUrl = buildZipUrl(repoUrl, branch);
-            log.info("Trying branch: " + branch + " -> " + zipUrl);
-            try {
-                Path tmp = Files.createTempFile("repo-", ".zip");
-                try (InputStream in = openUrlStream(zipUrl)) {
-                    if (in == null) throw new IOException("Not found: " + zipUrl);
-                    Files.copy(in, tmp, StandardCopyOption.REPLACE_EXISTING);
-                }
-                unzipTo(tmp, destDir);
-                Files.deleteIfExists(tmp);
-                return;
-            } catch (IOException e) {
-                lastException = e;
-                log.info("Failed branch " + branch + ": " + e.getMessage());
-            }
-        }
-        throw lastException != null ? lastException : new IOException("Failed to download repository zip");
-    }
-
-    private String buildZipUrl(String repoUrl, String branch) {
-        if (repoUrl.endsWith("/")) repoUrl = repoUrl.substring(0, repoUrl.length() - 1);
-        return repoUrl + "/archive/refs/heads/" + branch + ".zip";
-    }
-
-    private InputStream openUrlStream(String urlStr) throws IOException {
-        URL url = new URL(urlStr);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestProperty("User-Agent", "RO_UserInterfaceManager/1.0");
-        conn.setInstanceFollowRedirects(true);
-        int code = conn.getResponseCode();
-        if (code >= 200 && code < 300) return conn.getInputStream();
-        conn.disconnect();
-        return null;
-    }
-
-    private void unzipTo(Path zipFile, Path destDir) throws IOException {
-        try (ZipInputStream zis = new ZipInputStream(Files.newInputStream(zipFile))) {
-            ZipEntry entry;
-            while ((entry = zis.getNextEntry()) != null) {
-                String name = entry.getName();
-                String[] parts = name.split("/", 2);
-                String relative = parts.length == 2 ? parts[1] : (parts.length == 1 ? parts[0] : "");
-                if (relative.isEmpty()) {
-                    zis.closeEntry();
-                    continue;
-                }
-                Path outPath = destDir.resolve(relative);
-                if (entry.isDirectory()) {
-                    Files.createDirectories(outPath);
-                } else {
-                    Files.createDirectories(outPath.getParent());
-                    try (OutputStream os = Files.newOutputStream(outPath)) {
-                        byte[] buf = new byte[8192];
-                        int len;
-                        while ((len = zis.read(buf)) > 0) os.write(buf, 0, len);
-                    }
-                }
-                log.info("Extracted: " + relative);
-                zis.closeEntry();
-            }
-        }
+        RepositoryZipDownloader.downloadAndExtract(
+                repoUrl,
+                DEFAULT_REPO,
+                destDir,
+                "RO_UserInterfaceManager/1.0",
+                log::info
+        );
     }
 
     public void copyDirectoryContents(Path src, Path dst) throws IOException {
@@ -675,7 +611,7 @@ public class UserInterfaceManagerService implements GameResourceService {
         for (String branch : branches) {
             String remoteUrl = rawBase + "/" + branch + "/manifest.json?cb=" + System.currentTimeMillis();
             try {
-                InputStream in = openUrlStream(remoteUrl);
+                InputStream in = RepositoryZipDownloader.openUrlStream(remoteUrl, "RO_UserInterfaceManager/1.0");
                 if (in == null) continue;
                 String content;
                 try (java.io.InputStreamReader reader = new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8)) {

@@ -1,8 +1,10 @@
 package com.bstudio.ro_toolbox.controller;
 
+import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.app.AppNotificationService;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -58,7 +60,7 @@ public class LoginServiceController {
             Files.createDirectories(parent);
         }
         Files.writeString(exportPath, request.content(), StandardCharsets.UTF_8);
-        return new MessageResponse("Accounts exported.");
+        return MessageResponse.builder().message("Accounts exported.").build();
     }
 
     @PostMapping("/{id}/launch")
@@ -93,7 +95,7 @@ public class LoginServiceController {
             appNotificationService.enqueue("ROSE Online launched for " + account.name() + ".");
         }
 
-        return new MessageResponse("Launching ROSE Online for " + account.name() + ".");
+        return MessageResponse.builder().message("Launching ROSE Online for " + account.name() + ".").build();
     }
 
     @PostMapping
@@ -143,8 +145,7 @@ public class LoginServiceController {
         throw new IllegalStateException("No valid game installation folder is selected.");
     }
 
-    public record MessageResponse(String message) {
-    }
+
 
     public record ImportResponse(int totalAccounts, String message) {
     }

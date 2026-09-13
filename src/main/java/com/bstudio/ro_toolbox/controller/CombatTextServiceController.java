@@ -1,5 +1,7 @@
 package com.bstudio.ro_toolbox.controller;
 
+import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
+import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +15,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/combattext")
 @RequiredArgsConstructor
-public class CombatTextServiceController {
+public class CombatTextServiceController extends BaseController {
 
     private final CombatTextManagerService combatTextManagerService;
 
@@ -47,29 +49,29 @@ public class CombatTextServiceController {
         Path dest = combatTextManagerService.getResourcesDir();
         Files.createDirectories(dest);
         combatTextManagerService.downloadAndExtract(null, dest);
-        return new MessageResponse("Profiles downloaded.");
+        return MessageResponse.builder().message("Profiles downloaded.").build();
     }
 
     @PostMapping("/install")
     public MessageResponse installProfile(@RequestBody InstallProfileRequest request) throws IOException {
-        if (request == null || request.profileId() == null || request.profileId().isBlank()) {
+        if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
             throw new IllegalArgumentException("profileId is required.");
         }
-        combatTextManagerService.installProfile(request.profileId().trim());
-        return new MessageResponse("Profile installed: " + request.profileId().trim());
+        combatTextManagerService.installProfile(request.getProfileId().trim());
+        return MessageResponse.builder().message("Profile installed: " + request.getProfileId().trim()).build();
     }
 
     @PostMapping("/clear-resources")
     public MessageResponse clearResources() throws IOException {
         combatTextManagerService.clearResources();
-        return new MessageResponse("Downloaded resources cleared.");
+        return MessageResponse.builder().message("Downloaded resources cleared.").build();
     }
 
     @PostMapping("/clear-installed")
     public MessageResponse clearInstalled() throws IOException {
         combatTextManagerService.clearSelectedItemFolder();
         combatTextManagerService.setCurrentCombatTextProfile(null);
-        return new MessageResponse("Installed models cleared.");
+        return MessageResponse.builder().message("Installed models cleared.").build();
     }
 
     @GetMapping("/check-update")
@@ -82,7 +84,7 @@ public class CombatTextServiceController {
         Path resources = combatTextManagerService.getResourcesDir();
         Files.createDirectories(resources);
         DesktopFolderOpener.openInDesktop(resources);
-        return new MessageResponse("Opened resources folder.");
+        return MessageResponse.builder().message("Opened resources folder.").build();
     }
 
     @PostMapping("/folders/open/item")
@@ -93,18 +95,12 @@ public class CombatTextServiceController {
         }
         Files.createDirectories(item);
         DesktopFolderOpener.openInDesktop(item);
-        return new MessageResponse("Opened item folder.");
+        return MessageResponse.builder().message("Opened item folder.").build();
     }
 
-    private String absoluteOrNull(Path path) {
-        return path == null ? null : path.toAbsolutePath().normalize().toString();
-    }
 
-    public record InstallProfileRequest(String profileId) {
-    }
 
-    public record MessageResponse(String message) {
-    }
+
 
     public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
     }
