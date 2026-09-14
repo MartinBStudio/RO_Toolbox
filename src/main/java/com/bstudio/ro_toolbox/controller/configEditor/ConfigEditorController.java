@@ -1,5 +1,6 @@
-package com.bstudio.ro_toolbox.controller;
+package com.bstudio.ro_toolbox.controller.configEditor;
 
+import com.bstudio.ro_toolbox.controller.resourceReplacer.BaseResourceReplacerController;
 import com.bstudio.ro_toolbox.service.configEditor.ConfigEditorService;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import java.awt.Desktop;
@@ -12,7 +13,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/config-editor")
 @RequiredArgsConstructor
-public class ConfigEditorController extends BaseController {
+public class ConfigEditorController extends BaseResourceReplacerController {
 
   private final ConfigEditorService configEditorService;
 

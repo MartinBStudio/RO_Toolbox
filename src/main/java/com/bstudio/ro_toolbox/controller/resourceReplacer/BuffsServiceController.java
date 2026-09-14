@@ -1,12 +1,12 @@
-package com.bstudio.ro_toolbox.controller;
+package com.bstudio.ro_toolbox.controller.resourceReplacer;
 
-import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
-import com.bstudio.ro_toolbox.controller.model.MessageResponse;
-import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.InstallPackageRequest;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.ResourceReplacerStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
-import com.bstudio.ro_toolbox.service.resourceReplacer.service.icons.IconsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.buffs.BuffsManager;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -16,65 +16,65 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/bufficons")
+@RequestMapping("/api/buffs")
 @RequiredArgsConstructor
-public class BuffIconsServiceController extends BaseController {
+public class BuffsServiceController extends BaseResourceReplacerController {
 
-  private final IconsManager iconsManager;
+  private final BuffsManager buffsManager;
   private final AppConfigService appConfigService;
 
   @GetMapping("/status")
-  public PackageServiceStatusResponse status() {
-    var installed = iconsManager.getStatus();
-    return PackageServiceStatusResponse.builder()
+  public ResourceReplacerStatusResponse status() {
+    var installed = buffsManager.getStatus();
+    return ResourceReplacerStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
-        .selectedGameItemFolder(absoluteOrNull(iconsManager.getGameDataDir()))
+        .selectedGameItemFolder(absoluteOrNull(buffsManager.getGameDataDir()))
         .installedProfile(installed)
         .downloadedProfiles(
             List.of(
-                iconsManager.listPackages().stream().map(Resource::getName).toArray(String[]::new)))
-        .availableProfiles(iconsManager.listPackages())
+                buffsManager.listPackages().stream().map(Resource::getName).toArray(String[]::new)))
+        .availableProfiles(buffsManager.listPackages())
         .build();
   }
 
   @PostMapping("/download")
   public MessageResponse downloadProfiles() throws IOException {
-    iconsManager.runUpdate();
-    return MessageResponse.builder().message("Packages downloaded.").build();
+    buffsManager.runUpdate();
+    return MessageResponse.builder().message("Profiles downloaded.").build();
   }
 
   @PostMapping("/install")
-  public MessageResponse installProfile(@RequestBody InstallProfileRequest request)
+  public MessageResponse installProfile(@RequestBody InstallPackageRequest request)
       throws IOException {
     if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
       throw new IllegalArgumentException("profileId is required.");
     }
-    iconsManager.installPackage(request.getProfileId().trim(), List.of());
+    buffsManager.installPackage(request.getProfileId().trim(), List.of());
     return MessageResponse.builder()
-        .message("Package installed: " + request.getProfileId().trim())
+        .message("Profile installed: " + request.getProfileId().trim())
         .build();
   }
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    iconsManager.clearDownloaded();
+    buffsManager.clearDownloaded();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    iconsManager.uninstallPackage();
-    return MessageResponse.builder().message("Installed buff icons cleared.").build();
+    buffsManager.uninstallPackage();
+    return MessageResponse.builder().message("Installed buffs cleared.").build();
   }
 
   @GetMapping("/check-update")
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
-    return iconsManager.checkForUpdate();
+    return buffsManager.checkForUpdate();
   }
 
   @PostMapping("/folders/open/resources")
   public MessageResponse openResourcesFolder() throws IOException {
-    Path resources = iconsManager.getResourcesDir();
+    Path resources = buffsManager.getResourcesDir();
     Files.createDirectories(resources);
     DesktopFolderOpener.openInDesktop(resources);
     return MessageResponse.builder().message("Opened resources folder.").build();
@@ -82,7 +82,7 @@ public class BuffIconsServiceController extends BaseController {
 
   @PostMapping("/folders/open/item")
   public MessageResponse openItemFolder() throws IOException {
-    Path item = iconsManager.getGameDataDir();
+    Path item = buffsManager.getGameDataDir();
     if (item == null) {
       throw new IllegalStateException("No game installation folder is selected.");
     }
@@ -90,4 +90,11 @@ public class BuffIconsServiceController extends BaseController {
     DesktopFolderOpener.openInDesktop(item);
     return MessageResponse.builder().message("Opened item folder.").build();
   }
+
+  public record BuffsStatusResponse(
+      String selectedGameBase,
+      String selectedGameItemFolder,
+      Resource installedProfile,
+      List<String> downloadedProfiles,
+      List<Resource> availableProfiles) {}
 }

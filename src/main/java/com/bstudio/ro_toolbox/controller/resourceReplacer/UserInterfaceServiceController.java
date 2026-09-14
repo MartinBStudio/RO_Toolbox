@@ -1,8 +1,8 @@
-package com.bstudio.ro_toolbox.controller;
+package com.bstudio.ro_toolbox.controller.resourceReplacer;
 
-import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
-import com.bstudio.ro_toolbox.controller.model.MessageResponse;
-import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.InstallPackageRequest;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.ResourceReplacerStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
@@ -26,9 +26,9 @@ public class UserInterfaceServiceController {
   private final AppConfigService appConfigService;
 
   @GetMapping("/status")
-  public PackageServiceStatusResponse status() {
+  public ResourceReplacerStatusResponse status() {
     var installed = userInterfaceManager.getStatus();
-    return PackageServiceStatusResponse.builder()
+    return ResourceReplacerStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(userInterfaceManager.getGameDataDir()))
         .installedProfile(installed)
@@ -48,7 +48,7 @@ public class UserInterfaceServiceController {
   }
 
   @PostMapping("/install")
-  public MessageResponse installProfile(@RequestBody InstallProfileRequest request)
+  public MessageResponse installProfile(@RequestBody InstallPackageRequest request)
       throws IOException {
     if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
       throw new IllegalArgumentException("profileId is required.");

@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.controller;
+package com.bstudio.ro_toolbox.controller.app;
 
 import com.bstudio.ro_toolbox.RoToolboxApplication;
 import com.bstudio.ro_toolbox.service.app.AppNotificationService;

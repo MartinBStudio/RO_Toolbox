@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.controller.config;
+package com.bstudio.ro_toolbox.config;
 
 import java.io.IOException;
 import org.springframework.http.HttpStatus;

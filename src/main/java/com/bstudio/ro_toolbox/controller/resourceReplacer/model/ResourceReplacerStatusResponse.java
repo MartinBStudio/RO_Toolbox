@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.controller.model;
+package com.bstudio.ro_toolbox.controller.resourceReplacer.model;
 
 import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
 import java.util.List;
@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Builder
 @Data
-public class PackageServiceStatusResponse {
+public class ResourceReplacerStatusResponse {
   private String selectedGameBase;
   private String selectedGameItemFolder;
   private Resource installedProfile;

@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.controller.model;
+package com.bstudio.ro_toolbox.controller.resourceReplacer.model;
 
 import lombok.Builder;
 import lombok.Data;

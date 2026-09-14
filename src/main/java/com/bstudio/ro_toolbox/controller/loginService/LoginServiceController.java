@@ -1,6 +1,6 @@
-package com.bstudio.ro_toolbox.controller;
+package com.bstudio.ro_toolbox.controller.loginService;
 
-import com.bstudio.ro_toolbox.controller.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.MessageResponse;
 import com.bstudio.ro_toolbox.service.app.AppNotificationService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
