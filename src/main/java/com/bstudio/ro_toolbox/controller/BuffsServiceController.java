@@ -4,10 +4,10 @@ import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
-import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
-import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
-import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.buffs.BuffsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.icons.IconsManager;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,30 +21,27 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class BuffsServiceController extends BaseController {
 
-  private final BuffsManagerService buffsManagerService;
+  private final BuffsManager buffsManager;
   private final AppConfigService appConfigService;
-  private final IconsManagerService iconsManagerService;
+  private final IconsManager iconsManager;
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = buffsManagerService.getStatus();
+    var installed = buffsManager.getStatus();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
-        .selectedGameItemFolder(absoluteOrNull(buffsManagerService.getGameDataDir()))
+        .selectedGameItemFolder(absoluteOrNull(buffsManager.getGameDataDir()))
         .installedProfile(installed)
-            .downloadedProfiles(
-                    List.of(buffsManagerService.listPackages()
-                            .stream()
-                            .map(ResourcePackage::getName)
-                            .toArray(String[]::new))
-            )
-        .availableProfiles(buffsManagerService.listPackages())
+        .downloadedProfiles(
+            List.of(
+                buffsManager.listPackages().stream().map(Resource::getName).toArray(String[]::new)))
+        .availableProfiles(buffsManager.listPackages())
         .build();
   }
 
   @PostMapping("/download")
   public MessageResponse downloadProfiles() throws IOException {
-    buffsManagerService.runUpdate();
+    buffsManager.runUpdate();
     return MessageResponse.builder().message("Profiles downloaded.").build();
   }
 
@@ -54,7 +51,7 @@ public class BuffsServiceController extends BaseController {
     if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
       throw new IllegalArgumentException("profileId is required.");
     }
-    buffsManagerService.installPackage(request.getProfileId().trim(), List.of());
+    buffsManager.installPackage(request.getProfileId().trim(), List.of());
     return MessageResponse.builder()
         .message("Profile installed: " + request.getProfileId().trim())
         .build();
@@ -62,24 +59,24 @@ public class BuffsServiceController extends BaseController {
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    buffsManagerService.clearDownloaded();
+    buffsManager.clearDownloaded();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    buffsManagerService.uninstallPackage();
+    buffsManager.uninstallPackage();
     return MessageResponse.builder().message("Installed buffs cleared.").build();
   }
 
   @GetMapping("/check-update")
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
-    return buffsManagerService.checkForUpdate();
+    return buffsManager.checkForUpdate();
   }
 
   @PostMapping("/folders/open/resources")
   public MessageResponse openResourcesFolder() throws IOException {
-    Path resources = buffsManagerService.getResourcesDir();
+    Path resources = buffsManager.getResourcesDir();
     Files.createDirectories(resources);
     DesktopFolderOpener.openInDesktop(resources);
     return MessageResponse.builder().message("Opened resources folder.").build();
@@ -87,7 +84,7 @@ public class BuffsServiceController extends BaseController {
 
   @PostMapping("/folders/open/item")
   public MessageResponse openItemFolder() throws IOException {
-    Path item = buffsManagerService.getGameDataDir();
+    Path item = buffsManager.getGameDataDir();
     if (item == null) {
       throw new IllegalStateException("No game installation folder is selected.");
     }
@@ -99,7 +96,7 @@ public class BuffsServiceController extends BaseController {
   public record BuffsStatusResponse(
       String selectedGameBase,
       String selectedGameItemFolder,
-      ResourcePackage installedProfile,
+      Resource installedProfile,
       List<String> downloadedProfiles,
-      List<ResourcePackage> availableProfiles) {}
+      List<Resource> availableProfiles) {}
 }

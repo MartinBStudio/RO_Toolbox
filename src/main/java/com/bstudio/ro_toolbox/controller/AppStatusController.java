@@ -3,12 +3,12 @@ package com.bstudio.ro_toolbox.controller;
 import com.bstudio.ro_toolbox.RoToolboxApplication;
 import com.bstudio.ro_toolbox.service.app.AppNotificationService;
 import com.bstudio.ro_toolbox.service.app.TroseExecutableMonitor;
-import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
-import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.buffs.BuffsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.combatText.CombatTextManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.icons.IconsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.loot.LootManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.userInterface.UserInterfaceManager;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -21,21 +21,21 @@ import org.springframework.web.bind.annotation.RestController;
 public class AppStatusController {
 
   private final RoToolboxApplication app;
-  private final LootManagerService lootManagerService;
-  private final CombatTextManagerService combatTextManagerService;
-  private final UserInterfaceManagerService userInterfaceManagerService;
-  private final IconsManagerService iconsManagerService;
-  private final BuffsManagerService buffsManagerService;
+  private final LootManager lootManager;
+  private final CombatTextManager combatTextManagerService;
+  private final UserInterfaceManager userInterfaceManager;
+  private final IconsManager iconsManager;
+  private final BuffsManager buffsManager;
   private final AppNotificationService appNotificationService;
   private final TroseExecutableMonitor troseExecutableMonitor;
 
   @GetMapping("/status")
   public AppStatusResponse status() {
-    var installedLoot = lootManagerService.getStatus();
+    var installedLoot = lootManager.getStatus();
     var installedCombatText = combatTextManagerService.getStatus();
-    var installedUserInterface = userInterfaceManagerService.getStatus();
-    var installedBuffIcons = iconsManagerService.getStatus();
-    var installedBuffs = buffsManagerService.getStatus();
+    var installedUserInterface = userInterfaceManager.getStatus();
+    var installedBuffIcons = iconsManager.getStatus();
+    var installedBuffs = buffsManager.getStatus();
     return new AppStatusResponse(
         app.getVersion(),
         troseExecutableMonitor.isTroseRunning(),
@@ -81,7 +81,7 @@ public class AppStatusController {
       PackageServiceSummary buffsService,
       List<ServiceEndpointResponse> services) {}
 
-  public record PackageServiceSummary(String endpoint, ResourcePackage activeProfile) {}
+  public record PackageServiceSummary(String endpoint, Resource activeProfile) {}
 
   public record ServiceEndpointResponse(String key, String endpoint, String description) {}
 

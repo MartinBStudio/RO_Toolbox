@@ -137,6 +137,7 @@ public class AppConfigService {
   public void saveUsefulStuffCollapsed(boolean collapsed) throws IOException {
     setProperty(USEFUL_STUFF_COLLAPSED_KEY, String.valueOf(collapsed));
   }
+
   public boolean getIgnoreConfigWarnings() throws IOException {
     return Boolean.parseBoolean(getProperty(IGNORE_CONFIG_WARNINGS_KEY));
   }

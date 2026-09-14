@@ -1,6 +1,6 @@
-package com.bstudio.ro_toolbox.service.common;
+package com.bstudio.ro_toolbox.service.resourceReplacer.utils;
 
-import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
@@ -9,10 +9,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.*;
 
-public interface ICommonMethods {
+public interface ICommonResourceMethods {
   default String absoluteOrNull(Path path) {
     return path == null ? null : path.toAbsolutePath().normalize().toString();
   }
+
   default Path resolveDisabledManagedSubfolderPath(Path target) {
     if (target == null || target.getFileName() == null) {
       return null;
@@ -110,8 +111,7 @@ public interface ICommonMethods {
     }
   }
 
-  default ResourcePackage findSelectedPackage(
-      String profileId, List<ResourcePackage> availableProfiles) {
+  default Resource findSelectedPackage(String profileId, List<Resource> availableProfiles) {
     String normalizedProfileId = profileId == null ? "" : profileId.trim();
     if (normalizedProfileId.isEmpty()) {
       throw new IllegalArgumentException("profileId is required.");
@@ -149,8 +149,9 @@ public interface ICommonMethods {
     }
     return target;
   }
+
   default void deleteManagedSubfolders(Path baseDir, List<String> managedSubfolders)
-          throws IOException {
+      throws IOException {
     if (managedSubfolders == null || managedSubfolders.isEmpty()) return;
     for (String subfolder : managedSubfolders) {
       if (subfolder == null || subfolder.isBlank()) continue;
@@ -169,8 +170,8 @@ public interface ICommonMethods {
 
       Path disabledTarget = resolveDisabledManagedSubfolderPath(target);
       if (disabledTarget != null
-              && Files.exists(disabledTarget)
-              && Files.isDirectory(disabledTarget)) {
+          && Files.exists(disabledTarget)
+          && Files.isDirectory(disabledTarget)) {
         deleteDirectoryContents(disabledTarget);
         Files.deleteIfExists(disabledTarget);
       }

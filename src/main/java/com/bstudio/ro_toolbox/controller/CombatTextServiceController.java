@@ -4,9 +4,9 @@ import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
 import com.bstudio.ro_toolbox.controller.model.MessageResponse;
 import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
-import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
-import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
-import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.combatText.CombatTextManager;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CombatTextServiceController extends BaseController {
 
-  private final CombatTextManagerService combatTextManagerService;
+  private final CombatTextManager combatTextManagerService;
   private final AppConfigService appConfigService;
 
   @GetMapping("/status")
@@ -30,12 +30,11 @@ public class CombatTextServiceController extends BaseController {
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getGameDataDir()))
         .installedProfile(installed)
-            .downloadedProfiles(
-                    List.of(combatTextManagerService.listPackages()
-                            .stream()
-                            .map(ResourcePackage::getName)
-                            .toArray(String[]::new))
-            )
+        .downloadedProfiles(
+            List.of(
+                combatTextManagerService.listPackages().stream()
+                    .map(Resource::getName)
+                    .toArray(String[]::new)))
         .availableProfiles(combatTextManagerService.listPackages())
         .build();
   }
@@ -107,7 +106,7 @@ public class CombatTextServiceController extends BaseController {
   public record CombatTextStatusResponse(
       String selectedGameBase,
       String selectedGameItemFolder,
-      ResourcePackage installedProfile,
+      Resource installedProfile,
       List<String> downloadedProfiles,
-      List<ResourcePackage> availableProfiles) {}
+      List<Resource> availableProfiles) {}
 }

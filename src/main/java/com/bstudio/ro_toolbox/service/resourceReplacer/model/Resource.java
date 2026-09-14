@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.service.textureReplacer;
+package com.bstudio.ro_toolbox.service.resourceReplacer.model;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -7,7 +7,7 @@ import lombok.Data;
 
 @Builder
 @Data
-public class ResourcePackage {
+public class Resource {
   private String id;
   private String name;
   private String author;

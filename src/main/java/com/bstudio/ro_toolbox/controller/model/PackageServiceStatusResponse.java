@@ -1,6 +1,6 @@
 package com.bstudio.ro_toolbox.controller.model;
 
-import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
 import java.util.List;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +10,7 @@ import lombok.Data;
 public class PackageServiceStatusResponse {
   private String selectedGameBase;
   private String selectedGameItemFolder;
-  private ResourcePackage installedProfile;
+  private Resource installedProfile;
   private List<String> downloadedProfiles;
-  private List<ResourcePackage> availableProfiles;
+  private List<Resource> availableProfiles;
 }

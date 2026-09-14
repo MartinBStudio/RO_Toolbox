@@ -10,11 +10,11 @@ import static org.mockito.Mockito.when;
 
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.buffs.BuffsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.combatText.CombatTextManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.icons.IconsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.loot.LootManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.userInterface.UserInterfaceManager;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -63,11 +63,11 @@ class SettingsControllerTests {
 
     SettingsController controller =
         new SettingsController(
-            mock(LootManagerService.class),
-            mock(CombatTextManagerService.class),
-            mock(UserInterfaceManagerService.class),
-            mock(IconsManagerService.class),
-            mock(BuffsManagerService.class),
+            mock(LootManager.class),
+            mock(CombatTextManager.class),
+            mock(UserInterfaceManager.class),
+            mock(IconsManager.class),
+            mock(BuffsManager.class),
             mock(AppConfigService.class),
             mock(LoginManagerService.class));
     IllegalStateException ex =
@@ -115,11 +115,11 @@ class SettingsControllerTests {
 
   @Test
   void factoryResetAlsoClearsSavedAccounts() throws IOException {
-    LootManagerService loot = mock(LootManagerService.class);
-    CombatTextManagerService combat = mock(CombatTextManagerService.class);
-    UserInterfaceManagerService ui = mock(UserInterfaceManagerService.class);
-    IconsManagerService buff = mock(IconsManagerService.class);
-    BuffsManagerService buffs = mock(BuffsManagerService.class);
+    LootManager loot = mock(LootManager.class);
+    CombatTextManager combat = mock(CombatTextManager.class);
+    UserInterfaceManager ui = mock(UserInterfaceManager.class);
+    IconsManager buff = mock(IconsManager.class);
+    BuffsManager buffs = mock(BuffsManager.class);
     AppConfigService appConfig = mock(AppConfigService.class);
     LoginManagerService login = mock(LoginManagerService.class);
 
@@ -141,11 +141,11 @@ class SettingsControllerTests {
       throws IOException {
     SettingsController controller =
         new SettingsController(
-            mock(LootManagerService.class),
-            mock(CombatTextManagerService.class),
-            mock(UserInterfaceManagerService.class),
-            mock(IconsManagerService.class),
-            mock(BuffsManagerService.class),
+            mock(LootManager.class),
+            mock(CombatTextManager.class),
+            mock(UserInterfaceManager.class),
+            mock(IconsManager.class),
+            mock(BuffsManager.class),
             mock(AppConfigService.class),
             mock(LoginManagerService.class));
 
@@ -165,15 +165,15 @@ class SettingsControllerTests {
 
   @Test
   void savesQuickLaunchOnlyModeSetting() throws IOException {
-    LootManagerService loot = mock(LootManagerService.class);
+    LootManager loot = mock(LootManager.class);
     AppConfigService appConfig = mock(AppConfigService.class);
     SettingsController controller =
         new SettingsController(
             loot,
-            mock(CombatTextManagerService.class),
-            mock(UserInterfaceManagerService.class),
-            mock(IconsManagerService.class),
-            mock(BuffsManagerService.class),
+            mock(CombatTextManager.class),
+            mock(UserInterfaceManager.class),
+            mock(IconsManager.class),
+            mock(BuffsManager.class),
             appConfig,
             mock(LoginManagerService.class));
 
@@ -186,16 +186,16 @@ class SettingsControllerTests {
 
   @Test
   void readsQuickLaunchOnlyModeSetting() throws IOException {
-    LootManagerService loot = mock(LootManagerService.class);
+    LootManager loot = mock(LootManager.class);
     AppConfigService appConfig = mock(AppConfigService.class);
     when(appConfig.getQuickLaunchOnlyMode()).thenReturn(true);
     SettingsController controller =
         new SettingsController(
             loot,
-            mock(CombatTextManagerService.class),
-            mock(UserInterfaceManagerService.class),
-            mock(IconsManagerService.class),
-            mock(BuffsManagerService.class),
+            mock(CombatTextManager.class),
+            mock(UserInterfaceManager.class),
+            mock(IconsManager.class),
+            mock(BuffsManager.class),
             appConfig,
             mock(LoginManagerService.class));
 
@@ -206,15 +206,15 @@ class SettingsControllerTests {
 
   @Test
   void savesUsefulStuffCollapsedSetting() throws IOException {
-    LootManagerService loot = mock(LootManagerService.class);
+    LootManager loot = mock(LootManager.class);
     AppConfigService appConfig = mock(AppConfigService.class);
     SettingsController controller =
         new SettingsController(
             loot,
-            mock(CombatTextManagerService.class),
-            mock(UserInterfaceManagerService.class),
-            mock(IconsManagerService.class),
-            mock(BuffsManagerService.class),
+            mock(CombatTextManager.class),
+            mock(UserInterfaceManager.class),
+            mock(IconsManager.class),
+            mock(BuffsManager.class),
             appConfig,
             mock(LoginManagerService.class));
 
@@ -232,11 +232,11 @@ class SettingsControllerTests {
     when(appConfig.getUsefulStuffCollapsed()).thenReturn(true);
     SettingsController controller =
         new SettingsController(
-            mock(LootManagerService.class),
-            mock(CombatTextManagerService.class),
-            mock(UserInterfaceManagerService.class),
-            mock(IconsManagerService.class),
-            mock(BuffsManagerService.class),
+            mock(LootManager.class),
+            mock(CombatTextManager.class),
+            mock(UserInterfaceManager.class),
+            mock(IconsManager.class),
+            mock(BuffsManager.class),
             appConfig,
             mock(LoginManagerService.class));
 
@@ -247,15 +247,15 @@ class SettingsControllerTests {
 
   @Test
   void savesIgnoreConfigWarningsSetting() throws IOException {
-    LootManagerService loot = mock(LootManagerService.class);
+    LootManager loot = mock(LootManager.class);
     AppConfigService appConfig = mock(AppConfigService.class);
     SettingsController controller =
         new SettingsController(
             loot,
-            mock(CombatTextManagerService.class),
-            mock(UserInterfaceManagerService.class),
-            mock(IconsManagerService.class),
-            mock(BuffsManagerService.class),
+            mock(CombatTextManager.class),
+            mock(UserInterfaceManager.class),
+            mock(IconsManager.class),
+            mock(BuffsManager.class),
             appConfig,
             mock(LoginManagerService.class));
 
@@ -269,16 +269,16 @@ class SettingsControllerTests {
 
   @Test
   void readsIgnoreConfigWarningsSetting() throws IOException {
-    LootManagerService loot = mock(LootManagerService.class);
+    LootManager loot = mock(LootManager.class);
     AppConfigService appConfig = mock(AppConfigService.class);
     when(appConfig.getIgnoreConfigWarnings()).thenReturn(true);
     SettingsController controller =
         new SettingsController(
             loot,
-            mock(CombatTextManagerService.class),
-            mock(UserInterfaceManagerService.class),
-            mock(IconsManagerService.class),
-            mock(BuffsManagerService.class),
+            mock(CombatTextManager.class),
+            mock(UserInterfaceManager.class),
+            mock(IconsManager.class),
+            mock(BuffsManager.class),
             appConfig,
             mock(LoginManagerService.class));
 

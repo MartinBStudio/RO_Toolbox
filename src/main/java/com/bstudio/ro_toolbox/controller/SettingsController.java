@@ -2,12 +2,12 @@ package com.bstudio.ro_toolbox.controller;
 
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
-import com.bstudio.ro_toolbox.service.textureReplacer.buffIcons.IconsManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations.BuffsManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.combatText.CombatTextManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.lootModels.LootManagerService;
-import com.bstudio.ro_toolbox.service.textureReplacer.userInterface.UserInterfaceManagerService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.IResourceReplacer;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.buffs.BuffsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.combatText.CombatTextManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.icons.IconsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.loot.LootManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.userInterface.UserInterfaceManager;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,11 +23,11 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class SettingsController {
 
-  private final LootManagerService lootManagerService;
-  private final CombatTextManagerService combatTextManagerService;
-  private final UserInterfaceManagerService userInterfaceManagerService;
-  private final IconsManagerService iconsManagerService;
-  private final BuffsManagerService buffsManagerService;
+  private final LootManager lootManager;
+  private final CombatTextManager combatTextManagerService;
+  private final UserInterfaceManager userInterfaceManager;
+  private final IconsManager iconsManager;
+  private final BuffsManager buffsManager;
   private final AppConfigService appConfigService;
   private final LoginManagerService loginManagerService;
 
@@ -87,12 +87,12 @@ public class SettingsController {
   @PostMapping("/factory-reset")
   public MessageResponse factoryReset() throws IOException {
     // Step 1: Clear installed profiles from game folder
-    for (GameResourceService service : managedServices()) {
+    for (IResourceReplacer service : managedServices()) {
       service.uninstallPackage();
     }
 
     // Step 2: Clear downloaded resources (.default is preserved for recovery)
-    for (GameResourceService service : managedServices()) {
+    for (IResourceReplacer service : managedServices()) {
       service.clearDownloaded();
     }
 
@@ -239,13 +239,9 @@ public class SettingsController {
     return path == null ? null : path.toAbsolutePath().normalize().toString();
   }
 
-  private List<GameResourceService> managedServices() {
+  private List<IResourceReplacer> managedServices() {
     return List.of(
-        lootManagerService,
-        combatTextManagerService,
-        userInterfaceManagerService,
-        iconsManagerService,
-        buffsManagerService);
+        lootManager, combatTextManagerService, userInterfaceManager, iconsManager, buffsManager);
   }
 
   private String readReleaseNotesContent() throws IOException {

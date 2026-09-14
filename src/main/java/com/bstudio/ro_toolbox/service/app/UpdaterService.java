@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.service.updater;
+package com.bstudio.ro_toolbox.service.app;
 
 import com.bstudio.ro_toolbox.RoToolboxApplication;
 import java.io.IOException;

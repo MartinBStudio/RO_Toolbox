@@ -1,6 +1,6 @@
 package com.bstudio.ro_toolbox.controller;
 
-import com.bstudio.ro_toolbox.service.updater.UpdaterService;
+import com.bstudio.ro_toolbox.service.app.UpdaterService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
