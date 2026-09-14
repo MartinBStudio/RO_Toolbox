@@ -36,7 +36,7 @@ class LootManagerServiceTests {
 
     appConfigService.saveSelectedGameBase(gameBase);
 
-    lootManagerService.clearInstalledPackage();
+    lootManagerService.uninstallPackage();
 
     assertFalse(Files.exists(itemFolder.resolve("disabled_head")));
     assertFalse(Files.exists(itemFolder.resolve(Path.of("body", "disabled_sub"))));

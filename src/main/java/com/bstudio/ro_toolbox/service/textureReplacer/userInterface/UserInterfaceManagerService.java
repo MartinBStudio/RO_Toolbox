@@ -2,11 +2,12 @@ package com.bstudio.ro_toolbox.service.textureReplacer.userInterface;
 
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ICommonMethods;
+import com.bstudio.ro_toolbox.service.common.PackageHandler;
+import com.bstudio.ro_toolbox.service.common.PackageManifestReader;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
-import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
 
 import java.io.*;
 import java.nio.file.*;
@@ -28,6 +29,8 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
 
     private final AppConfigService appConfigService;
     private final ResourcesUpdater resourcesUpdater;
+    private final PackageManifestReader packageManifestReader;
+    private final PackageHandler packageHandler;
 
     @Override
     public Path getResourcesDir() {
@@ -40,94 +43,46 @@ public class UserInterfaceManagerService implements GameResourceService, ICommon
     }
 
     @Override
-    public void downloadAndExtract() throws IOException {
-        RepositoryZipDownloader.downloadAndExtract(
-                DEFAULT_REPO, RESOURCES_DIR, "RO_UserInterfaceManager/1.0", log::info);
+    public void runUpdate() throws IOException {
+        resourcesUpdater.runUpdate(DEFAULT_REPO, RESOURCES_DIR);
     }
 
     @Override
-    public void clearDownloadedPackages() throws IOException {
+    public void clearDownloaded() throws IOException {
         clearResources(RESOURCES_DIR);
     }
 
     @Override
-    public void clearInstalledPackage() throws IOException {
-        Path gameBase = appConfigService.getSelectedGameBase();
-        if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) return;
-
-        // Always clear the installed manifest so the app no longer shows the profile as installed
-        deleteManifestFiles(gameBase, MANIFEST_FILE_NAME);
-
-        // Restore original files from .default if available
-        Path defaultProfile = RESOURCES_DIR.resolve(".default");
-        if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) return;
-
-        List<Path> managedFiles = readDefaultFileList(defaultProfile.resolve("FILE_LIST.txt"));
-        for (Path relativeFile : managedFiles) {
-            Path defaultFile = defaultProfile.resolve(relativeFile);
-            Path target = resolveManagedFile(gameBase, relativeFile);
-            if (Files.isDirectory(target)) {
-                continue;
-            }
-            Files.deleteIfExists(target);
-            if (Files.isRegularFile(defaultFile)) {
-                Files.createDirectories(target.getParent());
-                Files.copy(defaultFile, target, StandardCopyOption.REPLACE_EXISTING);
-                log.info("Restored default file: " + target.toAbsolutePath());
-            } else {
-                log.info("Deleted managed file (no default available): " + target.toAbsolutePath());
-            }
-        }
+    public void uninstallPackage() throws IOException {
+        packageHandler.uninstallPackageFiles(getGameDataDir(), RESOURCES_DIR, MANIFEST_FILE_NAME);
     }
 
     @Override
-    public List<ResourcePackage> listAvailablePackages() {
-        return listAvailablePackages(
+    public List<ResourcePackage> listPackages() {
+        return packageHandler.listAvailablePackages(
                 RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
     }
 
     @Override
     public void installPackage(String profileId, List<String> disabledPackages) throws IOException {
-        Path destination = getGameDataDir();
-        if (destination == null) {
-            throw new IllegalStateException("No game installation folder is selected.");
-        }
-        ResourcePackage selected = findSelectedProfile(profileId, listAvailablePackages());
-
-        clearInstalledPackage();
-        copyDirectoryContents(selected.getSource(), destination);
+        uninstallPackage();
+        copyDirectoryContents(findSelectedPackage(profileId, listPackages()).getSource(), getGameDataDir());
+        managePackage(profileId, disabledPackages);
     }
 
     @Override
-    public ResourcePackage getInstalledPackageInfo() {
-        Path itemFolder = getGameDataDir();
-        if (itemFolder == null || !Files.exists(itemFolder)) {
-            return null;
-        }
-
-        Path manifest = itemFolder.resolve(MANIFEST_FILE_NAME);
-        if (manifest == null || !Files.isRegularFile(manifest)) {
-            return null;
-        }
-        ResourcePackage resourcePackage =
-                ResourcePackage.builder()
-                        .id(readManifestName(manifest))
-                        .name(readManifestName(manifest))
-                        .author(readManifestAuthor(manifest))
-                        .description(readManifestDescription(manifest))
-                        .url(readManifestUrl(manifest))
-                        .createdAt(readManifestCreatedAt(manifest))
-                        .version(readManifestVersion(manifest))
-                        .previewImages(loadPreviewImages(manifest))
-                        .source(manifest)
-                        .managedSubfolders(readManifestManagedSubfolders(manifest))
-                        .build();
-
-        return resourcePackage;
+    public void managePackage(String profileId, List<String> disabledManagedSubfolders)
+            throws IOException {
+        packageHandler.manageInstalledPackage(profileId, disabledManagedSubfolders, getGameDataDir(), MANIFEST_FILE_NAME);
     }
 
     @Override
-    public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    public ResourcePackage getStatus() {
+        return packageManifestReader.readManifest(MANIFEST_FILE_NAME, getGameDataDir());
+    }
+
+    @Override
+    public ResourcesUpdater.ResourcesUpdateCheckResult checkForUpdate() {
         return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);
     }
 }

@@ -25,25 +25,25 @@ public class BuffIconsServiceController extends BaseController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = iconsManagerService.getInstalledPackageInfo();
+    var installed = iconsManagerService.getStatus();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(iconsManagerService.getGameDataDir()))
         .installedProfile(installed)
             .downloadedProfiles(
-                    List.of(iconsManagerService.listAvailablePackages()
+                    List.of(iconsManagerService.listPackages()
                             .stream()
                             .map(ResourcePackage::getName)
                             .toArray(String[]::new))
             )
-        .availableProfiles(iconsManagerService.listAvailablePackages())
+        .availableProfiles(iconsManagerService.listPackages())
         .build();
   }
 
   @PostMapping("/download")
   public MessageResponse downloadProfiles() throws IOException {
-    iconsManagerService.downloadAndExtract();
-    return MessageResponse.builder().message("Profiles downloaded.").build();
+    iconsManagerService.runUpdate();
+    return MessageResponse.builder().message("Packages downloaded.").build();
   }
 
   @PostMapping("/install")
@@ -54,25 +54,25 @@ public class BuffIconsServiceController extends BaseController {
     }
     iconsManagerService.installPackage(request.getProfileId().trim(), List.of());
     return MessageResponse.builder()
-        .message("Profile installed: " + request.getProfileId().trim())
+        .message("Package installed: " + request.getProfileId().trim())
         .build();
   }
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    iconsManagerService.clearDownloadedPackages();
+    iconsManagerService.clearDownloaded();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    iconsManagerService.clearInstalledPackage();
+    iconsManagerService.uninstallPackage();
     return MessageResponse.builder().message("Installed buff icons cleared.").build();
   }
 
   @GetMapping("/check-update")
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
-    return iconsManagerService.checkResourcesUpdate();
+    return iconsManagerService.checkForUpdate();
   }
 
   @PostMapping("/folders/open/resources")

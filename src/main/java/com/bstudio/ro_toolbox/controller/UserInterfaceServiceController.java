@@ -27,24 +27,24 @@ public class UserInterfaceServiceController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = userInterfaceManagerService.getInstalledPackageInfo();
+    var installed = userInterfaceManagerService.getStatus();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(userInterfaceManagerService.getGameDataDir()))
         .installedProfile(installed)
             .downloadedProfiles(
-                    List.of(userInterfaceManagerService.listAvailablePackages()
+                    List.of(userInterfaceManagerService.listPackages()
                             .stream()
                             .map(ResourcePackage::getName)
                             .toArray(String[]::new))
             )
-        .availableProfiles(userInterfaceManagerService.listAvailablePackages())
+        .availableProfiles(userInterfaceManagerService.listPackages())
         .build();
   }
 
   @PostMapping("/download")
   public MessageResponse downloadProfiles() throws IOException {
-    userInterfaceManagerService.downloadAndExtract();
+    userInterfaceManagerService.runUpdate();
     return MessageResponse.builder().message("Profiles downloaded.").build();
   }
 
@@ -62,19 +62,19 @@ public class UserInterfaceServiceController {
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    userInterfaceManagerService.clearDownloadedPackages();
+    userInterfaceManagerService.clearDownloaded();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    userInterfaceManagerService.clearInstalledPackage();
+    userInterfaceManagerService.uninstallPackage();
     return MessageResponse.builder().message("Installed models cleared.").build();
   }
 
   @GetMapping("/check-update")
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
-    return userInterfaceManagerService.checkResourcesUpdate();
+    return userInterfaceManagerService.checkForUpdate();
   }
 
   @PostMapping("/folders/open/resources")

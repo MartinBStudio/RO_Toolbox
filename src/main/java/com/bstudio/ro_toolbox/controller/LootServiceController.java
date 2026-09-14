@@ -29,24 +29,24 @@ public class LootServiceController extends BaseController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = lootManagerService.getInstalledPackageInfo();
+    var installed = lootManagerService.getStatus();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(lootManagerService.getGameDataDir()))
         .installedProfile(installed)
             .downloadedProfiles(
-                    List.of(lootManagerService.listAvailablePackages()
+                    List.of(lootManagerService.listPackages()
                             .stream()
                             .map(ResourcePackage::getName)
                             .toArray(String[]::new))
             )
-        .availableProfiles(lootManagerService.listAvailablePackages())
+        .availableProfiles(lootManagerService.listPackages())
         .build();
   }
 
   @PostMapping("/download")
   public MessageResponse downloadProfiles() throws IOException {
-    lootManagerService.downloadAndExtract();
+    lootManagerService.runUpdate();
     return MessageResponse.builder().message("Profiles downloaded.").build();
   }
 
@@ -69,26 +69,26 @@ public class LootServiceController extends BaseController {
     if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
       throw new IllegalArgumentException("profileId is required.");
     }
-    lootManagerService.manageInstalledProfile(
+    lootManagerService.managePackage(
         request.getProfileId().trim(), request.getDisabledManagedSubfolders());
     return MessageResponse.builder().message("Managed folders updated.").build();
   }
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    lootManagerService.clearDownloadedPackages();
+    lootManagerService.clearDownloaded();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    lootManagerService.clearInstalledPackage();
+    lootManagerService.uninstallPackage();
     return MessageResponse.builder().message("Installed models cleared.").build();
   }
 
   @GetMapping("/check-update")
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
-    return lootManagerService.checkResourcesUpdate();
+    return lootManagerService.checkForUpdate();
   }
 
   @PostMapping("/folders/open/resources")

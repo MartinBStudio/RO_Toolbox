@@ -2,14 +2,17 @@ package com.bstudio.ro_toolbox.service.textureReplacer.buffsAnimations;
 
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.common.ICommonMethods;
+import com.bstudio.ro_toolbox.service.common.PackageHandler;
+import com.bstudio.ro_toolbox.service.common.PackageManifestReader;
 import com.bstudio.ro_toolbox.service.common.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.textureReplacer.GameResourceService;
 import com.bstudio.ro_toolbox.service.textureReplacer.ResourcePackage;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
-import com.bstudio.ro_toolbox.util.RepositoryZipDownloader;
+
 import java.io.*;
 import java.nio.file.*;
 import java.util.List;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -18,107 +21,68 @@ import org.springframework.stereotype.Service;
 @Slf4j
 @RequiredArgsConstructor
 public class BuffsManagerService implements GameResourceService, ICommonMethods {
-  private static final String DEFAULT_REPO =
-      "https://github.com/MartinBStudio/RO_BuffAnimations_Resources";
-  private static final String MANIFEST_FILE_NAME = "manifestBuffAnimations.json";
-  private static final Path RESOURCES_DIR =
-      AppDataPaths.resolveRoToolboxAppDataRoot().resolve("resources").resolve("buffs");
+    private static final String DEFAULT_REPO =
+            "https://github.com/MartinBStudio/RO_BuffAnimations_Resources";
+    private static final String MANIFEST_FILE_NAME = "manifestBuffAnimations.json";
+    private static final Path RESOURCES_DIR =
+            AppDataPaths.resolveRoToolboxAppDataRoot().resolve("resources").resolve("buffs");
 
-  private final AppConfigService appConfigService;
-  private final ResourcesUpdater resourcesUpdater;
-  @Override
-  public Path getResourcesDir() {
-    return RESOURCES_DIR;
-  }
-  @Override
-  public Path getGameDataDir() {
-      return appConfigService.getSelectedGameBase();
-  }
+    private final AppConfigService appConfigService;
+    private final ResourcesUpdater resourcesUpdater;
+    private final PackageManifestReader packageManifestReader;
+    private final PackageHandler packageHandler;
 
-  @Override
-  public void downloadAndExtract() throws IOException {
-    RepositoryZipDownloader.downloadAndExtract(
-        DEFAULT_REPO, RESOURCES_DIR, "RO_BuffsManager/1.0", log::info);
-  }
-  @Override
-  public void clearDownloadedPackages() throws IOException {
-    clearResources(RESOURCES_DIR);
-  }
-  @Override
-  public void clearInstalledPackage() throws IOException {
-    Path gameBase = getGameDataDir();
-    if (gameBase == null || !Files.exists(gameBase) || !Files.isDirectory(gameBase)) {
-      return;
-    }
-    deleteManifestFiles(gameBase, MANIFEST_FILE_NAME);
-    Path defaultProfile = RESOURCES_DIR.resolve(".default");
-    if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) {
-      return;
+    @Override
+    public Path getResourcesDir() {
+        return RESOURCES_DIR;
     }
 
-    List<Path> managedFiles = readDefaultFileList(defaultProfile.resolve("FILE_LIST.txt"));
-    for (Path relativeFile : managedFiles) {
-      Path defaultFile = defaultProfile.resolve(relativeFile);
-      Path target = resolveManagedFile(gameBase, relativeFile);
-      if (Files.isDirectory(target)) {
-        continue;
-      }
-      Files.deleteIfExists(target);
-      if (Files.isRegularFile(defaultFile)) {
-        Files.createDirectories(target.getParent());
-        Files.copy(defaultFile, target, StandardCopyOption.REPLACE_EXISTING);
-        log.info("Restored default file: " + target.toAbsolutePath());
-      } else {
-        log.info("Deleted managed file (no default available): " + target.toAbsolutePath());
-      }
-    }
-  }
-  @Override
-  public List<ResourcePackage> listAvailablePackages() {
-    return listAvailablePackages(
-        RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
-  }
-  @Override
-  public void installPackage(String profileId, List<String> disabledManagedSubfolders)
-      throws IOException {
-    Path destination = getGameDataDir();
-    if (destination == null) {
-      throw new IllegalStateException("No game installation folder is selected.");
-    }
-    ResourcePackage selected = findSelectedProfile(profileId, listAvailablePackages());
-
-    clearInstalledPackage();
-    copyDirectoryContents(selected.getSource(), destination);
-  }
-  @Override
-  public ResourcePackage getInstalledPackageInfo() {
-    Path itemFolder = getGameDataDir();
-    if (itemFolder == null || !Files.exists(itemFolder)) {
-      return null;
+    @Override
+    public Path getGameDataDir() {
+        return appConfigService.getSelectedGameBase();
     }
 
-    Path manifest = resolveManifestPath(itemFolder, MANIFEST_FILE_NAME);
-    if (manifest == null || !Files.isRegularFile(manifest)) {
-      return null;
+    @Override
+    public void runUpdate() throws IOException {
+        resourcesUpdater.runUpdate(DEFAULT_REPO, RESOURCES_DIR);
     }
-    ResourcePackage resourcePackage =
-        ResourcePackage.builder()
-            .id(readManifestName(manifest))
-            .name(readManifestName(manifest))
-            .author(readManifestAuthor(manifest))
-            .description(readManifestDescription(manifest))
-            .url(readManifestUrl(manifest))
-            .createdAt(readManifestCreatedAt(manifest))
-            .version(readManifestVersion(manifest))
-            .previewImages(loadPreviewImages(manifest))
-            .source(manifest)
-            .managedSubfolders(readManifestManagedSubfolders(manifest))
-            .build();
 
-    return resourcePackage;
-  }
-  @Override
-  public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
-    return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);
-  }
+    @Override
+    public void clearDownloaded() throws IOException {
+        clearResources(RESOURCES_DIR);
+    }
+
+    @Override
+    public void uninstallPackage() throws IOException {
+        packageHandler.uninstallPackageFiles(appConfigService.getSelectedGameBase(), RESOURCES_DIR, MANIFEST_FILE_NAME);
+    }
+
+    @Override
+    public List<ResourcePackage> listPackages() {
+        return packageHandler.listAvailablePackages(
+                RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
+    }
+
+    @Override
+    public void installPackage(String profileId, List<String> disabledPackages) throws IOException {
+        uninstallPackage();
+        copyDirectoryContents(findSelectedPackage(profileId, listPackages()).getSource(), getGameDataDir());
+        managePackage(profileId, disabledPackages);
+    }
+
+    @Override
+    public void managePackage(String profileId, List<String> disabledManagedSubfolders)
+            throws IOException {
+        packageHandler.manageInstalledPackage(profileId, disabledManagedSubfolders, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
+    }
+
+    @Override
+    public ResourcePackage getStatus() {
+        return packageManifestReader.readManifest(MANIFEST_FILE_NAME, appConfigService.getSelectedGameBase());
+    }
+
+    @Override
+    public ResourcesUpdater.ResourcesUpdateCheckResult checkForUpdate() {
+        return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);
+    }
 }

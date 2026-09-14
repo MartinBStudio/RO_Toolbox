@@ -25,24 +25,24 @@ public class CombatTextServiceController extends BaseController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = combatTextManagerService.getInstalledPackageInfo();
+    var installed = combatTextManagerService.getStatus();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getGameDataDir()))
         .installedProfile(installed)
             .downloadedProfiles(
-                    List.of(combatTextManagerService.listAvailablePackages()
+                    List.of(combatTextManagerService.listPackages()
                             .stream()
                             .map(ResourcePackage::getName)
                             .toArray(String[]::new))
             )
-        .availableProfiles(combatTextManagerService.listAvailablePackages())
+        .availableProfiles(combatTextManagerService.listPackages())
         .build();
   }
 
   @PostMapping("/download")
   public MessageResponse downloadProfiles() throws IOException {
-    combatTextManagerService.downloadAndExtract();
+    combatTextManagerService.runUpdate();
     return MessageResponse.builder().message("Profiles downloaded.").build();
   }
 
@@ -60,19 +60,19 @@ public class CombatTextServiceController extends BaseController {
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    combatTextManagerService.clearDownloadedPackages();
+    combatTextManagerService.clearDownloaded();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    combatTextManagerService.clearInstalledPackage();
+    combatTextManagerService.uninstallPackage();
     return MessageResponse.builder().message("Installed models cleared.").build();
   }
 
   @GetMapping("/check-update")
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
-    return combatTextManagerService.checkResourcesUpdate();
+    return combatTextManagerService.checkForUpdate();
   }
 
   @PostMapping("/folders/open/resources")

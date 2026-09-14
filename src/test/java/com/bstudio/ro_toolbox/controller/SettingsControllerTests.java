@@ -127,10 +127,10 @@ class SettingsControllerTests {
         new SettingsController(loot, combat, ui, buff, buffs, appConfig, login);
     controller.factoryReset();
 
-    verify(buff).clearInstalledPackage();
-    verify(buff).clearDownloadedPackages();
-    verify(buffs).clearInstalledPackage();
-    verify(buffs).clearDownloadedPackages();
+    verify(buff).uninstallPackage();
+    verify(buff).clearDownloaded();
+    verify(buffs).uninstallPackage();
+    verify(buffs).clearDownloaded();
     verify(appConfig).clearSelectedGameBase();
     verify(appConfig).clearAppConfig();
     verify(login).clearAccounts();

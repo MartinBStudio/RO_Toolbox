@@ -31,11 +31,11 @@ public class AppStatusController {
 
   @GetMapping("/status")
   public AppStatusResponse status() {
-    var installedLoot = lootManagerService.getInstalledPackageInfo();
-    var installedCombatText = combatTextManagerService.getInstalledPackageInfo();
-    var installedUserInterface = userInterfaceManagerService.getInstalledPackageInfo();
-    var installedBuffIcons = iconsManagerService.getInstalledPackageInfo();
-    var installedBuffs = buffsManagerService.getInstalledPackageInfo();
+    var installedLoot = lootManagerService.getStatus();
+    var installedCombatText = combatTextManagerService.getStatus();
+    var installedUserInterface = userInterfaceManagerService.getStatus();
+    var installedBuffIcons = iconsManagerService.getStatus();
+    var installedBuffs = buffsManagerService.getStatus();
     return new AppStatusResponse(
         app.getVersion(),
         troseExecutableMonitor.isTroseRunning(),

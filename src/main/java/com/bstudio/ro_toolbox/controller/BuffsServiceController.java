@@ -27,24 +27,24 @@ public class BuffsServiceController extends BaseController {
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {
-    var installed = buffsManagerService.getInstalledPackageInfo();
+    var installed = buffsManagerService.getStatus();
     return PackageServiceStatusResponse.builder()
         .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
         .selectedGameItemFolder(absoluteOrNull(buffsManagerService.getGameDataDir()))
         .installedProfile(installed)
             .downloadedProfiles(
-                    List.of(buffsManagerService.listAvailablePackages()
+                    List.of(buffsManagerService.listPackages()
                             .stream()
                             .map(ResourcePackage::getName)
                             .toArray(String[]::new))
             )
-        .availableProfiles(buffsManagerService.listAvailablePackages())
+        .availableProfiles(buffsManagerService.listPackages())
         .build();
   }
 
   @PostMapping("/download")
   public MessageResponse downloadProfiles() throws IOException {
-    buffsManagerService.downloadAndExtract();
+    buffsManagerService.runUpdate();
     return MessageResponse.builder().message("Profiles downloaded.").build();
   }
 
@@ -62,19 +62,19 @@ public class BuffsServiceController extends BaseController {
 
   @PostMapping("/clear-resources")
   public MessageResponse clearResources() throws IOException {
-    buffsManagerService.clearDownloadedPackages();
+    buffsManagerService.clearDownloaded();
     return MessageResponse.builder().message("Downloaded resources cleared.").build();
   }
 
   @PostMapping("/clear-installed")
   public MessageResponse clearInstalled() throws IOException {
-    buffsManagerService.clearInstalledPackage();
+    buffsManagerService.uninstallPackage();
     return MessageResponse.builder().message("Installed buffs cleared.").build();
   }
 
   @GetMapping("/check-update")
   public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
-    return buffsManagerService.checkResourcesUpdate();
+    return buffsManagerService.checkForUpdate();
   }
 
   @PostMapping("/folders/open/resources")

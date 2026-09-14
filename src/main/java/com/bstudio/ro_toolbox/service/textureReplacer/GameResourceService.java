@@ -8,20 +8,13 @@ import java.util.List;
 
 public interface GameResourceService {
     Path getResourcesDir();
-
     Path getGameDataDir();
-
-    void clearInstalledPackage() throws IOException;
-
-    void clearDownloadedPackages() throws IOException;
-
-    void downloadAndExtract() throws IOException;
-
-    List<ResourcePackage> listAvailablePackages() throws IOException;
-
+    ResourcePackage getStatus();
+    List<ResourcePackage> listPackages() throws IOException;
+    void clearDownloaded() throws IOException;
+    void uninstallPackage() throws IOException;
+    void managePackage(String profileId, List<String> disabledManagedSubfolders) throws IOException;
     void installPackage(String profileId, List<String> disabledManagedSubfolders) throws IOException;
-
-    ResourcePackage getInstalledPackageInfo();
-
-    ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate();
+    void runUpdate() throws IOException;
+    ResourcesUpdater.ResourcesUpdateCheckResult checkForUpdate();
 }
