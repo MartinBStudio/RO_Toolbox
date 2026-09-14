@@ -1,157 +1,101 @@
 package com.bstudio.ro_toolbox.controller;
 
-import com.bstudio.ro_toolbox.service.userInterface.UserInterfaceManagerService;
-import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-
-import java.awt.Desktop;
+import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
+import com.bstudio.ro_toolbox.controller.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.userInterface.UserInterfaceManager;
+import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.DependsOn;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/userinterface")
 @RequiredArgsConstructor
+@DependsOn("appConfigService")
 public class UserInterfaceServiceController {
 
-    private final UserInterfaceManagerService userInterfaceManagerService;
+  private final UserInterfaceManager userInterfaceManager;
+  private final AppConfigService appConfigService;
 
-    @GetMapping("/status")
-    public UserInterfaceStatusResponse status() {
-        UserInterfaceManagerService.ProfileInfo installed = userInterfaceManagerService.getInstalledProfileInfo();
-        return new UserInterfaceStatusResponse(
-                absoluteOrNull(userInterfaceManagerService.getSelectedGameBase()),
-                absoluteOrNull(userInterfaceManagerService.getSelectedGameItemFolder()),
-                installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
-                ),
-                userInterfaceManagerService.listDownloadedProfiles(),
-                userInterfaceManagerService.listAvailableProfiles().stream()
-                        .map(profile -> new AvailableProfileResponse(
-                                profile.id(),
-                                profile.name(),
-                                profile.author(),
-                                profile.description(),
-                                profile.url(),
-                                profile.createdAt(),
-                                profile.version(),
-                                profile.previewImages()
-                        ))
-                        .toList()
-        );
-    }
+  @GetMapping("/status")
+  public PackageServiceStatusResponse status() {
+    var installed = userInterfaceManager.getStatus();
+    return PackageServiceStatusResponse.builder()
+        .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
+        .selectedGameItemFolder(absoluteOrNull(userInterfaceManager.getGameDataDir()))
+        .installedProfile(installed)
+        .downloadedProfiles(
+            List.of(
+                userInterfaceManager.listPackages().stream()
+                    .map(Resource::getName)
+                    .toArray(String[]::new)))
+        .availableProfiles(userInterfaceManager.listPackages())
+        .build();
+  }
 
-    @PostMapping("/download")
-    public MessageResponse downloadProfiles() throws IOException {
-        Path dest = userInterfaceManagerService.getResourcesDir();
-        Files.createDirectories(dest);
-        userInterfaceManagerService.downloadAndExtract(null, dest);
-        return new MessageResponse("Profiles downloaded.");
-    }
+  @PostMapping("/download")
+  public MessageResponse downloadProfiles() throws IOException {
+    userInterfaceManager.runUpdate();
+    return MessageResponse.builder().message("Profiles downloaded.").build();
+  }
 
-    @PostMapping("/install")
-    public MessageResponse installProfile(@RequestBody InstallProfileRequest request) throws IOException {
-        if (request == null || request.profileId() == null || request.profileId().isBlank()) {
-            throw new IllegalArgumentException("profileId is required.");
-        }
-        userInterfaceManagerService.installProfile(request.profileId().trim());
-        return new MessageResponse("Profile installed: " + request.profileId().trim());
+  @PostMapping("/install")
+  public MessageResponse installProfile(@RequestBody InstallProfileRequest request)
+      throws IOException {
+    if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
+      throw new IllegalArgumentException("profileId is required.");
     }
+    userInterfaceManager.installPackage(request.getProfileId().trim(), List.of());
+    return MessageResponse.builder()
+        .message("Profile installed: " + request.getProfileId().trim())
+        .build();
+  }
 
-    @PostMapping("/clear-resources")
-    public MessageResponse clearResources() throws IOException {
-        userInterfaceManagerService.clearResources();
-        return new MessageResponse("Downloaded resources cleared.");
-    }
+  @PostMapping("/clear-resources")
+  public MessageResponse clearResources() throws IOException {
+    userInterfaceManager.clearDownloaded();
+    return MessageResponse.builder().message("Downloaded resources cleared.").build();
+  }
 
-    @PostMapping("/clear-installed")
-    public MessageResponse clearInstalled() throws IOException {
-        userInterfaceManagerService.clearSelectedItemFolder();
-        return new MessageResponse("Installed models cleared.");
-    }
+  @PostMapping("/clear-installed")
+  public MessageResponse clearInstalled() throws IOException {
+    userInterfaceManager.uninstallPackage();
+    return MessageResponse.builder().message("Installed models cleared.").build();
+  }
 
-    @GetMapping("/check-update")
-    public UserInterfaceManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
-        return userInterfaceManagerService.checkResourcesUpdate();
-    }
+  @GetMapping("/check-update")
+  public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    return userInterfaceManager.checkForUpdate();
+  }
 
-    @PostMapping("/folders/open/resources")
-    public MessageResponse openResourcesFolder() throws IOException {
-        Path resources = userInterfaceManagerService.getResourcesDir();
-        Files.createDirectories(resources);
-        openInDesktop(resources);
-        return new MessageResponse("Opened resources folder.");
-    }
+  @PostMapping("/folders/open/resources")
+  public MessageResponse openResourcesFolder() throws IOException {
+    Path resources = userInterfaceManager.getResourcesDir();
+    Files.createDirectories(resources);
+    DesktopFolderOpener.openInDesktop(resources);
+    return MessageResponse.builder().message("Opened resources folder.").build();
+  }
 
-    @PostMapping("/folders/open/item")
-    public MessageResponse openItemFolder() throws IOException {
-        Path item = userInterfaceManagerService.getSelectedGameItemFolder();
-        if (item == null) {
-            throw new IllegalStateException("No game installation folder is selected.");
-        }
-        Files.createDirectories(item);
-        openInDesktop(item);
-        return new MessageResponse("Opened item folder.");
+  @PostMapping("/folders/open/item")
+  public MessageResponse openItemFolder() throws IOException {
+    Path item = userInterfaceManager.getGameDataDir();
+    if (item == null) {
+      throw new IllegalStateException("No game installation folder is selected.");
     }
+    Files.createDirectories(item);
+    DesktopFolderOpener.openInDesktop(item);
+    return MessageResponse.builder().message("Opened item folder.").build();
+  }
 
-    private String absoluteOrNull(Path path) {
-        return path == null ? null : path.toAbsolutePath().normalize().toString();
-    }
-
-    private void openInDesktop(Path path) {
-        try {
-            String os = System.getProperty("os.name", "").toLowerCase();
-            if (os.contains("win")) {
-                openWithSystemCommand(path);
-                return;
-            }
-            if (!Desktop.isDesktopSupported()) {
-                openWithSystemCommand(path);
-                return;
-            }
-            if (Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                Desktop.getDesktop().open(path.toFile());
-                return;
-            }
-            openWithSystemCommand(path);
-        } catch (Exception ex) {
-            throw new IllegalStateException("Unable to open folder: " + path.toAbsolutePath(), ex);
-        }
-    }
-
-    private void openWithSystemCommand(Path path) throws IOException {
-        String os = System.getProperty("os.name", "").toLowerCase();
-        if (os.contains("win")) {
-            WindowsProcessLauncher.openFolderForeground(path);
-            return;
-        }
-        if (os.contains("mac")) {
-            new ProcessBuilder("open", path.toAbsolutePath().toString()).start();
-            return;
-        }
-        new ProcessBuilder("xdg-open", path.toAbsolutePath().toString()).start();
-    }
-
-    public record InstallProfileRequest(String profileId) {
-    }
-
-    public record MessageResponse(String message) {
-    }
-
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
-    }
-
-    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> previewImages) {
-    }
-
-    public record UserInterfaceStatusResponse(
-            String selectedGameBase,
-            String selectedGameItemFolder,
-            ProfileInfoResponse installedProfile,
-            List<String> downloadedProfiles,
-            List<AvailableProfileResponse> availableProfiles
-    ) {
-    }
+  private String absoluteOrNull(Path path) {
+    return path == null ? null : path.toAbsolutePath().normalize().toString();
+  }
 }

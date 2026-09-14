@@ -1,158 +1,112 @@
 package com.bstudio.ro_toolbox.controller;
 
-import com.bstudio.ro_toolbox.service.combatText.CombatTextManagerService;
-import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-
-import java.awt.Desktop;
+import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
+import com.bstudio.ro_toolbox.controller.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.combatText.CombatTextManager;
+import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/combattext")
 @RequiredArgsConstructor
-public class CombatTextServiceController {
+public class CombatTextServiceController extends BaseController {
 
-    private final CombatTextManagerService combatTextManagerService;
+  private final CombatTextManager combatTextManagerService;
+  private final AppConfigService appConfigService;
 
-    @GetMapping("/status")
-    public CombatTextStatusResponse status() {
-        CombatTextManagerService.ProfileInfo installed = combatTextManagerService.getInstalledProfileInfo();
-        return new CombatTextStatusResponse(
-                absoluteOrNull(combatTextManagerService.getSelectedGameBase()),
-                absoluteOrNull(combatTextManagerService.getSelectedGameItemFolder()),
-                installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
-                ),
-                combatTextManagerService.listDownloadedProfiles(),
-                combatTextManagerService.listAvailableProfiles().stream()
-                        .map(profile -> new AvailableProfileResponse(
-                                profile.id(),
-                                profile.name(),
-                                profile.author(),
-                                profile.description(),
-                                profile.url(),
-                                profile.createdAt(),
-                                profile.version(),
-                                profile.previewImages()
-                        ))
-                        .toList()
-        );
+  @GetMapping("/status")
+  public PackageServiceStatusResponse status() {
+    var installed = combatTextManagerService.getStatus();
+    return PackageServiceStatusResponse.builder()
+        .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
+        .selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getGameDataDir()))
+        .installedProfile(installed)
+        .downloadedProfiles(
+            List.of(
+                combatTextManagerService.listPackages().stream()
+                    .map(Resource::getName)
+                    .toArray(String[]::new)))
+        .availableProfiles(combatTextManagerService.listPackages())
+        .build();
+  }
+
+  @PostMapping("/download")
+  public MessageResponse downloadProfiles() throws IOException {
+    combatTextManagerService.runUpdate();
+    return MessageResponse.builder().message("Profiles downloaded.").build();
+  }
+
+  @PostMapping("/install")
+  public MessageResponse installProfile(@RequestBody InstallProfileRequest request)
+      throws IOException {
+    if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
+      throw new IllegalArgumentException("profileId is required.");
     }
+    combatTextManagerService.installPackage(request.getProfileId().trim(), List.of());
+    return MessageResponse.builder()
+        .message("Profile installed: " + request.getProfileId().trim())
+        .build();
+  }
 
-    @PostMapping("/download")
-    public MessageResponse downloadProfiles() throws IOException {
-        Path dest = combatTextManagerService.getResourcesDir();
-        Files.createDirectories(dest);
-        combatTextManagerService.downloadAndExtract(null, dest);
-        return new MessageResponse("Profiles downloaded.");
-    }
+  @PostMapping("/clear-resources")
+  public MessageResponse clearResources() throws IOException {
+    combatTextManagerService.clearDownloaded();
+    return MessageResponse.builder().message("Downloaded resources cleared.").build();
+  }
 
-    @PostMapping("/install")
-    public MessageResponse installProfile(@RequestBody InstallProfileRequest request) throws IOException {
-        if (request == null || request.profileId() == null || request.profileId().isBlank()) {
-            throw new IllegalArgumentException("profileId is required.");
-        }
-        combatTextManagerService.installProfile(request.profileId().trim());
-        return new MessageResponse("Profile installed: " + request.profileId().trim());
-    }
+  @PostMapping("/clear-installed")
+  public MessageResponse clearInstalled() throws IOException {
+    combatTextManagerService.uninstallPackage();
+    return MessageResponse.builder().message("Installed models cleared.").build();
+  }
 
-    @PostMapping("/clear-resources")
-    public MessageResponse clearResources() throws IOException {
-        combatTextManagerService.clearResources();
-        return new MessageResponse("Downloaded resources cleared.");
-    }
+  @GetMapping("/check-update")
+  public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    return combatTextManagerService.checkForUpdate();
+  }
 
-    @PostMapping("/clear-installed")
-    public MessageResponse clearInstalled() throws IOException {
-        combatTextManagerService.clearSelectedItemFolder();
-        combatTextManagerService.setCurrentCombatTextProfile(null);
-        return new MessageResponse("Installed models cleared.");
-    }
+  @PostMapping("/folders/open/resources")
+  public MessageResponse openResourcesFolder() throws IOException {
+    Path resources = combatTextManagerService.getResourcesDir();
+    Files.createDirectories(resources);
+    DesktopFolderOpener.openInDesktop(resources);
+    return MessageResponse.builder().message("Opened resources folder.").build();
+  }
 
-    @GetMapping("/check-update")
-    public CombatTextManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
-        return combatTextManagerService.checkResourcesUpdate();
+  @PostMapping("/folders/open/item")
+  public MessageResponse openItemFolder() throws IOException {
+    Path item = combatTextManagerService.getGameDataDir();
+    if (item == null) {
+      throw new IllegalStateException("No game installation folder is selected.");
     }
+    Files.createDirectories(item);
+    DesktopFolderOpener.openInDesktop(item);
+    return MessageResponse.builder().message("Opened item folder.").build();
+  }
 
-    @PostMapping("/folders/open/resources")
-    public MessageResponse openResourcesFolder() throws IOException {
-        Path resources = combatTextManagerService.getResourcesDir();
-        Files.createDirectories(resources);
-        openInDesktop(resources);
-        return new MessageResponse("Opened resources folder.");
-    }
+  public record AvailableProfileResponse(
+      String id,
+      String name,
+      String author,
+      String description,
+      String url,
+      String createdAt,
+      String version,
+      List<String> previewImages) {}
 
-    @PostMapping("/folders/open/item")
-    public MessageResponse openItemFolder() throws IOException {
-        Path item = combatTextManagerService.getSelectedGameItemFolder();
-        if (item == null) {
-            throw new IllegalStateException("No game installation folder is selected.");
-        }
-        Files.createDirectories(item);
-        openInDesktop(item);
-        return new MessageResponse("Opened item folder.");
-    }
-
-    private String absoluteOrNull(Path path) {
-        return path == null ? null : path.toAbsolutePath().normalize().toString();
-    }
-
-    private void openInDesktop(Path path) {
-        try {
-            String os = System.getProperty("os.name", "").toLowerCase();
-            if (os.contains("win")) {
-                openWithSystemCommand(path);
-                return;
-            }
-            if (!Desktop.isDesktopSupported()) {
-                openWithSystemCommand(path);
-                return;
-            }
-            if (Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                Desktop.getDesktop().open(path.toFile());
-                return;
-            }
-            openWithSystemCommand(path);
-        } catch (Exception ex) {
-            throw new IllegalStateException("Unable to open folder: " + path.toAbsolutePath(), ex);
-        }
-    }
-
-    private void openWithSystemCommand(Path path) throws IOException {
-        String os = System.getProperty("os.name", "").toLowerCase();
-        if (os.contains("win")) {
-            WindowsProcessLauncher.openFolderForeground(path);
-            return;
-        }
-        if (os.contains("mac")) {
-            new ProcessBuilder("open", path.toAbsolutePath().toString()).start();
-            return;
-        }
-        new ProcessBuilder("xdg-open", path.toAbsolutePath().toString()).start();
-    }
-
-    public record InstallProfileRequest(String profileId) {
-    }
-
-    public record MessageResponse(String message) {
-    }
-
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
-    }
-
-    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> previewImages) {
-    }
-
-    public record CombatTextStatusResponse(
-            String selectedGameBase,
-            String selectedGameItemFolder,
-            ProfileInfoResponse installedProfile,
-            List<String> downloadedProfiles,
-            List<AvailableProfileResponse> availableProfiles
-    ) {
-    }
+  public record CombatTextStatusResponse(
+      String selectedGameBase,
+      String selectedGameItemFolder,
+      Resource installedProfile,
+      List<String> downloadedProfiles,
+      List<Resource> availableProfiles) {}
 }

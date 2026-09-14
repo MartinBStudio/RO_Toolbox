@@ -1,157 +1,102 @@
 package com.bstudio.ro_toolbox.controller;
 
-import com.bstudio.ro_toolbox.service.buffs.BuffsManagerService;
-import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-
-import java.awt.Desktop;
+import com.bstudio.ro_toolbox.controller.model.InstallProfileRequest;
+import com.bstudio.ro_toolbox.controller.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.model.PackageServiceStatusResponse;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.buffs.BuffsManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.icons.IconsManager;
+import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/buffs")
 @RequiredArgsConstructor
-public class BuffsServiceController {
+public class BuffsServiceController extends BaseController {
 
-    private final BuffsManagerService buffsManagerService;
+  private final BuffsManager buffsManager;
+  private final AppConfigService appConfigService;
+  private final IconsManager iconsManager;
 
-    @GetMapping("/status")
-    public BuffsStatusResponse status() {
-        BuffsManagerService.ProfileInfo installed = buffsManagerService.getInstalledProfileInfo();
-        return new BuffsStatusResponse(
-                absoluteOrNull(buffsManagerService.getSelectedGameBase()),
-                absoluteOrNull(buffsManagerService.getSelectedGameItemFolder()),
-                installed == null ? null : new ProfileInfoResponse(
-                        installed.name, installed.author, installed.description, installed.url, installed.createdAt, installed.version
-                ),
-                buffsManagerService.listDownloadedProfiles(),
-                buffsManagerService.listAvailableProfiles().stream()
-                        .map(profile -> new AvailableProfileResponse(
-                                profile.id(),
-                                profile.name(),
-                                profile.author(),
-                                profile.description(),
-                                profile.url(),
-                                profile.createdAt(),
-                                profile.version(),
-                                profile.previewImages()
-                        ))
-                        .toList()
-        );
+  @GetMapping("/status")
+  public PackageServiceStatusResponse status() {
+    var installed = buffsManager.getStatus();
+    return PackageServiceStatusResponse.builder()
+        .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
+        .selectedGameItemFolder(absoluteOrNull(buffsManager.getGameDataDir()))
+        .installedProfile(installed)
+        .downloadedProfiles(
+            List.of(
+                buffsManager.listPackages().stream().map(Resource::getName).toArray(String[]::new)))
+        .availableProfiles(buffsManager.listPackages())
+        .build();
+  }
+
+  @PostMapping("/download")
+  public MessageResponse downloadProfiles() throws IOException {
+    buffsManager.runUpdate();
+    return MessageResponse.builder().message("Profiles downloaded.").build();
+  }
+
+  @PostMapping("/install")
+  public MessageResponse installProfile(@RequestBody InstallProfileRequest request)
+      throws IOException {
+    if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
+      throw new IllegalArgumentException("profileId is required.");
     }
+    buffsManager.installPackage(request.getProfileId().trim(), List.of());
+    return MessageResponse.builder()
+        .message("Profile installed: " + request.getProfileId().trim())
+        .build();
+  }
 
-    @PostMapping("/download")
-    public MessageResponse downloadProfiles() throws IOException {
-        Path dest = buffsManagerService.getResourcesDir();
-        Files.createDirectories(dest);
-        buffsManagerService.downloadAndExtract(null, dest);
-        return new MessageResponse("Profiles downloaded.");
-    }
+  @PostMapping("/clear-resources")
+  public MessageResponse clearResources() throws IOException {
+    buffsManager.clearDownloaded();
+    return MessageResponse.builder().message("Downloaded resources cleared.").build();
+  }
 
-    @PostMapping("/install")
-    public MessageResponse installProfile(@RequestBody InstallProfileRequest request) throws IOException {
-        if (request == null || request.profileId() == null || request.profileId().isBlank()) {
-            throw new IllegalArgumentException("profileId is required.");
-        }
-        buffsManagerService.installProfile(request.profileId().trim());
-        return new MessageResponse("Profile installed: " + request.profileId().trim());
-    }
+  @PostMapping("/clear-installed")
+  public MessageResponse clearInstalled() throws IOException {
+    buffsManager.uninstallPackage();
+    return MessageResponse.builder().message("Installed buffs cleared.").build();
+  }
 
-    @PostMapping("/clear-resources")
-    public MessageResponse clearResources() throws IOException {
-        buffsManagerService.clearResources();
-        return new MessageResponse("Downloaded resources cleared.");
-    }
+  @GetMapping("/check-update")
+  public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    return buffsManager.checkForUpdate();
+  }
 
-    @PostMapping("/clear-installed")
-    public MessageResponse clearInstalled() throws IOException {
-        buffsManagerService.clearSelectedItemFolder();
-        return new MessageResponse("Installed buffs cleared.");
-    }
+  @PostMapping("/folders/open/resources")
+  public MessageResponse openResourcesFolder() throws IOException {
+    Path resources = buffsManager.getResourcesDir();
+    Files.createDirectories(resources);
+    DesktopFolderOpener.openInDesktop(resources);
+    return MessageResponse.builder().message("Opened resources folder.").build();
+  }
 
-    @GetMapping("/check-update")
-    public BuffsManagerService.ResourcesUpdateCheckResult checkResourcesUpdate() {
-        return buffsManagerService.checkResourcesUpdate();
+  @PostMapping("/folders/open/item")
+  public MessageResponse openItemFolder() throws IOException {
+    Path item = buffsManager.getGameDataDir();
+    if (item == null) {
+      throw new IllegalStateException("No game installation folder is selected.");
     }
+    Files.createDirectories(item);
+    DesktopFolderOpener.openInDesktop(item);
+    return MessageResponse.builder().message("Opened item folder.").build();
+  }
 
-    @PostMapping("/folders/open/resources")
-    public MessageResponse openResourcesFolder() throws IOException {
-        Path resources = buffsManagerService.getResourcesDir();
-        Files.createDirectories(resources);
-        openInDesktop(resources);
-        return new MessageResponse("Opened resources folder.");
-    }
-
-    @PostMapping("/folders/open/item")
-    public MessageResponse openItemFolder() throws IOException {
-        Path item = buffsManagerService.getSelectedGameItemFolder();
-        if (item == null) {
-            throw new IllegalStateException("No game installation folder is selected.");
-        }
-        Files.createDirectories(item);
-        openInDesktop(item);
-        return new MessageResponse("Opened item folder.");
-    }
-
-    private String absoluteOrNull(Path path) {
-        return path == null ? null : path.toAbsolutePath().normalize().toString();
-    }
-
-    private void openInDesktop(Path path) {
-        try {
-            String os = System.getProperty("os.name", "").toLowerCase();
-            if (os.contains("win")) {
-                openWithSystemCommand(path);
-                return;
-            }
-            if (!Desktop.isDesktopSupported()) {
-                openWithSystemCommand(path);
-                return;
-            }
-            if (Desktop.getDesktop().isSupported(Desktop.Action.OPEN)) {
-                Desktop.getDesktop().open(path.toFile());
-                return;
-            }
-            openWithSystemCommand(path);
-        } catch (Exception ex) {
-            throw new IllegalStateException("Unable to open folder: " + path.toAbsolutePath(), ex);
-        }
-    }
-
-    private void openWithSystemCommand(Path path) throws IOException {
-        String os = System.getProperty("os.name", "").toLowerCase();
-        if (os.contains("win")) {
-            WindowsProcessLauncher.openFolderForeground(path);
-            return;
-        }
-        if (os.contains("mac")) {
-            new ProcessBuilder("open", path.toAbsolutePath().toString()).start();
-            return;
-        }
-        new ProcessBuilder("xdg-open", path.toAbsolutePath().toString()).start();
-    }
-
-    public record InstallProfileRequest(String profileId) {
-    }
-
-    public record MessageResponse(String message) {
-    }
-
-    public record ProfileInfoResponse(String name, String author, String description, String url, String createdAt, String version) {
-    }
-
-    public record AvailableProfileResponse(String id, String name, String author, String description, String url, String createdAt, String version, List<String> previewImages) {
-    }
-
-    public record BuffsStatusResponse(
-            String selectedGameBase,
-            String selectedGameItemFolder,
-            ProfileInfoResponse installedProfile,
-            List<String> downloadedProfiles,
-            List<AvailableProfileResponse> availableProfiles
-    ) {
-    }
+  public record BuffsStatusResponse(
+      String selectedGameBase,
+      String selectedGameItemFolder,
+      Resource installedProfile,
+      List<String> downloadedProfiles,
+      List<Resource> availableProfiles) {}
 }

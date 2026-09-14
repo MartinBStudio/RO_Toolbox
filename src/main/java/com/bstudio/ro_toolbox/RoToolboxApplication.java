@@ -1,24 +1,23 @@
 package com.bstudio.ro_toolbox;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.PropertySource;
 
 @SpringBootApplication
 @PropertySource("classpath:application.properties")
 public class RoToolboxApplication {
-    
-    @Value("${app.version:dev}")
-    private String version;
 
-    public static void main(String[] args) {
-        SpringApplication app = new SpringApplication(RoToolboxApplication.class);
-        app.run(args);
-    }
+  @Value("${app.version:dev}")
+  private String version;
 
-    public String getVersion() {
-        return version;
-    }
+  public static void main(String[] args) {
+    SpringApplication app = new SpringApplication(RoToolboxApplication.class);
+    app.run(args);
+  }
 
+  public String getVersion() {
+    return version;
+  }
 }
