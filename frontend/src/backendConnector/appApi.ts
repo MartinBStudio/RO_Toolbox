@@ -4,62 +4,15 @@ import { request } from "./apiClient.ts";
 type ApiAppStatus = {
   version: string;
   troseRunning: boolean;
-  lootService: {
-    endpoint: string;
-  };
-  combatTextService: {
-    endpoint: string;
-  };
-  userInterfaceService: {
-    endpoint: string;
-  };
-  buffIconsService: {
-    endpoint: string;
-  };
-  buffsService: {
-    endpoint: string;
-  };
 };
 
-type ApiLootStatus = {
+interface ApiResourceServiceStatus {
   selectedGameBase: string | null;
   selectedGameItemFolder: string | null;
   installedProfile: AppStatus["installedProfile"];
   downloadedProfiles: string[];
   availableProfiles: AppStatus["availableProfiles"];
-};
-
-type ApiCombatTextStatus = {
-  selectedGameBase: string | null;
-  selectedGameItemFolder: string | null;
-  installedProfile: AppStatus["combatTextInstalledProfile"];
-  downloadedProfiles: string[];
-  availableProfiles: AppStatus["combatTextAvailableProfiles"];
-};
-
-type ApiUserInterfaceStatus = {
-  selectedGameBase: string | null;
-  selectedGameItemFolder: string | null;
-  installedProfile: AppStatus["userInterfaceInstalledProfile"];
-  downloadedProfiles: string[];
-  availableProfiles: AppStatus["userInterfaceAvailableProfiles"];
-};
-
-type ApiBuffIconsStatus = {
-  selectedGameBase: string | null;
-  selectedGameItemFolder: string | null;
-  installedProfile: AppStatus["buffIconsInstalledProfile"];
-  downloadedProfiles: string[];
-  availableProfiles: AppStatus["buffIconsAvailableProfiles"];
-};
-
-type ApiBuffsStatus = {
-  selectedGameBase: string | null;
-  selectedGameItemFolder: string | null;
-  installedProfile: AppStatus["buffsInstalledProfile"];
-  downloadedProfiles: string[];
-  availableProfiles: AppStatus["buffsAvailableProfiles"];
-};
+}
 
 function asNullableString(value: unknown): string | null {
   return typeof value === "string" ? value : null;
@@ -113,48 +66,112 @@ function asAvailableProfiles(value: unknown): AppStatus["availableProfiles"] {
     .filter((profile) => profile.id.length > 0);
 }
 
-export function getStatus() {
-  return Promise.all([
+type ResourceServiceStatus = Pick<
+  AppStatus,
+  "selectedGameBase" | "selectedGameItemFolder" | "installedProfile" | "downloadedProfiles" | "availableProfiles"
+>;
+
+function asResourceServiceStatus(status: ApiResourceServiceStatus): ResourceServiceStatus {
+  return {
+    selectedGameBase: asNullableString(status.selectedGameBase),
+    selectedGameItemFolder: asNullableString(status.selectedGameItemFolder),
+    installedProfile: asProfileInfo(status.installedProfile),
+    downloadedProfiles: asStringArray(status.downloadedProfiles),
+    availableProfiles: asAvailableProfiles(status.availableProfiles)
+  };
+}
+
+function asCombatTextStatus(status: ApiResourceServiceStatus): Pick<
+  AppStatus,
+  | "combatTextSelectedGameBase"
+  | "combatTextSelectedGameItemFolder"
+  | "combatTextInstalledProfile"
+  | "combatTextDownloadedProfiles"
+  | "combatTextAvailableProfiles"
+> {
+  const resourceStatus = asResourceServiceStatus(status);
+  return {
+    combatTextSelectedGameBase: resourceStatus.selectedGameBase,
+    combatTextSelectedGameItemFolder: resourceStatus.selectedGameItemFolder,
+    combatTextInstalledProfile: resourceStatus.installedProfile,
+    combatTextDownloadedProfiles: resourceStatus.downloadedProfiles,
+    combatTextAvailableProfiles: resourceStatus.availableProfiles
+  };
+}
+
+function asUserInterfaceStatus(status: ApiResourceServiceStatus): Pick<
+  AppStatus,
+  | "userInterfaceSelectedGameBase"
+  | "userInterfaceSelectedGameItemFolder"
+  | "userInterfaceInstalledProfile"
+  | "userInterfaceDownloadedProfiles"
+  | "userInterfaceAvailableProfiles"
+> {
+  const resourceStatus = asResourceServiceStatus(status);
+  return {
+    userInterfaceSelectedGameBase: resourceStatus.selectedGameBase,
+    userInterfaceSelectedGameItemFolder: resourceStatus.selectedGameItemFolder,
+    userInterfaceInstalledProfile: resourceStatus.installedProfile,
+    userInterfaceDownloadedProfiles: resourceStatus.downloadedProfiles,
+    userInterfaceAvailableProfiles: resourceStatus.availableProfiles
+  };
+}
+
+function asBuffIconsStatus(status: ApiResourceServiceStatus): Pick<
+  AppStatus,
+  | "buffIconsSelectedGameBase"
+  | "buffIconsSelectedGameItemFolder"
+  | "buffIconsInstalledProfile"
+  | "buffIconsDownloadedProfiles"
+  | "buffIconsAvailableProfiles"
+> {
+  const resourceStatus = asResourceServiceStatus(status);
+  return {
+    buffIconsSelectedGameBase: resourceStatus.selectedGameBase,
+    buffIconsSelectedGameItemFolder: resourceStatus.selectedGameItemFolder,
+    buffIconsInstalledProfile: resourceStatus.installedProfile,
+    buffIconsDownloadedProfiles: resourceStatus.downloadedProfiles,
+    buffIconsAvailableProfiles: resourceStatus.availableProfiles
+  };
+}
+
+function asBuffsStatus(status: ApiResourceServiceStatus): Pick<
+  AppStatus,
+  | "buffsSelectedGameBase"
+  | "buffsSelectedGameItemFolder"
+  | "buffsInstalledProfile"
+  | "buffsDownloadedProfiles"
+  | "buffsAvailableProfiles"
+> {
+  const resourceStatus = asResourceServiceStatus(status);
+  return {
+    buffsSelectedGameBase: resourceStatus.selectedGameBase,
+    buffsSelectedGameItemFolder: resourceStatus.selectedGameItemFolder,
+    buffsInstalledProfile: resourceStatus.installedProfile,
+    buffsDownloadedProfiles: resourceStatus.downloadedProfiles,
+    buffsAvailableProfiles: resourceStatus.availableProfiles
+  };
+}
+
+export async function getStatus(): Promise<AppStatus> {
+  const [appStatus, lootStatus, combatTextStatus, userInterfaceStatus, buffIconsStatus, buffsStatus] = await Promise.all([
     request<ApiAppStatus>("/status"),
-    request<ApiLootStatus>("/loot/status"),
-    request<ApiCombatTextStatus>("/combattext/status"),
-    request<ApiUserInterfaceStatus>("/userinterface/status"),
-    request<ApiBuffIconsStatus>("/bufficons/status"),
-    request<ApiBuffsStatus>("/buffs/status")
-  ]).then(([appStatus, lootStatus, combatTextStatus, userInterfaceStatus, buffIconsStatus, buffsStatus]) => ({
+    request<ApiResourceServiceStatus>("/loot/status"),
+    request<ApiResourceServiceStatus>("/combattext/status"),
+    request<ApiResourceServiceStatus>("/userinterface/status"),
+    request<ApiResourceServiceStatus>("/bufficons/status"),
+    request<ApiResourceServiceStatus>("/buffs/status")
+  ]);
+
+  return {
     version: asString(appStatus?.version),
     troseRunning: Boolean(appStatus?.troseRunning),
-    lootServiceEndpoint: asString(appStatus?.lootService?.endpoint),
-    combatTextServiceEndpoint: asString(appStatus?.combatTextService?.endpoint),
-    userInterfaceServiceEndpoint: asString(appStatus?.userInterfaceService?.endpoint),
-    buffIconsServiceEndpoint: asString(appStatus?.buffIconsService?.endpoint),
-    buffsServiceEndpoint: asString(appStatus?.buffsService?.endpoint),
-    selectedGameBase: asNullableString(lootStatus?.selectedGameBase),
-    selectedGameItemFolder: asNullableString(lootStatus?.selectedGameItemFolder),
-    installedProfile: asProfileInfo(lootStatus?.installedProfile),
-    downloadedProfiles: asStringArray(lootStatus?.downloadedProfiles),
-    availableProfiles: asAvailableProfiles(lootStatus?.availableProfiles),
-    combatTextSelectedGameBase: asNullableString(combatTextStatus?.selectedGameBase),
-    combatTextSelectedGameItemFolder: asNullableString(combatTextStatus?.selectedGameItemFolder),
-    combatTextInstalledProfile: asProfileInfo(combatTextStatus?.installedProfile),
-    combatTextDownloadedProfiles: asStringArray(combatTextStatus?.downloadedProfiles),
-    combatTextAvailableProfiles: asAvailableProfiles(combatTextStatus?.availableProfiles),
-    userInterfaceSelectedGameBase: asNullableString(userInterfaceStatus?.selectedGameBase),
-    userInterfaceSelectedGameItemFolder: asNullableString(userInterfaceStatus?.selectedGameItemFolder),
-    userInterfaceInstalledProfile: asProfileInfo(userInterfaceStatus?.installedProfile),
-    userInterfaceDownloadedProfiles: asStringArray(userInterfaceStatus?.downloadedProfiles),
-    userInterfaceAvailableProfiles: asAvailableProfiles(userInterfaceStatus?.availableProfiles),
-    buffIconsSelectedGameBase: asNullableString(buffIconsStatus?.selectedGameBase),
-    buffIconsSelectedGameItemFolder: asNullableString(buffIconsStatus?.selectedGameItemFolder),
-    buffIconsInstalledProfile: asProfileInfo(buffIconsStatus?.installedProfile),
-    buffIconsDownloadedProfiles: asStringArray(buffIconsStatus?.downloadedProfiles),
-    buffIconsAvailableProfiles: asAvailableProfiles(buffIconsStatus?.availableProfiles),
-    buffsSelectedGameBase: asNullableString(buffsStatus?.selectedGameBase),
-    buffsSelectedGameItemFolder: asNullableString(buffsStatus?.selectedGameItemFolder),
-    buffsInstalledProfile: asProfileInfo(buffsStatus?.installedProfile),
-    buffsDownloadedProfiles: asStringArray(buffsStatus?.downloadedProfiles),
-    buffsAvailableProfiles: asAvailableProfiles(buffsStatus?.availableProfiles)
-  }));
+    ...asResourceServiceStatus(lootStatus),
+    ...asCombatTextStatus(combatTextStatus),
+    ...asUserInterfaceStatus(userInterfaceStatus),
+    ...asBuffIconsStatus(buffIconsStatus),
+    ...asBuffsStatus(buffsStatus)
+  };
 }
 
 export function drainNotifications() {

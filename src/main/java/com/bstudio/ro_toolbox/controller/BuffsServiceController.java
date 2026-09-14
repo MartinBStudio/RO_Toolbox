@@ -23,7 +23,6 @@ public class BuffsServiceController extends BaseController {
 
   private final BuffsManager buffsManager;
   private final AppConfigService appConfigService;
-  private final IconsManager iconsManager;
 
   @GetMapping("/status")
   public PackageServiceStatusResponse status() {

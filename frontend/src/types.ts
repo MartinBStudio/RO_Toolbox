@@ -24,11 +24,6 @@ export type AvailableProfile = {
 export type AppStatus = {
   version: string;
   troseRunning: boolean;
-  lootServiceEndpoint: string;
-  combatTextServiceEndpoint: string;
-  userInterfaceServiceEndpoint: string;
-  buffIconsServiceEndpoint: string;
-  buffsServiceEndpoint: string;
   selectedGameBase: string | null;
   selectedGameItemFolder: string | null;
   installedProfile: ProfileInfo | null;

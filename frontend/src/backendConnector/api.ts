@@ -50,7 +50,7 @@ export {
   openBuffIconsResourcesFolder,
   openBuffIconsItemFolder,
   checkBuffIconsResourcesUpdate
-} from "./buffIconsApi.ts";
+} from "./iconsApi.ts";
 export {
   downloadBuffsProfiles,
   installBuffsProfile,
