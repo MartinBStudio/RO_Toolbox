@@ -1,4 +1,4 @@
-package com.bstudio.ro_toolbox.service.resourceReplacer;
+package com.bstudio.ro_toolbox.service.resourceReplacer.service;
 
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.resourceReplacer.component.PackageHandler;

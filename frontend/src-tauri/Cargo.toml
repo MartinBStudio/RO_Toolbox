@@ -1,9 +1,9 @@
 [package]
-name = "ro_toolbox_desktop"
-version = "0.5.2"
-description = "RO Toolbox desktop shell"
+name = "Ro_Toolbox"
+version = "0.5.3"
+description = "RO Toolbox is a tool for managing and enhancing your experience in the game Rose Online. It provides various features such as resource management and quality of life improvements."
 authors = ["BStudio"]
-edition = "2021"
+edition = "2026"
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

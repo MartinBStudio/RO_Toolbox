@@ -8,9 +8,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 
-@Service
+@Component
 public class PackageManifestReader implements ICommonResourceMethods {
 
   public Resource readManifest(String manifestFileName, Path installedPackageFolder) {

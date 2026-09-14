@@ -1,8 +1,8 @@
 package com.bstudio.ro_toolbox.service.resourceReplacer.service.icons;
 
-import com.bstudio.ro_toolbox.service.resourceReplacer.BaseIResourceReplacerResource;
 import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.BaseIResourceReplacerResource;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
 import java.io.IOException;
 import java.nio.file.Path;
