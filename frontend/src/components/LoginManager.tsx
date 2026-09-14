@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
+import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import { StarIcon } from "@heroicons/react/24/solid";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import {
   createLoginAccount,
@@ -249,21 +251,11 @@ export function LoginManager({
   return (
     <section className="loginManager">
       <div className="card serviceContentPanel">
-        <div className="servicePanelHeader">
-          <div className="servicePanelHeaderContent">
-            <div className="serviceAccordionTitleRow">
-              <span className="serviceAccordionAccent" aria-hidden="true" />
-              <p className="sectionTitle serviceAccordionTitle">Login manager</p>
-              <span className="serviceAccordionBadge serviceAccordionBadgeActive">Local</span>
-            </div>
-            <p className="servicePanelDescription">Store multiple ROSE accounts locally.</p>
-            <div className="servicePanelMeta">
-              <span className="servicePanelMetaChip">{accounts.length} saved</span>
-              <span className="servicePanelMetaChip">Quick launch ready</span>
-              <span className="servicePanelMetaChip">JSON import/export</span>
-            </div>
-          </div>
-          <div className="loginHeaderActions">
+        <div className="loginManagerHeader">
+          <p className="sectionTitle">Login manager</p>
+          <p className="activeProfileMeta">Store multiple ROSE accounts locally.</p>
+        </div>
+        <div className="headerActions loginManagerActions">
             <button
               type="button"
               className="buttonSubtle"
@@ -290,7 +282,6 @@ export function LoginManager({
             >
               +
             </button>
-          </div>
         </div>
 
         {error ? <p className="formError">{error}</p> : null}
@@ -326,13 +317,27 @@ export function LoginManager({
                     aria-label={account.displayInQuick ? "Remove from quick launch" : "Add to quick launch"}
                     title={account.displayInQuick ? "Remove from quick launch" : "Add to quick launch"}
                   >
-                    ★
+                    <StarIcon className="heroIcon" aria-hidden="true" />
                   </button>
-                  <button type="button" className="buttonSubtle" onClick={() => beginEdit(account)} disabled={busy}>
-                    Edit
+                  <button
+                    type="button"
+                    className="iconBtn loginEditButton"
+                    onClick={() => beginEdit(account)}
+                    disabled={busy}
+                    aria-label={`Edit ${account.name}`}
+                    title={`Edit ${account.name}`}
+                  >
+                    <PencilIcon className="heroIcon" aria-hidden="true" />
                   </button>
-                  <button type="button" className="buttonDanger" onClick={() => setDeleteTarget(account)} disabled={busy}>
-                    Delete
+                  <button
+                    type="button"
+                    className="iconBtn loginDeleteButton"
+                    onClick={() => setDeleteTarget(account)}
+                    disabled={busy}
+                    aria-label={`Delete ${account.name}`}
+                    title={`Delete ${account.name}`}
+                  >
+                    <TrashIcon className="heroIcon" aria-hidden="true" />
                   </button>
                 </div>
               </div>

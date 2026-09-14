@@ -247,53 +247,10 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
   const hasParseError = Boolean(selectedFile?.parseError);
 
   return (
-    <section className="card configEditor">
-      <div className="servicePanelHeader configEditorHeader">
-        <div className="servicePanelHeaderContent">
-          <div className="serviceAccordionTitleRow">
-            <span className="serviceAccordionAccent" aria-hidden="true" />
-            <p className="sectionTitle serviceAccordionTitle">Config editor</p>
-            <span className="serviceAccordionBadge serviceAccordionBadgeActive">Config files</span>
-          </div>
-          <p className="servicePanelDescription">Edit game TOML files with parsed preview and quick boolean controls.</p>
-          <div className="servicePanelMeta">
-            <span className="servicePanelMetaChip servicePanelMetaChipWarn">Close ROSE client first</span>
-            <span className="servicePanelMetaChip servicePanelMetaChipMono">{status?.configDir ?? "%APPDATA%\\Rednim Games\\ROSE Online\\config"}</span>
-          </div>
-        </div>
-        <div className="headerActions">
-          <button
-            type="button"
-            className="iconBtn iconBtnSubtle iconBtnDim"
-            disabled={loading}
-            onClick={onOpenFolder}
-            title="Open config folder"
-            aria-label="Open config folder"
-          >
-            <FolderOpenIcon className="heroIcon" />
-          </button>
-          <button
-            type="button"
-            className="iconBtn iconBtnSubtle iconBtnDim"
-            disabled={loading}
-            onClick={onReload}
-            title="Reload files"
-            aria-label="Reload files"
-          >
-            <ArrowPathIcon className="heroIcon" />
-          </button>
-          <button
-            type="button"
-            className="buttonSubtle"
-            disabled={loading}
-            onClick={() => setShowFileEditor((value) => !value)}
-          >
-            {showFileEditor ? "Hide files" : "See files"}
-          </button>
-          <button type="button" className="buttonStrong" disabled={loading || !selectedFile || !editorDirty} onClick={onSave}>
-            Save
-          </button>
-        </div>
+    <section className="configEditor">
+      <div className="configEditorHeader">
+        <p className="sectionTitle">Config editor</p>
+        <p className="activeProfileMeta">Edit game Config files.</p>
       </div>
 
       <div className="configEditorFileTabs">
@@ -314,6 +271,40 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
             </button>
           );
         })}
+      </div>
+
+      <div className="headerActions configEditorActions">
+        <button
+          type="button"
+          className="iconBtn iconBtnSubtle iconBtnDim"
+          disabled={loading}
+          onClick={onOpenFolder}
+          title="Open config folder"
+          aria-label="Open config folder"
+        >
+          <FolderOpenIcon className="heroIcon" />
+        </button>
+        <button
+          type="button"
+          className="iconBtn iconBtnSubtle iconBtnDim"
+          disabled={loading}
+          onClick={onReload}
+          title="Reload files"
+          aria-label="Reload files"
+        >
+          <ArrowPathIcon className="heroIcon" />
+        </button>
+        <button
+          type="button"
+          className="buttonSubtle"
+          disabled={loading}
+          onClick={() => setShowFileEditor((value) => !value)}
+        >
+          {showFileEditor ? "Hide files" : "See files"}
+        </button>
+        <button type="button" className="buttonStrong" disabled={loading || !selectedFile || !editorDirty} onClick={onSave}>
+          Save
+        </button>
       </div>
 
       {selectedFile ? (

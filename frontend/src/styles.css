@@ -124,13 +124,6 @@ body {
   margin-top: 0.9rem;
 }
 
-.layoutFloatingStatus {
-  position: absolute;
-  left: 1rem;
-  bottom: 0.2rem;
-  z-index: 2;
-}
-
 .appWorkspace {
   display: grid !important;
   grid-template-columns: 260px minmax(0, 1fr) !important;
@@ -306,6 +299,17 @@ body {
 
 .card.textureReplacerPanel {
   padding-bottom: calc(0.7rem + 12px);
+}
+
+.panelStatusHost {
+  position: relative;
+}
+
+.panelTroseStatus {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 1;
 }
 
 header.card {
@@ -1214,23 +1218,23 @@ button:disabled {
   line-height: 1;
 }
 
-.loginHeaderActions {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  align-self: center;
-  padding-left: 0.85rem;
-  margin-left: auto;
+.loginManagerHeader {
+  display: grid;
+  gap: 0.22rem;
 }
 
-.loginHeaderActions > .buttonSubtle,
+.loginManagerActions {
+  justify-self: end;
+}
+
+.loginManagerActions > .buttonSubtle,
 .configEditor .headerActions > .buttonSubtle {
   background: linear-gradient(180deg, rgba(26, 39, 59, 0.96) 0%, rgba(20, 30, 45, 0.96) 100%);
   border-color: #48638a;
   color: #d8e7ff;
 }
 
-.loginHeaderActions > .buttonSubtle:hover:enabled,
+.loginManagerActions > .buttonSubtle:hover:enabled,
 .configEditor .headerActions > .buttonSubtle:hover:enabled {
   border-color: #6d91cb;
   background: linear-gradient(180deg, rgba(33, 48, 73, 0.98) 0%, rgba(25, 37, 57, 0.98) 100%);
@@ -1346,11 +1350,12 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  position: relative;
   gap: 0.6rem;
   border: 1px solid var(--panel-blue-border);
   border-radius: 8px;
   background: var(--panel-blue-surface-soft);
-  padding: 0.7rem;
+  padding: 0.7rem 7.45rem 0.7rem 0.7rem;
   box-shadow: var(--panel-blue-highlight);
 }
 
@@ -1388,8 +1393,39 @@ button:disabled {
 }
 
 .loginActions {
+  position: absolute;
+  top: 0.55rem;
+  right: 0.55rem;
   flex-wrap: nowrap;
   align-items: center;
+  gap: 0.28rem;
+}
+
+.loginActions .iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0.3rem;
+  border: 1px solid #3a4a64;
+  border-radius: 6px;
+  background: #1a2333;
+}
+
+.loginActions .iconBtn:hover:enabled {
+  background: #202c3f;
+  border-color: #4b607f;
+}
+
+.loginDeleteButton .heroIcon {
+  color: #eb6b6b;
+}
+
+.loginDeleteButton:hover:enabled {
+  border-color: #5d3d3d !important;
 }
 
 .loginQuickStarActive,
@@ -1403,15 +1439,28 @@ button:disabled {
 }
 
 .loginQuickStarActive {
-  background: #ffcd4d;
+  background: #4a3513;
   border-color: #ffcd4d;
-  color: #1a1406;
+  color: #ffcd4d;
+  box-shadow: 0 0 0 1px rgba(255, 205, 77, 0.22), 0 0 10px rgba(255, 205, 77, 0.16);
+}
+
+.loginQuickStarActive .heroIcon {
+  color: #ffcd4d !important;
+  fill: #ffcd4d !important;
+  stroke: #ffcd4d !important;
 }
 
 .loginQuickStarInactive {
   background: #1a2333;
   border-color: #3a4a64;
-  color: #9bb3d9;
+  color: #f0b459;
+}
+
+.loginQuickStarInactive .heroIcon {
+  color: #ffcd4d !important;
+  fill: #ffcd4d !important;
+  stroke: #ffcd4d !important;
 }
 
 .loginModalActions {
@@ -2801,7 +2850,13 @@ a {
 }
 
 .configEditorHeader {
-  gap: 0.9rem;
+  display: grid;
+  gap: 0.22rem;
+  padding-right: 15rem;
+}
+
+.configEditorActions {
+  justify-self: end;
 }
 
 .configEditorFileTabs {
