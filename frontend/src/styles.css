@@ -2228,11 +2228,600 @@ a {
 }
 
 .releaseNotesModalCard {
-  width: min(860px, 100%);
-  max-height: min(80vh, 760px);
+  width: min(980px, calc(100vw - 1.2rem));
+  max-height: min(92vh, 840px);
+  height: min(92vh, 840px);
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem 0.9rem;
+  background: var(--rose-panel-surface);
+  border: 1px solid var(--panel-blue-border);
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.releaseNotesHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(51, 68, 89, 0.4);
+}
+
+.releaseNotesHeaderMain {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.releaseNotesBadgeIconWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(38, 56, 84, 0.8) 0%, rgba(18, 28, 44, 0.9) 100%);
+  border: 1px solid rgba(89, 137, 206, 0.35);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.releaseNotesHeaderLogo {
+  height: 1.4rem;
+  width: auto;
+  object-fit: contain;
+}
+
+.releaseNotesSparklePill {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 1rem;
+  height: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #ff9e2c 0%, #ff4b2b 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(255, 110, 43, 0.6);
+}
+
+.releaseNotesSparkleIcon {
+  width: 0.65rem;
+  height: 0.65rem;
+  color: #fff;
+}
+
+.releaseNotesHeaderText {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.releaseNotesEyebrow {
+  color: #8bb2e8;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-family: var(--display-font);
+}
+
+.releaseNotesTitle {
+  margin: 0;
+  color: #f1f6ff;
+  font-size: 1.25rem;
+  font-family: var(--display-font);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.releaseNotesCloseButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: 6px;
+  color: #9eb4cf;
+  transition: all 0.15s ease;
+}
+
+.releaseNotesCloseButton:hover:enabled {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.releaseNotesCloseIcon {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+/* Toolbar */
+.releaseNotesToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.releaseNotesSearchWrapper {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+  max-width: 340px;
+  display: flex;
+  align-items: center;
+}
+
+.releaseNotesSearchIcon {
+  position: absolute;
+  left: 0.6rem;
+  width: 0.95rem;
+  height: 0.95rem;
+  color: #6a82a3;
+  pointer-events: none;
+}
+
+.releaseNotesSearchInput {
+  width: 100%;
+  padding: 0.38rem 1.8rem 0.38rem 2rem;
+  background: rgba(10, 16, 26, 0.7);
+  border: 1px solid #2e415a;
+  border-radius: 6px;
+  color: #d8e5f7;
+  font-size: 0.8rem;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.releaseNotesSearchInput:focus {
+  outline: none;
+  border-color: #5b87c7;
+  background: rgba(12, 20, 32, 0.9);
+  box-shadow: 0 0 0 2px rgba(91, 135, 199, 0.2);
+}
+
+.releaseNotesSearchInput::placeholder {
+  color: #5c728f;
+}
+
+.releaseNotesSearchClear {
+  position: absolute;
+  right: 0.45rem;
+  background: none;
+  border: none;
+  color: #7289a8;
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 0.15rem 0.3rem;
+  border-radius: 4px;
+}
+
+.releaseNotesSearchClear:hover {
+  color: #dbe7f7;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.releaseNotesVersionTabs {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.releaseNotesVersionTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.3rem 0.6rem;
+  background: rgba(18, 28, 43, 0.7);
+  border: 1px solid #2a3c54;
+  border-radius: 5px;
+  color: #8fa6c4;
+  font-size: 0.76rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+}
+
+.releaseNotesVersionTab:hover {
+  color: #dbe7f7;
+  border-color: #48648a;
+  background: rgba(27, 42, 64, 0.8);
+}
+
+.releaseNotesVersionTab.active {
+  background: linear-gradient(180deg, rgba(46, 73, 112, 0.9) 0%, rgba(31, 51, 80, 0.9) 100%);
+  border-color: #628cc7;
+  color: #f1f6ff;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.tabLatestBadge {
+  font-size: 0.62rem;
+  padding: 0.05rem 0.3rem;
+  border-radius: 9999px;
+  background: rgba(45, 212, 191, 0.2);
+  color: #5eead4;
+  border: 1px solid rgba(45, 212, 191, 0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Body & Scroll Area */
+.releaseNotesBody {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 0.35rem;
+  display: grid;
+  gap: 0.8rem;
+  scrollbar-width: thin;
+  scrollbar-color: #3b5070 rgba(14, 24, 36, 0.6);
+}
+
+.releaseNotesBody::-webkit-scrollbar {
+  width: 6px;
+}
+
+.releaseNotesBody::-webkit-scrollbar-track {
+  background: rgba(12, 20, 32, 0.5);
+  border-radius: 4px;
+}
+
+.releaseNotesBody::-webkit-scrollbar-thumb {
+  background: #364e70;
+  border-radius: 4px;
+}
+
+.releaseNotesBody::-webkit-scrollbar-thumb:hover {
+  background: #4f729f;
+}
+
+/* Timeline & Cards */
+.releaseTimeline {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.releaseTimelineCard {
+  background: linear-gradient(180deg, rgba(20, 31, 48, 0.85) 0%, rgba(14, 23, 37, 0.85) 100%);
+  border: 1px solid #283a52;
+  border-radius: 8px;
+  padding: 0.8rem 0.9rem;
+  display: grid;
+  gap: 0.65rem;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: border-color 0.15s ease;
+}
+
+.releaseTimelineCard:hover {
+  border-color: #385073;
+}
+
+.releaseCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid rgba(48, 70, 99, 0.35);
+}
+
+.releaseCardHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex-wrap: wrap;
+}
+
+.releaseVersionBadgeGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.releaseVersionPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.18rem 0.55rem;
+  background: #18283d;
+  border: 1px solid #364f70;
+  border-radius: 6px;
+  font-family: var(--display-font);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #bfdbfe;
+}
+
+.releaseVersionPill.latest {
+  background: linear-gradient(135deg, rgba(29, 78, 216, 0.35) 0%, rgba(14, 116, 144, 0.35) 100%);
+  border-color: #3b82f6;
+  color: #93c5fd;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+}
+
+.releaseLatestTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  padding: 0.15rem 0.45rem;
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  border-radius: 9999px;
+  color: #6ee7b7;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.releaseLatestTagIcon {
+  width: 0.72rem;
+  height: 0.72rem;
+}
+
+.releaseCardTitle {
+  margin: 0;
+  color: #e6eefc;
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: var(--display-font);
+  letter-spacing: 0.03em;
+}
+
+.releaseCardDate {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #728aa8;
+  font-size: 0.74rem;
+}
+
+.releaseDateIcon {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.releaseSummaryText {
+  margin: 0;
+  color: #9ab0cb;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+/* Category Sections */
+.releaseCategoriesList {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.releaseCategorySection {
+  background: rgba(10, 17, 28, 0.55);
+  border: 1px solid rgba(40, 58, 83, 0.6);
+  border-radius: 6px;
+  padding: 0.55rem 0.65rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.releaseCategoryHeader {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.releaseCategoryIconBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.releaseCategoryIcon {
+  width: 0.9rem;
+  height: 0.9rem;
+}
+
+.releaseCategoryIcon.feature {
+  color: #fbbf24;
+}
+
+.releaseCategoryIcon.ui {
+  color: #a78bfa;
+}
+
+.releaseCategoryIcon.fix {
+  color: #f87171;
+}
+
+.releaseCategoryIcon.improvement {
+  color: #38bdf8;
+}
+
+.releaseCategoryIcon.tool {
+  color: #34d399;
+}
+
+.releaseCategoryIcon.general {
+  color: #93c5fd;
+}
+
+.releaseCategoryTitle {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #d1deef;
+  font-family: var(--display-font);
+  text-transform: uppercase;
+}
+
+.releaseCategoryCount {
+  margin-left: auto;
+  font-size: 0.68rem;
+  color: #647b99;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 0.05rem 0.35rem;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+/* Items List */
+.releaseItemsList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.releaseItemRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: #b7cadf;
+}
+
+.releaseItemBullet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.2rem;
+  flex-shrink: 0;
+  color: #5c7eab;
+}
+
+.releaseBulletIcon {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.releaseItemContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.releaseItemTag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  padding: 0.05rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  color: #93c5fd;
+  margin-right: 0.4rem;
+  vertical-align: middle;
+}
+
+.releaseItemText {
+  color: #c4d6eb;
+}
+
+.releaseNotesBold {
+  color: #f1f6ff;
+  font-weight: 600;
+}
+
+.releaseNotesItalic {
+  color: #98b0ce;
+  font-style: italic;
+}
+
+.releaseNotesCode {
+  display: inline-block;
+  background: #0d1624;
+  border: 1px solid #2b3d56;
+  border-radius: 4px;
+  padding: 0.05rem 0.32rem;
+  font-size: 0.78rem;
+  font-family: "Consolas", "Courier New", monospace;
+  color: #7dd3fc;
+  margin: 0 0.15rem;
+}
+
+.releaseNotesLink {
+  color: #60a5fa;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 0.15s ease;
+}
+
+.releaseNotesLink:hover {
+  color: #93c5fd;
+}
+
+/* Empty State */
+.releaseNotesEmptyState {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+  padding: 2.5rem 1rem;
+  gap: 0.5rem;
+}
+
+.releaseNotesEmptyIcon {
+  width: 2.2rem;
+  height: 2.2rem;
+  color: #4a6180;
+}
+
+.releaseNotesEmptyTitle {
+  color: #d1dfef;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.releaseNotesEmptyDesc {
+  margin: 0;
+  color: #728aa8;
+  font-size: 0.8rem;
+  max-width: 280px;
+}
+
+.releaseNotesResetSearch {
+  margin-top: 0.4rem;
+  font-size: 0.78rem;
+  padding: 0.3rem 0.8rem;
+}
+
+/* Footer */
+.releaseNotesFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.8rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid rgba(51, 68, 89, 0.4);
+}
+
+.releaseNotesFooterMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #728aa8;
+  font-size: 0.74rem;
+}
+
+.releaseNotesAcknowledgeButton {
+  min-width: 6.5rem;
+  padding: 0.4rem 1.1rem;
+  font-size: 0.84rem;
+  font-weight: 600;
 }
 
 .modalCard.serviceDetailModalCard {
@@ -2251,22 +2840,6 @@ a {
   display: grid;
   gap: 0.7rem;
   padding-right: 0.1rem;
-}
-
-.releaseNotesContent {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  overflow: auto;
-  max-height: 100%;
-  padding: 0.75rem;
-  border: 1px solid #243040;
-  border-radius: 8px;
-  background: #0d1420;
-  color: #c7d4e8;
-  font-size: 0.85rem;
-  line-height: 1.5;
-  font-family: "Consolas", "Courier New", monospace;
 }
 
 .modalBackdrop {
@@ -2289,7 +2862,14 @@ a {
   box-sizing: border-box;
   border-color: var(--panel-blue-border);
 }
-
+.modalCardWide {
+  position: relative;
+  z-index: 1;
+  width: 560px;
+  max-width: calc(100vw - 1rem);
+  box-sizing: border-box;
+  border-color: var(--panel-blue-border);
+}
 .modalHeader {
   display: flex;
   align-items: center;
