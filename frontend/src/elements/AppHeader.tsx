@@ -250,8 +250,11 @@ export function AppHeader({
             className="buttonSubtle headerLaunchButton"
             disabled={loading || launchDisabled}
             onClick={onLaunchRose}
+            aria-label="Launch ROSE"
+            title="Launch ROSE"
           >
-            Rose Launcher
+            <img src={roseLogo} alt="ROSE" className="headerLaunchLogo" />
+            Launcher
           </button>
           <button
             type="button"

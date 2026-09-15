@@ -179,10 +179,19 @@ body {
 }
 
 .headerLaunchButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   white-space: nowrap;
   font-size: 0.78rem;
   padding: 0.3rem 0.55rem;
   line-height: 1.1;
+}
+
+.headerLaunchLogo {
+  height: 0.95rem;
+  width: auto;
+  display: block;
 }
 
 .quickAccountButton:hover:enabled {
