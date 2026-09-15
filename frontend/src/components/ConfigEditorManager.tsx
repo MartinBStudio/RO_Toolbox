@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { ArrowPathIcon, FolderOpenIcon } from "@heroicons/react/24/outline";
+import { ArrowPathIcon, FolderOpenIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import {
   addIgnoreListEntry,
   deleteIgnoreListEntry,
@@ -9,6 +9,26 @@ import {
   saveConfigEditorFile
 } from "../backendConnector/api.ts";
 import type { ConfigEditorFileState, ConfigEditorStatus, TomlNode } from "../types.ts";
+
+function FloppyDiskIcon({ className = "heroIcon" }: { className?: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="M16.5 3.75V6.75a1.5 1.5 0 0 1-1.5 1.5H9a1.5 1.5 0 0 1-1.5-1.5V3.75" />
+      <path d="M3.75 6.75A2.25 2.25 0 0 1 6 4.5h10.379a2.25 2.25 0 0 1 1.59.659l2.372 2.372a2.25 2.25 0 0 1 .659 1.591V18A2.25 2.25 0 0 1 18.75 20.25H5.25A2.25 2.25 0 0 1 3 18V6.75z" />
+      <path d="M7.5 20.25V14.25A1.5 1.5 0 0 1 9 12.75h6a1.5 1.5 0 0 1 1.5 1.5v6" />
+    </svg>
+  );
+}
 
 type ConfigEditorManagerProps = {
   loading: boolean;
@@ -253,58 +273,69 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
         <p className="activeProfileMeta">Edit game Config files.</p>
       </div>
 
-      <div className="configEditorFileTabs">
-        {FILE_ORDER.map((fileId) => {
-          const file = status?.files.find((entry) => entry.id === fileId);
-          return (
-            <button
-              key={fileId}
-              type="button"
-              className={`configEditorFileTab${selectedFileId === fileId ? " configEditorFileTabActive" : ""}`}
-              onClick={() => onFileChange(fileId)}
-              disabled={loading}
-            >
-              {file?.fileName ?? `${fileId}.toml`}
-              <span className={`configEditorFileBadge${file?.exists ? " configEditorFileBadgeFound" : ""}`}>
-                {file?.exists ? "found" : "missing"}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+      <div className="configEditorToolbar">
+        <div className="configEditorFileTabs">
+          {FILE_ORDER.map((fileId) => {
+            const file = status?.files.find((entry) => entry.id === fileId);
+            return (
+              <button
+                key={fileId}
+                type="button"
+                className={`configEditorFileTab${selectedFileId === fileId ? " configEditorFileTabActive" : ""}`}
+                onClick={() => onFileChange(fileId)}
+                disabled={loading}
+              >
+                {file?.fileName ?? `${fileId}.toml`}
+                <span className={`configEditorFileBadge${file?.exists ? " configEditorFileBadgeFound" : ""}`}>
+                  {file?.exists ? "found" : "missing"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
 
-      <div className="headerActions configEditorActions">
-        <button
-          type="button"
-          className="iconBtn iconBtnSubtle iconBtnDim"
-          disabled={loading}
-          onClick={onOpenFolder}
-          title="Open config folder"
-          aria-label="Open config folder"
-        >
-          <FolderOpenIcon className="heroIcon" />
-        </button>
-        <button
-          type="button"
-          className="iconBtn iconBtnSubtle iconBtnDim"
-          disabled={loading}
-          onClick={onReload}
-          title="Reload files"
-          aria-label="Reload files"
-        >
-          <ArrowPathIcon className="heroIcon" />
-        </button>
-        <button
-          type="button"
-          className="buttonSubtle"
-          disabled={loading}
-          onClick={() => setShowFileEditor((value) => !value)}
-        >
-          {showFileEditor ? "Hide files" : "See files"}
-        </button>
-        <button type="button" className="buttonStrong" disabled={loading || !selectedFile || !editorDirty} onClick={onSave}>
-          Save
-        </button>
+        <div className="headerActions configEditorActions">
+          <button
+            type="button"
+            className="iconBtn iconBtnSubtle"
+            disabled={loading}
+            onClick={onOpenFolder}
+            title="Open config folder"
+            aria-label="Open config folder"
+          >
+            <FolderOpenIcon className="heroIcon" />
+          </button>
+          <button
+            type="button"
+            className="iconBtn iconBtnSubtle"
+            disabled={loading}
+            onClick={onReload}
+            title="Reload files"
+            aria-label="Reload files"
+          >
+            <ArrowPathIcon className="heroIcon" />
+          </button>
+          <button
+            type="button"
+            className={`iconBtn ${showFileEditor ? "iconBtnActive" : "iconBtnSubtle"}`}
+            disabled={loading}
+            onClick={() => setShowFileEditor((value) => !value)}
+            title={showFileEditor ? "Hide file editor" : "See files"}
+            aria-label={showFileEditor ? "Hide file editor" : "See files"}
+          >
+            <MagnifyingGlassIcon className="heroIcon" />
+          </button>
+          <button
+            type="button"
+            className="iconBtn buttonStrong"
+            disabled={loading || !selectedFile || !editorDirty}
+            onClick={onSave}
+            title="Save"
+            aria-label="Save"
+          >
+            <FloppyDiskIcon className="heroIcon" />
+          </button>
+        </div>
       </div>
 
       {selectedFile ? (

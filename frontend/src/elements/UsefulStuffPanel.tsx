@@ -29,14 +29,15 @@ function toErrorMessage(error: unknown, fallback: string) {
 }
 
 function renderLinkTitle(title: string) {
-  if (!title.startsWith("ROSE ")) {
+  const match = title.match(/^rose\s+/i);
+  if (!match) {
     return title;
   }
 
   return (
     <>
       <img src={roseLogo} alt="ROSE" className="usefulStuffTitleLogo" />
-      <span className="usefulStuffTitleText">{title.slice("ROSE ".length)}</span>
+      <span className="usefulStuffTitleText">{title.slice(match[0].length)}</span>
     </>
   );
 }
