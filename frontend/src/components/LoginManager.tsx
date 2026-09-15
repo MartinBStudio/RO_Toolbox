@@ -1,6 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
+import {
+  ArrowDownTrayIcon,
+  ArrowUpTrayIcon,
+  PencilIcon,
+  PlusIcon,
+  TrashIcon
+} from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
 import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import {
@@ -258,19 +264,23 @@ export function LoginManager({
         <div className="headerActions loginManagerActions">
             <button
               type="button"
-              className="buttonSubtle"
+              className="iconBtn iconBtnSubtle"
               onClick={onExportAccounts}
               disabled={busy}
+              aria-label="Export accounts"
+              title="Export accounts"
             >
-              Export
+              <ArrowUpTrayIcon className="heroIcon" aria-hidden="true" />
             </button>
             <button
               type="button"
-              className="buttonSubtle"
+              className="iconBtn iconBtnSubtle"
               onClick={() => importInputRef.current?.click()}
               disabled={busy}
+              aria-label="Import accounts"
+              title="Import accounts"
             >
-              Import
+              <ArrowDownTrayIcon className="heroIcon" aria-hidden="true" />
             </button>
             <button
               type="button"
@@ -280,7 +290,7 @@ export function LoginManager({
               aria-label="Add account"
               title="Add account"
             >
-              +
+              <PlusIcon className="heroIcon" aria-hidden="true" />
             </button>
         </div>
 

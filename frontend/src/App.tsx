@@ -165,7 +165,6 @@ function App() {
         setLoadingMessage(undefined);
         try {
             await quickLaunchGame();
-            setMessage("ROSE Online launched.");
             await refreshStatus();
         } catch (err) {
             setMessage(toErrorMessage(err, "Failed to launch ROSE Online."));

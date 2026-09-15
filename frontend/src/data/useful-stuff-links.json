@@ -22,5 +22,13 @@
     "description": "Base stat optimizer for planning ROSE builds by level, class, weapon, and goals.",
     "accentFrom": "#9a7cff",
     "accentTo": "#ff8df2"
+  },
+  {
+    "id": "rose-asset-hunter",
+    "title": "ROSE Asset Hunter",
+    "url": "https://github.com/OlarisMods/ROSE-Asset-Hunter",
+    "description": "Find out what any texture or model in game is called.",
+    "accentFrom": "#2dd4bf",
+    "accentTo": "#86efac"
   }
 ]
