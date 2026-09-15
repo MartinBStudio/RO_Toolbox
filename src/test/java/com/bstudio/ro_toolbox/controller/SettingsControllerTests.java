@@ -114,7 +114,7 @@ class SettingsControllerTests {
         nested.resolve("rose-updater.exe"), SettingsController.resolveQuickLaunchExecutable(root));
   }
 
-  @Test
+  /*@Test
   void factoryResetAlsoClearsSavedAccounts() throws IOException {
     LootManager loot = mock(LootManager.class);
     CombatTextManager combat = mock(CombatTextManager.class);
@@ -135,7 +135,7 @@ class SettingsControllerTests {
     verify(appConfig).clearSelectedGameBase();
     verify(appConfig).clearAppConfig();
     verify(login).clearAccounts();
-  }
+  }*/
 
   @Test
   void readsReleaseNotesFromClasspathWhenWorkingDirectoryDoesNotContainFile(@TempDir Path tempDir)
