@@ -2464,26 +2464,31 @@ a {
   text-transform: uppercase;
 }
 
-.lootManageTable th:first-child,
-.lootManageTable td:first-child {
-  width: 88px;
-  max-width: 88px;
+.lootManageTable th.lootManageToggleHeader,
+.lootManageTable td.lootManageToggleCell {
+  width: 70px;
+  max-width: 70px;
   text-align: center;
 }
 
-.lootManageTable th:nth-child(2),
-.lootManageTable td:nth-child(2) {
-  width: 18%;
+.includedPackagesTable th:nth-child(1),
+.includedPackagesTable td:nth-child(1) {
+  width: 16%;
 }
 
-.lootManageTable th:nth-child(3),
-.lootManageTable td:nth-child(3) {
-  width: 22%;
+.includedPackagesTable th:nth-child(2),
+.includedPackagesTable td:nth-child(2) {
+  width: 20%;
 }
 
-.lootManageTable th:nth-child(4),
-.lootManageTable td:nth-child(4) {
+.includedPackagesTable th:nth-child(3),
+.includedPackagesTable td:nth-child(3) {
   width: auto;
+}
+
+.includedPackagesTable th:nth-child(4),
+.includedPackagesTable td:nth-child(4) {
+  width: 140px;
 }
 
 .lootManageTable tbody tr:last-child td {
@@ -2596,6 +2601,108 @@ a {
   justify-content: flex-end;
   gap: 0.55rem;
   padding-top: 0.1rem;
+}
+
+.lootFolderPreviewThumbnails {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.lootFolderPreviewThumbBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.lootFolderPreviewThumb {
+  width: 36px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #2d3f59;
+  background: #080c14;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+  display: block;
+}
+
+.lootFolderPreviewThumbBtn:hover .lootFolderPreviewThumb {
+  border-color: #6a9eff;
+  transform: scale(1.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.lootFolderPreviewEmpty {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #53647c;
+  font-size: 0.8rem;
+}
+
+.lootFolderPreviewEmptyIcon {
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.5;
+}
+
+.lootFolderPreviewEmptyText {
+  opacity: 0.7;
+}
+
+.imagePreviewModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 7, 13, 0.86);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  cursor: zoom-out;
+  padding: 1.5rem;
+  box-sizing: border-box;
+}
+
+.imagePreviewModalClose {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 100000;
+  background: #151d2a;
+  border-color: #2b3b52;
+  color: #cdd8ea;
+}
+
+.imagePreviewModalClose:hover:enabled {
+  background: #1f2b3e;
+  border-color: #4a6388;
+  color: #fff;
+}
+
+.imagePreviewModalContent {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+}
+
+.imagePreviewModalImage {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  background: #080d16;
 }
 
 .modalActions {

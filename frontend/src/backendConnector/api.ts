@@ -22,7 +22,8 @@ export {
   clearInstalled,
   openResourcesFolder,
   openItemFolder,
-  checkLootResourcesUpdate
+  checkLootResourcesUpdate,
+  getItemPreviews
 } from "./lootApi.ts";
 export {
   downloadCombatTextProfiles,

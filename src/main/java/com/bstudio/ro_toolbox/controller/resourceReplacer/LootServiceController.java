@@ -12,9 +12,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -116,5 +120,52 @@ public class LootServiceController extends BaseResourceReplacerController {
             .getInputStream()
             .readAllBytes(),
         StandardCharsets.UTF_8);
+  }
+
+  @GetMapping(value = {"/item-previews", "/previews"}, produces = MediaType.APPLICATION_JSON_VALUE)
+  public Map<String, List<String>> getItemPreviews() throws IOException {
+    PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+    org.springframework.core.io.Resource[] resources =
+        resolver.getResources("classpath*:static/ITEM_previews/**/*");
+
+    Map<String, List<String>> map = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+    for (org.springframework.core.io.Resource resource : resources) {
+      if (!resource.isReadable()) {
+        continue;
+      }
+      String filename = resource.getFilename();
+      if (filename == null) {
+        continue;
+      }
+      String lower = filename.toLowerCase();
+      if (!(lower.endsWith(".png")
+          || lower.endsWith(".jpg")
+          || lower.endsWith(".jpeg")
+          || lower.endsWith(".gif")
+          || lower.endsWith(".webp"))) {
+        continue;
+      }
+
+      String uriPath = resource.getURI().toString().replace('\\', '/');
+      int idx = uriPath.indexOf("/ITEM_previews/");
+      if (idx != -1) {
+        String subPath = uriPath.substring(idx + "/ITEM_previews/".length());
+        int slash = subPath.indexOf('/');
+        if (slash != -1) {
+          String folderName = subPath.substring(0, slash);
+          String itemUrl = "/ITEM_previews/" + subPath;
+          map.computeIfAbsent(folderName, k -> new ArrayList<>()).add(itemUrl);
+        }
+      }
+    }
+
+    map.values().forEach(list -> list.sort(String.CASE_INSENSITIVE_ORDER));
+    return map;
+  }
+
+  @GetMapping(value = "/item-previews/{folder}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public List<String> getItemPreviewsForFolder(@PathVariable String folder) throws IOException {
+    Map<String, List<String>> all = getItemPreviews();
+    return all.getOrDefault(folder, List.of());
   }
 }

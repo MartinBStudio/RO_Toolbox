@@ -38,3 +38,7 @@ export function manageInstalledProfile(profileId: string, disabledManagedSubfold
     body: JSON.stringify({ profileId, disabledManagedSubfolders })
   });
 }
+
+export function getItemPreviews() {
+  return request<Record<string, string[]>>("/loot/item-previews");
+}

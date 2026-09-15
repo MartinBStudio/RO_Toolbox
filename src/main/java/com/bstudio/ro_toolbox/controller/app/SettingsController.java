@@ -57,7 +57,7 @@ public class SettingsController {
         absoluteOrNull(base), absoluteOrNull(itemFolder), containsExpectedFolder);
   }
 
-  static Path resolveGameBase(Path picked) {
+  public static Path resolveGameBase(Path picked) {
     Path normalized = picked == null ? null : picked.toAbsolutePath().normalize();
     if (normalized == null) {
       return null;
@@ -129,7 +129,7 @@ public class SettingsController {
     return new MessageResponse("ROSE Online launched.");
   }
 
-  static Path resolveQuickLaunchExecutable(Path gameBase) {
+  public static Path resolveQuickLaunchExecutable(Path gameBase) {
     if (gameBase == null) {
       return null;
     }
