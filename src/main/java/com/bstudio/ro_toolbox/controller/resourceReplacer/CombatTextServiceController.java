@@ -1,0 +1,112 @@
+package com.bstudio.ro_toolbox.controller.resourceReplacer;
+
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.InstallPackageRequest;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.MessageResponse;
+import com.bstudio.ro_toolbox.controller.resourceReplacer.model.ResourceReplacerStatusResponse;
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
+import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.combatText.CombatTextManager;
+import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/combattext")
+@RequiredArgsConstructor
+public class CombatTextServiceController extends BaseResourceReplacerController {
+
+  private final CombatTextManager combatTextManagerService;
+  private final AppConfigService appConfigService;
+
+  @GetMapping("/status")
+  public ResourceReplacerStatusResponse status() {
+    var installed = combatTextManagerService.getStatus();
+    return ResourceReplacerStatusResponse.builder()
+        .selectedGameBase(absoluteOrNull(appConfigService.getSelectedGameBase()))
+        .selectedGameItemFolder(absoluteOrNull(combatTextManagerService.getGameDataDir()))
+        .installedProfile(installed)
+        .downloadedProfiles(
+            List.of(
+                combatTextManagerService.listPackages().stream()
+                    .map(Resource::getName)
+                    .toArray(String[]::new)))
+        .availableProfiles(combatTextManagerService.listPackages())
+        .build();
+  }
+
+  @PostMapping("/download")
+  public MessageResponse downloadProfiles() throws IOException {
+    combatTextManagerService.runUpdate();
+    return MessageResponse.builder().message("Profiles downloaded.").build();
+  }
+
+  @PostMapping("/install")
+  public MessageResponse installProfile(@RequestBody InstallPackageRequest request)
+      throws IOException {
+    if (request == null || request.getProfileId() == null || request.getProfileId().isBlank()) {
+      throw new IllegalArgumentException("profileId is required.");
+    }
+    combatTextManagerService.installPackage(request.getProfileId().trim(), List.of());
+    return MessageResponse.builder()
+        .message("Profile installed: " + request.getProfileId().trim())
+        .build();
+  }
+
+  @PostMapping("/clear-resources")
+  public MessageResponse clearResources() throws IOException {
+    combatTextManagerService.clearDownloaded();
+    return MessageResponse.builder().message("Downloaded resources cleared.").build();
+  }
+
+  @PostMapping("/clear-installed")
+  public MessageResponse clearInstalled() throws IOException {
+    combatTextManagerService.uninstallPackage();
+    return MessageResponse.builder().message("Installed models cleared.").build();
+  }
+
+  @GetMapping("/check-update")
+  public ResourcesUpdater.ResourcesUpdateCheckResult checkResourcesUpdate() {
+    return combatTextManagerService.checkForUpdate();
+  }
+
+  @PostMapping("/folders/open/resources")
+  public MessageResponse openResourcesFolder() throws IOException {
+    Path resources = combatTextManagerService.getResourcesDir();
+    Files.createDirectories(resources);
+    DesktopFolderOpener.openInDesktop(resources);
+    return MessageResponse.builder().message("Opened resources folder.").build();
+  }
+
+  @PostMapping("/folders/open/item")
+  public MessageResponse openItemFolder() throws IOException {
+    Path item = combatTextManagerService.getGameDataDir();
+    if (item == null) {
+      throw new IllegalStateException("No game installation folder is selected.");
+    }
+    Files.createDirectories(item);
+    DesktopFolderOpener.openInDesktop(item);
+    return MessageResponse.builder().message("Opened item folder.").build();
+  }
+
+  public record AvailableProfileResponse(
+      String id,
+      String name,
+      String author,
+      String description,
+      String url,
+      String createdAt,
+      String version,
+      List<String> previewImages) {}
+
+  public record CombatTextStatusResponse(
+      String selectedGameBase,
+      String selectedGameItemFolder,
+      Resource installedProfile,
+      List<String> downloadedProfiles,
+      List<Resource> availableProfiles) {}
+}

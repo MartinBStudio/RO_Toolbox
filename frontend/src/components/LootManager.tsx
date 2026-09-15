@@ -500,7 +500,10 @@ export function LootManager({
                 {selectedProfileData.description ? (
                   <p className="profileCardDesc">{selectedProfileData.description}</p>
                 ) : null}
-                <IncludedFoldersTable folders={selectedProfileData.managedSubfolders || []} />
+                <IncludedFoldersTable
+                  folders={selectedProfileData.managedSubfolders || []}
+                  profileName={selectedProfileData.name || selectedProfileData.id}
+                />
                 <button
                   className={`buttonStrong profileInstallBtn${hasSelectedProfilePreviewImages ? "" : " profileInstallBtnCompact"}`}
                   disabled={installButtonDisabled}
@@ -523,6 +526,7 @@ export function LootManager({
       </section>
       <ManageInstalledLootModal
         isOpen={manageModalOpen}
+        profileName={status?.installedProfile?.name}
         managedSubfolders={status?.installedProfile?.managedSubfolders || []}
         disabledManagedSubfolders={status?.installedProfile?.disabledManagedSubfolders || []}
         onClose={() => setManageModalOpen(false)}

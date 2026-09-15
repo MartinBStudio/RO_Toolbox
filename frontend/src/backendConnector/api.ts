@@ -22,7 +22,8 @@ export {
   clearInstalled,
   openResourcesFolder,
   openItemFolder,
-  checkLootResourcesUpdate
+  checkLootResourcesUpdate,
+  getItemPreviews
 } from "./lootApi.ts";
 export {
   downloadCombatTextProfiles,
@@ -50,7 +51,7 @@ export {
   openBuffIconsResourcesFolder,
   openBuffIconsItemFolder,
   checkBuffIconsResourcesUpdate
-} from "./buffIconsApi.ts";
+} from "./iconsApi.ts";
 export {
   downloadBuffsProfiles,
   installBuffsProfile,

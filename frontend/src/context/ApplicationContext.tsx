@@ -40,6 +40,7 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
   const [ignoreConfigWarnings, setIgnoreConfigWarningsState] = useState(false);
   const [quickLaunchOnlyMode, setQuickLaunchOnlyModeState] = useState(false);
   const refreshInFlightRef = useRef<Promise<void> | null>(null);
+  const refreshQueuedRef = useRef<Promise<void> | null>(null);
 
   function isSameStatus(nextStatus: AppStatus, currentStatus: AppStatus | null) {
     if (currentStatus === null) {
@@ -52,22 +53,34 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
     }
   }
 
-  const refreshStatus = useCallback(async () => {
-    if (refreshInFlightRef.current) {
+  const refreshStatus = useCallback(async (): Promise<void> => {
+    if (!refreshInFlightRef.current) {
+      const run = async () => {
+        try {
+          const nextStatus = await getStatus();
+          setStatus((currentStatus) => (isSameStatus(nextStatus, currentStatus) ? currentStatus : nextStatus));
+        } finally {
+          refreshInFlightRef.current = null;
+        }
+      };
+      refreshInFlightRef.current = run();
       return refreshInFlightRef.current;
     }
-    const refreshTask = (async () => {
-      const nextStatus = await getStatus();
-      setStatus((currentStatus) => (isSameStatus(nextStatus, currentStatus) ? currentStatus : nextStatus));
-    })();
-    refreshInFlightRef.current = refreshTask;
-    try {
-      await refreshTask;
-    } finally {
-      if (refreshInFlightRef.current === refreshTask) {
-        refreshInFlightRef.current = null;
-      }
+
+    if (!refreshQueuedRef.current) {
+      refreshQueuedRef.current = (async () => {
+        try {
+          await refreshInFlightRef.current;
+        } catch {
+          // Ignore error from prior in-flight request so queued request can still proceed
+        } finally {
+          refreshQueuedRef.current = null;
+        }
+        return refreshStatus();
+      })();
     }
+
+    return refreshQueuedRef.current;
   }, []);
 
   useEffect(() => {

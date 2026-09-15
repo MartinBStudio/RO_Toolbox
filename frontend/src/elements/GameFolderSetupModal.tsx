@@ -28,12 +28,18 @@ export function GameFolderSetupModal({
     try {
       const result = await saveGameFolder(trimmedPath, false);
       await onStatusRefresh();
-      if (!result.containsExpectedItemFolder) {
-        onMessage("Game folder saved.");
-      }
+      onMessage(
+        result.containsExpectedItemFolder
+          ? "Game folder saved."
+          : "Game folder saved. Some mod folders may need to be created in this installation."
+      );
     } catch (err) {
       const text = toErrorMessage(err, "Request failed.");
+      if (text.includes("trose.exe") || text.includes("not valid")) {
+        onMessage("The selected folder is not valid. It must contain trose.exe.");
+      } else {
         onMessage(text);
+      }
     } finally {
       onBusyChange(false);
     }

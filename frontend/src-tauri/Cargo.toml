@@ -1,6 +1,6 @@
 [package]
 name = "RO_Toolbox"
-version = "0.5.3"
+version = "0.5.5"
 description = "RO Toolbox is a tool for managing and enhancing your experience in the game Rose Online. It provides various features such as resource management and quality of life improvements."
 authors = ["BStudio"]
 edition = "2021"

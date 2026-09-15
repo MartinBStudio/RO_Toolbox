@@ -489,10 +489,19 @@ function App() {
 
                                 <section className="appContent">
                                     {selectedService === "texture-replacer" && (
-                                        <div className="card serviceContentPanel textureReplacerPanel">
+                                        <div className="card serviceContentPanel textureReplacerPanel panelStatusHost">
+                                            {Boolean(status?.troseRunning) && (
+                                                <div className="panelTroseStatus">
+                                                    <TroseRunningBanner
+                                                        running={true}
+                                                        loading={troseRefreshLoading || loading}
+                                                        onRefresh={onRefreshTroseStatus}
+                                                    />
+                                                </div>
+                                            )}
                                             <div>
                                                 <p className="sectionTitle">Texture replacer</p>
-                                            <p className="activeProfileMeta">Manage loot, combat text, user interface, buffs, and buff icon packages.</p>
+                                            <p className="activeProfileMeta">Manage texture and animation packages.</p>
                                             </div>
                                             <LootManager
                                                 status={status}
@@ -539,11 +548,22 @@ function App() {
                                         />
                                     )}
                                     {selectedService === "config-editor" && (
-                                        <ConfigEditorManager
-                                            loading={loading}
-                                            onBusyChange={onBusyChange}
-                                            onMessage={setMessage}
-                                        />
+                                        <div className="card serviceContentPanel textureReplacerPanel panelStatusHost">
+                                            {Boolean(status?.troseRunning) && (
+                                                <div className="panelTroseStatus">
+                                                    <TroseRunningBanner
+                                                        running={true}
+                                                        loading={troseRefreshLoading || loading}
+                                                        onRefresh={onRefreshTroseStatus}
+                                                    />
+                                                </div>
+                                            )}
+                                            <ConfigEditorManager
+                                                loading={loading}
+                                                onBusyChange={onBusyChange}
+                                                onMessage={setMessage}
+                                            />
+                                        </div>
                                     )}
                                 </section>
                             </div>
@@ -555,15 +575,6 @@ function App() {
                             loading={loading}
                             onOpenWhatsNew={onOpenWhatsNew}
                         />
-                    )}
-                    {!quickLaunchOnlyActive && Boolean(status?.troseRunning) && (
-                        <div className="layoutFloatingStatus">
-                            <TroseRunningBanner
-                                running={true}
-                                loading={troseRefreshLoading || loading}
-                                onRefresh={onRefreshTroseStatus}
-                            />
-                        </div>
                     )}
                     <SettingsModal
                         open={settingsOpen}
