@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "RO.Toolbox",
-  "version": "0.5.6",
+  "productName": "RO_Toolbox",
+  "version": "0.5.7",
   "identifier": "com.bstudio.ro-toolbox",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "RO Toolbox",
+        "title": "RO_Toolbox",
         "label": "main",
         "center": true,
         "decorations": false,

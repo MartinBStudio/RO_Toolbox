@@ -23,15 +23,11 @@ import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 
 const ACCOUNT_ICON_OPTIONS = [
   "👤",
-  "✚",
   "🪙",
   "🛡️",
-  "🪄",
   "🏹",
   "⚔️",
   "💎",
-  "✦",
-  "⚑"
 ] as const;
 
 const EMPTY_FORM = {

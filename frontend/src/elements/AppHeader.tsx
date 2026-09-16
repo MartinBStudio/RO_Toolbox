@@ -242,8 +242,8 @@ export function AppHeader({
         </h1>
         <div className="headerActions">
           <span className="versionMeta">
-            App v{appVersion ?? "..."}
-            {debugMode ? ` | Backend v${backendVersion ?? "..."}` : ""}
+            v{appVersion ?? "..."}
+            {debugMode ? ` | v${backendVersion ?? "..."}` : ""}
           </span>
           <button
             type="button"
