@@ -65,7 +65,7 @@ fn get_backend_url(state: tauri::State<BackendState>) -> Result<String, String> 
         .lock()
         .expect("backend lock poisoned")
     {
-        return Ok(format!("http://localhost:{port}/api"));
+        return Ok(format!("http://127.0.0.1:{port}/api"));
     }
 
     let port_file = std::env::temp_dir().join("ro_toolbox_backend_port");
@@ -89,7 +89,7 @@ fn get_backend_url(state: tauri::State<BackendState>) -> Result<String, String> 
             )
         })?;
 
-    Ok(format!("http://localhost:{port}/api"))
+    Ok(format!("http://127.0.0.1:{port}/api"))
 }
 fn debug_log(message: &str) {
     let path = std::env::temp_dir().join("ro_toolbox_debug.log");
@@ -161,7 +161,7 @@ fn main() {
                        "[RO Toolbox] Backend started on port {port}"
                    ));
                     debug_log(&format!(
-                        "[RO Toolbox] Backend API: http://localhost:{port}/api"
+                        "[RO Toolbox] Backend API: http://127.0.0.1:{port}/api"
                     ));
 
                     let state = app.state::<BackendState>();
