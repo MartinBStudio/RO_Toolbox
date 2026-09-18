@@ -156,24 +156,26 @@ export function ApplicationProvider({ children }: ApplicationProviderProps) {
     let cancelled = false;
 
     async function waitForBackend() {
-      for (let i = 0; i < 30; i++) {
-        if (cancelled) return;
+      while (!cancelled) {
         try {
           await refreshStatus();
+
+          if (cancelled) return;
+
           setBackendReady(true);
           setStartupError(null);
           return;
         } catch {
+          if (cancelled) return;
+
+          setStartupError("Waiting for backend...");
           await new Promise((resolve) => setTimeout(resolve, 1000));
         }
-      }
-      if (!cancelled) {
-        setStartupError("Backend failed to start. Please restart the app.");
-        setBackendReady(true);
       }
     }
 
     waitForBackend();
+
     return () => {
       cancelled = true;
     };
