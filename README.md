@@ -18,13 +18,13 @@ Desktop app for managing ROSE Online profile packs, combat text packs, user inte
 * Keep combat text resources separate from loot model installations
 * Check for upgrades and install selected packs with one click
 
-### User Interface Profiles
+### User Interface 
 
 * Manage UI profile packs in the same workflow as loot and combat text
 * Keep installed UI profiles separate from the game’s other data folders
 * Refresh downloaded resources and clear installed files when needed
 
-### Icons profiles
+### Icons 
 
 * Manage buff icon profile packs in the same workflow as loot and combat text
 * Keep installed icon profiles separate from the game’s other data folders
@@ -74,7 +74,7 @@ RO Toolbox uses separate public repositories for community-created resources:
 * **Loot Models:** https://github.com/MartinBStudio/RO_LootFilter_resources
 * **Combat Text:** https://github.com/MartinBStudio/RO_CombatText_resources
 * **UI Themes:** https://github.com/MartinBStudio/RO_UserInterface_resources
-* **Buff icons:** https://github.com/MartinBStudio/RO_UserInterface_resources
+* **Icons:** https://github.com/MartinBStudio/RO_UserInterface_resources
 * **Buff animations:** https://github.com/MartinBStudio/RO_BuffAnimations_resources
 
 The repositories are intentionally public so anyone can create and contribute their own models, themes, or other customizations.
@@ -91,7 +91,6 @@ If you have created your own loot model, combat text, UI theme, or other support
 2. Create a new folder for your profile/resource following the structure of the existing profiles.
 3. Add your resource files.
 4. Add or update the profile metadata, including:
-
    * Profile name
    * Author
    * Version
@@ -134,11 +133,11 @@ The goal is to keep the repositories open and community-driven while giving prop
 1. Open **Settings** and choose the game folder.
 2. Ensure the selected folder is the root folder that contains `trose.exe`.
 
-### Install Profile Packs
+### Install Packages
 
 1. In **Loot Models**, **Combat Text**, or **User Interface**, check for updates or download resources.
-2. Select a profile and click **Install**.
-3. Restart the game client after installing a new profile.
+2. Select a package and click **Install**.
+3. Restart the game client after installing a new package.
 
 ### Quick Launch with Saved Accounts
 

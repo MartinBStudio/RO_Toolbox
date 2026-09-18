@@ -1,6 +1,6 @@
 [package]
 name = "RO_Toolbox"
-version = "0.6.2"
+version = "1.0.0"
 description = "RO_Toolbox is a tool for managing and enhancing your experience in the game Rose Online."
 authors = ["BStudio"]
 edition = "2021"
