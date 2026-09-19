@@ -7,6 +7,7 @@ import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
 import com.bstudio.ro_toolbox.service.resourceReplacer.service.loot.LootManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.loot.LootModelScaleReport;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -91,6 +92,33 @@ public class LootServiceController extends BaseResourceReplacerController {
     return lootManager.checkForUpdate();
   }
 
+  @GetMapping("/model-scales")
+  public LootModelScaleReport getModelScales() throws IOException {
+    return lootManager.scanInstalledModelScales();
+  }
+
+  @PostMapping("/model-scales/scale")
+  public MessageResponse scaleModelFolder(@RequestBody ScaleModelFolderRequest request)
+      throws IOException {
+    if (request == null || request.folder() == null || request.folder().isBlank()) {
+      throw new IllegalArgumentException("folder is required.");
+    }
+    String direction = request.direction() == null ? "" : request.direction().trim();
+    if ("reset".equals(direction)) {
+      int count = lootManager.resetManagedModelFolderScale(request.folder().trim());
+      return MessageResponse.builder().message("Reset " + count + " model file(s).").build();
+    }
+    float factor =
+        switch (direction) {
+          case "increase" -> 1.1f;
+          case "decrease" -> 0.9f;
+          default ->
+              throw new IllegalArgumentException("direction must be increase, decrease, or reset.");
+        };
+    int count = lootManager.scaleManagedModelFolder(request.folder().trim(), factor);
+    return MessageResponse.builder().message("Scaled " + count + " model file(s).").build();
+  }
+
   @PostMapping("/folders/open/resources")
   public MessageResponse openResourcesFolder() throws IOException {
     Path resources = lootManager.getResourcesDir();
@@ -122,7 +150,9 @@ public class LootServiceController extends BaseResourceReplacerController {
         StandardCharsets.UTF_8);
   }
 
-  @GetMapping(value = {"/item-previews", "/previews"}, produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(
+      value = {"/item-previews", "/previews"},
+      produces = MediaType.APPLICATION_JSON_VALUE)
   public Map<String, List<String>> getItemPreviews() throws IOException {
     PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
     org.springframework.core.io.Resource[] resources =
@@ -168,4 +198,6 @@ public class LootServiceController extends BaseResourceReplacerController {
     Map<String, List<String>> all = getItemPreviews();
     return all.getOrDefault(folder, List.of());
   }
+
+  public record ScaleModelFolderRequest(String folder, String direction) {}
 }
