@@ -72,7 +72,7 @@ export function getLootModelScales() {
   return request<LootModelScaleReport>("/loot/model-scales");
 }
 
-export type LootModelScaleDirection = "increase" | "decrease" | "reset";
+export type LootModelScaleDirection = "increase" | "decrease" | "reset" | "min" | "max";
 
 export function scaleLootModelFolder(folder: string, direction: LootModelScaleDirection) {
   return request<{ message: string }>("/loot/model-scales/scale", {

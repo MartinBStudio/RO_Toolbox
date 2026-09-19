@@ -28,6 +28,9 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class LootServiceController extends BaseResourceReplacerController {
 
+  private static final float MIN_MODEL_SCALE_RATIO = 0.04f;
+  private static final float MAX_MODEL_SCALE_RATIO = 11.0f;
+
   private final LootManager lootManager;
   private final AppConfigService appConfigService;
 
@@ -108,12 +111,25 @@ public class LootServiceController extends BaseResourceReplacerController {
       int count = lootManager.resetManagedModelFolderScale(request.folder().trim());
       return MessageResponse.builder().message("Reset " + count + " model file(s).").build();
     }
+    if ("min".equals(direction)) {
+      int count =
+          lootManager.scaleManagedModelFolderToOriginalRatio(
+              request.folder().trim(), MIN_MODEL_SCALE_RATIO);
+      return MessageResponse.builder().message("Scaled " + count + " model file(s).").build();
+    }
+    if ("max".equals(direction)) {
+      int count =
+          lootManager.scaleManagedModelFolderToOriginalRatio(
+              request.folder().trim(), MAX_MODEL_SCALE_RATIO);
+      return MessageResponse.builder().message("Scaled " + count + " model file(s).").build();
+    }
     float factor =
         switch (direction) {
           case "increase" -> 1.1f;
           case "decrease" -> 0.9f;
           default ->
-              throw new IllegalArgumentException("direction must be increase, decrease, or reset.");
+              throw new IllegalArgumentException(
+                  "direction must be increase, decrease, reset, min, or max.");
         };
     int count = lootManager.scaleManagedModelFolder(request.folder().trim(), factor);
     return MessageResponse.builder().message("Scaled " + count + " model file(s).").build();

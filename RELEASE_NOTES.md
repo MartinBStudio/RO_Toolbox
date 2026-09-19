@@ -1,5 +1,21 @@
 ﻿# RO Toolbox – Release Notes
 
+## v1.0.2 – Loot Manager Modal Polish
+
+This update refines the loot manage modal and fixes packaged-app loading for loot helper data.
+
+### Loot Manager
+
+* **One-click scale limits**: Added `Min` and `Max` actions for quickly setting loot models to about `0.04x` size or up to `11x` size.
+* **Friendlier size display**: Model size now shows as a multiplier such as `1x`, `0.04x`, or `1.35x`, with the percentage difference available on hover.
+* **Compact scale controls**: The scale actions now appear as a single segmented control for a cleaner table layout.
+* **Better modal scrolling**: The modal header and footer stay visible while only the folder table scrolls, with sticky table headers.
+* **More table space**: Save and cancel actions were tightened so the table can use more of the modal height.
+
+### Fixes
+
+* **Installed app previews**: Loot dictionary and item preview loading now uses the active backend port, so previews and labels work when the packaged app starts the backend on a random free port.
+
 ## v1.0.1 – Loot Model Scale Tools
 
 This update improves loot model management with built-in model scale controls and a cleaner manage packages table.

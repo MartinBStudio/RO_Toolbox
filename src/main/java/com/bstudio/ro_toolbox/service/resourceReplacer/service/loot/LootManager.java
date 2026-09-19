@@ -101,6 +101,48 @@ public class LootManager extends BaseIResourceReplacerResource {
     return ZmsScaleScanner.scaleFolder(scanFolder, factor);
   }
 
+  public int scaleManagedModelFolderToOriginalRatio(String managedSubfolder, float targetRatio)
+      throws IOException {
+    if (managedSubfolder == null || managedSubfolder.isBlank()) {
+      throw new IllegalArgumentException("folder is required.");
+    }
+    if (targetRatio <= 0.0f || !Float.isFinite(targetRatio)) {
+      throw new IllegalArgumentException("target ratio must be a positive finite number.");
+    }
+
+    Path itemFolder = getGameDataDir();
+    if (itemFolder == null) {
+      throw new IllegalStateException("No game installation folder is selected.");
+    }
+
+    Path scanFolder = resolveManagedOrDisabledFolder(itemFolder, managedSubfolder);
+    if (scanFolder == null || !Files.isDirectory(scanFolder)) {
+      throw new IllegalArgumentException("Managed folder is not installed: " + managedSubfolder);
+    }
+
+    Path originalPackageFolder = resolveInstalledPackageSource();
+    Path originalFolder = resolveOriginalManagedFolder(originalPackageFolder, managedSubfolder);
+    if (originalFolder == null || !Files.isDirectory(originalFolder)) {
+      throw new IllegalArgumentException(
+          "Original package folder was not found for: " + managedSubfolder);
+    }
+
+    LootModelScaleReport.File currentFile =
+        findLargestReasonableScaleFile(ZmsScaleScanner.scanFolder(scanFolder, itemFolder));
+    LootModelScaleReport.File originalFile =
+        findLargestReasonableScaleFile(
+            ZmsScaleScanner.scanFolder(originalFolder, originalPackageFolder));
+    float currentSize = currentFile.vertexBounds().largestAxis();
+    float originalSize = originalFile.vertexBounds().largestAxis();
+    if (currentSize <= 0.0f || originalSize <= 0.0f) {
+      throw new IllegalStateException("Unable to calculate current model scale.");
+    }
+
+    float currentRatio = currentSize / originalSize;
+    float factor = targetRatio / currentRatio;
+    return scaleManagedModelFolder(managedSubfolder, factor);
+  }
+
   public int resetManagedModelFolderScale(String managedSubfolder) throws IOException {
     if (managedSubfolder == null || managedSubfolder.isBlank()) {
       throw new IllegalArgumentException("folder is required.");
@@ -238,6 +280,20 @@ public class LootManager extends BaseIResourceReplacerResource {
               null,
               ex.getMessage()));
     }
+  }
+
+  private LootModelScaleReport.File findLargestReasonableScaleFile(
+      List<LootModelScaleReport.File> files) {
+    return files.stream()
+        .filter(file -> file.error() == null)
+        .filter(file -> file.vertexBounds() != null)
+        .filter(file -> isReasonableSizeValue(file.vertexBounds().largestAxis()))
+        .max(Comparator.comparingDouble(file -> file.vertexBounds().largestAxis()))
+        .orElseThrow(() -> new IllegalStateException("No readable model files were found."));
+  }
+
+  private boolean isReasonableSizeValue(float value) {
+    return Float.isFinite(value) && value >= 0.0f && value < 10_000.0f;
   }
 
   private Path resolveInstalledPackageSource() {

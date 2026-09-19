@@ -17,6 +17,12 @@ import {
 } from "../utils/lootDictionary";
 import { ImagePreviewModal } from "./ImagePreviewModal";
 
+type ModelScaleDisplay = {
+  label: string;
+  detail: string;
+  state: "tiny" | "small" | "normal" | "large" | "huge";
+};
+
 function isReasonableSizeValue(value: number) {
   return Number.isFinite(value)
     && value >= 0
@@ -36,14 +42,14 @@ function hasReasonableBounds(file: LootModelScaleFile) {
 }
 
 function buildScaleMap(report: LootModelScaleReport) {
-  const scaleMap: Record<string, string> = {};
+  const scaleMap: Record<string, ModelScaleDisplay> = {};
   for (const folder of report.folders) {
     const currentFile = findLargestFile(folder.files);
     if (currentFile) {
       const originalFile = findLargestFile(folder.originalFiles);
-      const delta = formatScaleDelta(currentFile, originalFile);
-      if (delta) {
-        scaleMap[folder.folder.trim().toLowerCase()] = delta;
+      const scale = formatScaleDisplay(currentFile, originalFile);
+      if (scale) {
+        scaleMap[folder.folder.trim().toLowerCase()] = scale;
       }
     }
   }
@@ -56,21 +62,43 @@ function findLargestFile(files: LootModelScaleFile[]) {
     .sort((left, right) => (right.vertexBounds?.largestAxis ?? 0) - (left.vertexBounds?.largestAxis ?? 0))[0] ?? null;
 }
 
-function formatScaleDelta(currentFile: LootModelScaleFile, originalFile: LootModelScaleFile | null) {
+function formatScaleDisplay(currentFile: LootModelScaleFile, originalFile: LootModelScaleFile | null): ModelScaleDisplay | null {
   const current = currentFile.vertexBounds?.largestAxis;
   const original = originalFile?.vertexBounds?.largestAxis;
   if (!current || !original || !isReasonableSizeValue(current) || !isReasonableSizeValue(original)) {
     return null;
   }
-  const percent = ((current / original) - 1) * 100;
-  if (!Number.isFinite(percent)) {
+  const ratio = current / original;
+  const percent = (ratio - 1) * 100;
+  if (!Number.isFinite(ratio) || !Number.isFinite(percent)) {
     return null;
   }
+  const label = `${formatScaleRatio(ratio)}x`;
   const rounded = Math.round(percent);
-  if (rounded === 0) {
-    return "0%";
+  const percentLabel = rounded === 0 ? "original size" : `${rounded > 0 ? "+" : ""}${rounded}%`;
+  return {
+    label,
+    detail: `${label} (${percentLabel})`,
+    state: getScaleState(ratio)
+  };
+}
+
+function formatScaleRatio(ratio: number) {
+  if (ratio < 0.1) {
+    return ratio.toFixed(2);
   }
-  return `${rounded > 0 ? "+" : ""}${rounded}%`;
+  if (ratio < 10) {
+    return Number(ratio.toFixed(2)).toString();
+  }
+  return Math.round(ratio).toString();
+}
+
+function getScaleState(ratio: number): ModelScaleDisplay["state"] {
+  if (ratio < 0.1) return "tiny";
+  if (ratio < 0.85) return "small";
+  if (ratio <= 1.15) return "normal";
+  if (ratio <= 3) return "large";
+  return "huge";
 }
 
 interface ManageInstalledLootModalProps {
@@ -94,7 +122,7 @@ export function ManageInstalledLootModal({
 }: ManageInstalledLootModalProps) {
   const [dictionary, setDictionary] = useState<Record<string, LootFolderInfo>>({});
   const [previews, setPreviews] = useState<Record<string, string[]>>({});
-  const [modelScales, setModelScales] = useState<Record<string, string>>({});
+  const [modelScales, setModelScales] = useState<Record<string, ModelScaleDisplay>>({});
   const [pendingDisabled, setPendingDisabled] = useState<Set<string>>(new Set());
   const [saving, setSaving] = useState(false);
   const [scalingFolder, setScalingFolder] = useState<string | null>(null);
@@ -202,9 +230,9 @@ export function ManageInstalledLootModal({
         <div className="lootManageModal" onClick={(event) => event.stopPropagation()}>
           <div className="lootManageHeader">
             <div>
-              <h2 className="lootManageTitle">Manage installed packages</h2>
+              <h2 className="lootManageTitle">Manage installed package</h2>
               <p className="lootManageSubtitle">
-                Choose what parts of the package you want to enable.
+                Choose what parts of the package you want to enable or resize.
               </p>
             </div>
             <button type="button" onClick={onClose} className="iconBtn iconBtnSubtle" aria-label="Close">
@@ -292,8 +320,23 @@ export function ManageInstalledLootModal({
                           </td>
                         ) : null}
                         <td className="lootManageSize">
-                          <span className="lootManageSizeDelta">{folderScale ?? "-"}</span>
+                          <span
+                            className={`lootManageSizeDelta${folderScale ? ` is-${folderScale.state}` : ""}`}
+                            title={folderScale?.detail ?? "Size could not be measured"}
+                          >
+                            {folderScale?.label ?? "-"}
+                          </span>
                           <span className="lootManageSizeActions">
+                            <button
+                              type="button"
+                              className="lootManageSizeButton lootManageSizeLimitButton"
+                              onClick={() => handleScaleFolder(folder, "min")}
+                              disabled={scalingFolder === folder}
+                              title="Set model size to the minimum, about -96%"
+                              aria-label={`Set ${folder} model size to minimum`}
+                            >
+                              Min
+                            </button>
                             <button
                               type="button"
                               className="lootManageSizeButton"
@@ -324,6 +367,16 @@ export function ManageInstalledLootModal({
                             >
                               +
                             </button>
+                            <button
+                              type="button"
+                              className="lootManageSizeButton lootManageSizeLimitButton"
+                              onClick={() => handleScaleFolder(folder, "max")}
+                              disabled={scalingFolder === folder}
+                              title="Set model size to +1000%"
+                              aria-label={`Set ${folder} model size to maximum`}
+                            >
+                              Max
+                            </button>
                           </span>
                         </td>
                         <td>{label}</td>
@@ -337,10 +390,10 @@ export function ManageInstalledLootModal({
           )}
 
           <div className="lootManageFooter">
-            <button type="button" className="buttonSubtle" onClick={onClose} style={{ padding: "8px 16px" }}>
+            <button type="button" className="buttonSubtle lootManageFooterButton" onClick={onClose}>
               Cancel
             </button>
-            <button type="button" className="buttonStrong" onClick={handleSave} disabled={saving} style={{ padding: "8px 16px" }}>
+            <button type="button" className="buttonStrong lootManageFooterButton" onClick={handleSave} disabled={saving}>
               {saving ? "Saving..." : "Save"}
             </button>
           </div>
