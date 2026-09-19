@@ -40,19 +40,19 @@ class LootServiceControllerTests {
     Map<String, List<String>> previews = controller.getItemPreviews();
     assertNotNull(previews);
     assertFalse(previews.isEmpty());
-    assertTrue(previews.containsKey("ARM") || previews.containsKey("arm"));
-    List<String> armPreviews = previews.get("ARM") != null ? previews.get("ARM") : previews.get("arm");
-    assertNotNull(armPreviews);
-    assertFalse(armPreviews.isEmpty());
-    assertTrue(armPreviews.get(0).startsWith("/ITEM_previews/"));
+    assertTrue(previews.containsKey("DI55") || previews.containsKey("di55"));
+    List<String> di55Previews = previews.get("DI55") != null ? previews.get("DI55") : previews.get("di55");
+    assertNotNull(di55Previews);
+    assertFalse(di55Previews.isEmpty());
+    assertTrue(di55Previews.get(0).startsWith("/ITEM_previews/"));
   }
 
   @Test
   void returnsItemPreviewsForSpecificFolder() throws IOException {
-    List<String> armPreviews = controller.getItemPreviewsForFolder("ARM");
-    assertNotNull(armPreviews);
-    assertFalse(armPreviews.isEmpty());
-    assertTrue(armPreviews.get(0).contains("ARM"));
+    List<String> di55Previews = controller.getItemPreviewsForFolder("DI55");
+    assertNotNull(di55Previews);
+    assertFalse(di55Previews.isEmpty());
+    assertTrue(di55Previews.get(0).contains("DI55"));
 
     List<String> missing = controller.getItemPreviewsForFolder("NON_EXISTENT_FOLDER_XYZ");
     assertNotNull(missing);
