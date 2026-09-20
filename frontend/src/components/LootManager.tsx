@@ -32,6 +32,7 @@ import {
   isProfileAlreadyInstalled,
   resolveProfileName
 } from "../formatting.ts";
+import type { ProfileOptionGroup } from "../formatting.ts";
 import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ManageInstalledLootModal } from "../elements/ManageInstalledLootModal.tsx";
 import { IncludedFoldersTable } from "../elements/IncludedFoldersTable.tsx";
@@ -65,8 +66,9 @@ export function LootManager({
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
   const availableProfiles = status?.availableProfiles ?? [];
+  const recommendedProfile = availableProfiles.find(isRecommendedLootProfile) ?? null;
   const profileOptionGroups = useMemo(
-    () => buildProfileOptionGroups(availableProfiles),
+    () => buildLootProfileOptionGroups(availableProfiles),
     [availableProfiles]
   );
   const canInstall = Boolean(selectedProfile);
@@ -98,12 +100,12 @@ export function LootManager({
     }
     const selectedStillExists = availableProfiles.some((profile) => profile.id === selectedProfile);
     if (!selectedStillExists) {
-      setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0].id);
+      setSelectedProfile(installedAvailableProfileId ?? recommendedProfile?.id ?? availableProfiles[0].id);
     }
-  }, [availableProfiles, installedAvailableProfileId, selectedProfile]);
+  }, [availableProfiles, installedAvailableProfileId, recommendedProfile, selectedProfile]);
 
   function openPackageBrowser() {
-    setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0]?.id ?? "");
+    setSelectedProfile(installedAvailableProfileId ?? recommendedProfile?.id ?? availableProfiles[0]?.id ?? "");
     setCollapsed(false);
   }
 
@@ -542,4 +544,36 @@ export function LootManager({
       />
     </>
   );
+}
+
+function buildLootProfileOptionGroups(profiles: AppStatus["availableProfiles"]): ProfileOptionGroup[] {
+  const recommendedProfile = profiles.find(isRecommendedLootProfile);
+  const defaultGroups = buildProfileOptionGroups(
+    recommendedProfile
+      ? profiles.filter((profile) => profile.id !== recommendedProfile.id)
+      : profiles
+  ).filter((group) => group.options.length > 0);
+
+  if (!recommendedProfile) {
+    return defaultGroups;
+  }
+
+  return [
+    {
+      label: "Recommended",
+      options: [
+        {
+          profile: recommendedProfile,
+          label: resolveProfileName(recommendedProfile.name, recommendedProfile.id)
+        }
+      ]
+    },
+    ...defaultGroups
+  ];
+}
+
+function isRecommendedLootProfile(profile: AppStatus["availableProfiles"][number]) {
+  const name = profile.name?.trim().toLowerCase();
+  const id = profile.id?.trim().toLowerCase();
+  return name === "farming meta" || id === "farming meta";
 }

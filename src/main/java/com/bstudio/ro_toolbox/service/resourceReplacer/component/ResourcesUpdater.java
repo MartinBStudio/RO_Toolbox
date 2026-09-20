@@ -100,7 +100,7 @@ public class ResourcesUpdater implements ICommonResourceMethods {
         if (!downloadArchive(zipUrl, tempZip)) {
           throw new IOException("Not found: " + zipUrl);
         }
-        unzipWithoutRootFolder(tempZip, destinationDir);
+        replaceWithArchiveContents(tempZip, destinationDir);
         return;
       } catch (IOException ex) {
         lastException = ex;
@@ -158,6 +158,20 @@ public class ResourcesUpdater implements ICommonResourceMethods {
     }
   }
 
+  private void replaceWithArchiveContents(Path zipFile, Path destinationDir) throws IOException {
+    Path tempExtractDir = Files.createTempDirectory("resources-update-");
+    try {
+      unzipWithoutRootFolder(zipFile, tempExtractDir);
+      deleteDirectoryContents(destinationDir);
+      moveDirectoryContents(tempExtractDir, destinationDir);
+    } finally {
+      if (Files.exists(tempExtractDir)) {
+        deleteDirectoryContents(tempExtractDir);
+        Files.deleteIfExists(tempExtractDir);
+      }
+    }
+  }
+
   private void unzipWithoutRootFolder(Path zipFile, Path destinationDir) throws IOException {
     try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipFile))) {
       ZipEntry entry;
@@ -169,7 +183,10 @@ public class ResourcesUpdater implements ICommonResourceMethods {
           continue;
         }
 
-        Path outputPath = destinationDir.resolve(relativePath);
+        Path outputPath = destinationDir.resolve(relativePath).normalize();
+        if (!outputPath.startsWith(destinationDir)) {
+          throw new IOException("Archive entry escapes destination: " + entry.getName());
+        }
         if (entry.isDirectory()) {
           Files.createDirectories(outputPath);
         } else {
@@ -178,6 +195,16 @@ public class ResourcesUpdater implements ICommonResourceMethods {
         }
         log.info("Extracted: " + relativePath);
         zipInputStream.closeEntry();
+      }
+    }
+  }
+
+  private void moveDirectoryContents(Path sourceDir, Path destinationDir) throws IOException {
+    Files.createDirectories(destinationDir);
+    try (var stream = Files.list(sourceDir)) {
+      for (Path source : (Iterable<Path>) stream::iterator) {
+        Path target = destinationDir.resolve(source.getFileName());
+        Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
       }
     }
   }

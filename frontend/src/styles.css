@@ -1879,6 +1879,7 @@ button .heroIcon {
   background: linear-gradient(180deg, rgba(17, 25, 38, 0.98) 0%, rgba(12, 19, 30, 0.98) 100%);
   padding: 0.8rem 0.85rem;
   display: grid;
+  align-content: start;
   gap: 0.65rem;
   box-shadow: var(--panel-blue-highlight);
 }
@@ -1956,6 +1957,7 @@ button .heroIcon {
 
 .includedPackagesAccordion {
   margin: 0.2rem 0;
+  align-self: start;
 }
 
 .includedPackagesHeader {
@@ -2843,6 +2845,7 @@ a {
   min-height: 0;
   overflow: auto;
   display: grid;
+  align-content: start;
   gap: 0.7rem;
   padding-right: 0.1rem;
 }

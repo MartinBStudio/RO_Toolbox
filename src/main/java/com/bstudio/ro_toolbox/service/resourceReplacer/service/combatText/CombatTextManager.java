@@ -7,6 +7,8 @@ import com.bstudio.ro_toolbox.util.AppDataPaths;
 
 import java.io.*;
 import java.nio.file.*;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +22,7 @@ public class CombatTextManager extends BaseIResourceReplacerResource {
     private static final String DEFAULT_REPO =
             "https://github.com/MartinBStudio/RO_CombatText_resources";
     private static final String MANIFEST_FILE_NAME = "manifestCombatText.json";
+    private static final String FEATURED_PACKAGE_NAME = "No combat text";
     private static final Path RESOURCES_DIR =
             AppDataPaths.resolveRoToolboxAppDataRoot().resolve("resources").resolve("combatText");
     private static final Path GAME_DATA_DIR = Paths.get("3ddata");
@@ -52,8 +55,14 @@ public class CombatTextManager extends BaseIResourceReplacerResource {
 
     @Override
     public List<Resource> listPackages() {
-        return packageHandler.listAvailablePackages(
-                RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
+        List<Resource> packages =
+                new ArrayList<>(
+                        packageHandler.listAvailablePackages(
+                                RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME));
+        packages.sort(
+                Comparator.comparing(
+                        resource -> !matchesFeaturedPackage(resource), Boolean::compareTo));
+        return packages;
     }
 
     @Override
@@ -79,5 +88,17 @@ public class CombatTextManager extends BaseIResourceReplacerResource {
     @Override
     public ResourcesUpdater.ResourcesUpdateCheckResult checkForUpdate() {
         return resourcesUpdater.checkResourcesUpdate(DEFAULT_REPO, RESOURCES_DIR);
+    }
+
+    private boolean matchesFeaturedPackage(Resource resource) {
+        if (resource == null) {
+            return false;
+        }
+        return FEATURED_PACKAGE_NAME.equalsIgnoreCase(nullToBlank(resource.getName()))
+                || FEATURED_PACKAGE_NAME.equalsIgnoreCase(nullToBlank(resource.getId()));
+    }
+
+    private String nullToBlank(String value) {
+        return value == null ? "" : value.trim();
     }
 }

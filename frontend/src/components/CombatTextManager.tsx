@@ -28,6 +28,7 @@ import {
   isProfileAlreadyInstalled,
   resolveProfileName
 } from "../formatting.ts";
+import type { ProfileOptionGroup } from "../formatting.ts";
 import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
@@ -57,8 +58,9 @@ export function CombatTextManager({
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
   const availableProfiles = status?.combatTextAvailableProfiles ?? [];
+  const recommendedProfile = availableProfiles.find(isRecommendedCombatTextProfile) ?? null;
   const profileOptionGroups = useMemo(
-    () => buildProfileOptionGroups(availableProfiles),
+    () => buildCombatTextProfileOptionGroups(availableProfiles),
     [availableProfiles]
   );
   const canInstall = Boolean(selectedProfile);
@@ -87,12 +89,12 @@ export function CombatTextManager({
     }
     const selectedStillExists = availableProfiles.some((profile) => profile.id === selectedProfile);
     if (!selectedStillExists) {
-      setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0].id);
+      setSelectedProfile(installedAvailableProfileId ?? recommendedProfile?.id ?? availableProfiles[0].id);
     }
-  }, [availableProfiles, installedAvailableProfileId, selectedProfile]);
+  }, [availableProfiles, installedAvailableProfileId, recommendedProfile, selectedProfile]);
 
   function openPackageBrowser() {
-    setSelectedProfile(installedAvailableProfileId ?? availableProfiles[0]?.id ?? "");
+    setSelectedProfile(installedAvailableProfileId ?? recommendedProfile?.id ?? availableProfiles[0]?.id ?? "");
     setCollapsed(false);
   }
 
@@ -438,4 +440,36 @@ export function CombatTextManager({
       />
     </>
   );
+}
+
+function buildCombatTextProfileOptionGroups(profiles: AppStatus["combatTextAvailableProfiles"]): ProfileOptionGroup[] {
+  const recommendedProfile = profiles.find(isRecommendedCombatTextProfile);
+  const defaultGroups = buildProfileOptionGroups(
+    recommendedProfile
+      ? profiles.filter((profile) => profile.id !== recommendedProfile.id)
+      : profiles
+  ).filter((group) => group.options.length > 0);
+
+  if (!recommendedProfile) {
+    return defaultGroups;
+  }
+
+  return [
+    {
+      label: "Recommended",
+      options: [
+        {
+          profile: recommendedProfile,
+          label: resolveProfileName(recommendedProfile.name, recommendedProfile.id)
+        }
+      ]
+    },
+    ...defaultGroups
+  ];
+}
+
+function isRecommendedCombatTextProfile(profile: AppStatus["combatTextAvailableProfiles"][number]) {
+  const name = profile.name?.trim().toLowerCase();
+  const id = profile.id?.trim().toLowerCase();
+  return name === "no combat text" || id === "no combat text";
 }

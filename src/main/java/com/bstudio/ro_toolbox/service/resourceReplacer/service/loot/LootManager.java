@@ -20,6 +20,7 @@ public class LootManager extends BaseIResourceReplacerResource {
   private static final String DEFAULT_REPO =
       "https://github.com/MartinBStudio/RO_LootFilter_resources";
   private static final String MANIFEST_FILE_NAME = "manifestLoot.json";
+  private static final String FEATURED_PACKAGE_NAME = "Farming meta";
   private static final Path RESOURCES_DIR =
       AppDataPaths.resolveRoToolboxAppDataRoot().resolve("resources").resolve("lootManager");
   private static final Path GAME_DATA_DIR = Paths.get("3ddata", "item");
@@ -52,8 +53,14 @@ public class LootManager extends BaseIResourceReplacerResource {
 
   @Override
   public List<Resource> listPackages() {
-    return packageHandler.listAvailablePackages(
-        RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME);
+    List<Resource> packages =
+        new ArrayList<>(
+            packageHandler.listAvailablePackages(
+                RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME));
+    packages.sort(
+        Comparator.comparing(
+            resource -> !matchesFeaturedPackage(resource), Boolean::compareTo));
+    return packages;
   }
 
   @Override
@@ -385,5 +392,13 @@ public class LootManager extends BaseIResourceReplacerResource {
       return folderName.substring("disabled_".length());
     }
     return folderName;
+  }
+
+  private boolean matchesFeaturedPackage(Resource resource) {
+    if (resource == null) {
+      return false;
+    }
+    return FEATURED_PACKAGE_NAME.equalsIgnoreCase(nullToBlank(resource.getName()))
+        || FEATURED_PACKAGE_NAME.equalsIgnoreCase(nullToBlank(resource.getId()));
   }
 }

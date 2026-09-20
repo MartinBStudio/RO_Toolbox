@@ -218,7 +218,7 @@ public class PackageHandler implements ICommonResourceMethods {
             || !installedPackage.getId().equals(candidatePackage.getId())) {
           continue;
         }
-        Path fileList = candidate.resolve(".pack").resolve("filelist.txt");
+        Path fileList = candidate.resolve(".pack").resolve("FILE_LIST.txt");
         if (Files.isRegularFile(fileList)) {
           return fileList;
         }

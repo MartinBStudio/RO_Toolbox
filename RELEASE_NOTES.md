@@ -1,6 +1,22 @@
 ﻿# RO Toolbox – Release Notes
 
-## v1.0.2 – Loot Manager Modal Polish
+## v1.0.4 – Resource Update Cleanup
+
+This update improves package downloads, package browsing, and cleanup behavior for resource managers.
+
+### Resource Managers
+
+* **Clean resource updates**: Downloading updated resources now replaces the local downloaded resource folder instead of merging over old files, preventing stale packages or removed files from lingering.
+* **Safer update extraction**: Resource archives are extracted into a temporary folder first, then moved into place only after extraction succeeds.
+* **Consistent package cleanup**: File-list based packages now use `.pack/FILE_LIST.txt` consistently when restoring or deleting managed files.
+
+### Package Browser
+
+* **Recommended loot package**: `Farming meta` now appears in a top `Recommended` group and is selected by default when available.
+* **Recommended combat text package**: `No combat text` now appears in a top `Recommended` group and is selected by default when available.
+* **Better empty-preview layout**: Package cards without preview images no longer stretch their sections inside the browser modal.
+
+## v1.0.3 – Loot Manager Modal Polish
 
 This update refines the loot manage modal and fixes packaged-app loading for loot helper data.
 
@@ -16,7 +32,7 @@ This update refines the loot manage modal and fixes packaged-app loading for loo
 
 * **Installed app previews**: Loot dictionary and item preview loading now uses the active backend port, so previews and labels work when the packaged app starts the backend on a random free port.
 
-## v1.0.1 – Loot Model Scale Tools
+## v1.0.2 – Loot Model Scale Tools
 
 This update improves loot model management with built-in model scale controls and a cleaner manage packages table.
 
