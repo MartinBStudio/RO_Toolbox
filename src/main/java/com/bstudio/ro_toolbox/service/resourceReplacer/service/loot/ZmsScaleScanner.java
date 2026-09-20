@@ -244,7 +244,8 @@ final class ZmsScaleScanner {
       offset += 2;
     }
 
-    return new ParsedZmsLayout(baseOffset, vertexCount, legacy ? offset + (4 * vertexCount) : offset);
+    return new ParsedZmsLayout(
+        baseOffset, vertexCount, legacy ? offset + (4 * vertexCount) : offset);
   }
 
   private static LootModelScaleReport.Bounds validatedBounds(

@@ -159,14 +159,20 @@ public class PackageHandler implements ICommonResourceMethods {
     if (installedDir == null || !Files.exists(installedDir) || !Files.isDirectory(installedDir))
       return;
 
+    Resource installedPackage = packageManifestReader.readManifest(manifestFileName, installedDir);
+    List<Path> managedFiles =
+        readDefaultFileList(
+            resolveInstalledPackageFileList(resourcesDir, installedPackage, manifestFileName));
+
     // Always clear the installed manifest so the app no longer shows the profile as installed
     packageManifestReader.deleteManifestFiles(installedDir, manifestFileName);
 
     // Restore original files from .default if available
     Path defaultProfile = resourcesDir.resolve(".default");
-    if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) return;
-
-    List<Path> managedFiles = readDefaultFileList(defaultProfile.resolve("FILE_LIST.txt"));
+    if (managedFiles.isEmpty()) {
+      if (!Files.exists(defaultProfile) || !Files.isDirectory(defaultProfile)) return;
+      managedFiles = readDefaultFileList(defaultProfile.resolve("FILE_LIST.txt"));
+    }
     for (Path relativeFile : managedFiles) {
       Path defaultFile = defaultProfile.resolve(relativeFile);
       Path target = resolveManagedFile(installedDir, relativeFile);
@@ -182,6 +188,43 @@ public class PackageHandler implements ICommonResourceMethods {
         log.info("Deleted managed file (no default available): " + target.toAbsolutePath());
       }
     }
+  }
+
+  private Path resolveInstalledPackageFileList(
+      Path resourcesDir, Resource installedPackage, String manifestFileName) throws IOException {
+    if (resourcesDir == null
+        || installedPackage == null
+        || installedPackage.getId() == null
+        || installedPackage.getId().isBlank()
+        || !Files.isDirectory(resourcesDir)) {
+      return null;
+    }
+
+    Path packageDir = resourcesDir.resolve(installedPackage.getId());
+    Path directFileList = packageDir.resolve(".pack").resolve("FILE_LIST.txt");
+    if (Files.isRegularFile(directFileList)) {
+      return directFileList;
+    }
+
+    try (var stream = Files.list(resourcesDir)) {
+      for (Path candidate : (Iterable<Path>) stream::iterator) {
+        if (!Files.isDirectory(candidate)) continue;
+        String name = candidate.getFileName().toString();
+        if (name.startsWith(".")) continue;
+        Path manifest = packageManifestReader.resolveManifestPath(candidate, manifestFileName);
+        if (!Files.isRegularFile(manifest)) continue;
+        Resource candidatePackage = packageManifestReader.readManifest(manifestFileName, candidate);
+        if (candidatePackage == null
+            || !installedPackage.getId().equals(candidatePackage.getId())) {
+          continue;
+        }
+        Path fileList = candidate.resolve(".pack").resolve("filelist.txt");
+        if (Files.isRegularFile(fileList)) {
+          return fileList;
+        }
+      }
+    }
+    return null;
   }
 
   private List<String> loadPreviewImages(Path profileDir) {

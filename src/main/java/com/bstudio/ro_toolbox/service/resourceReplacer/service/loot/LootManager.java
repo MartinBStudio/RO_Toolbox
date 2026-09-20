@@ -270,15 +270,7 @@ public class LootManager extends BaseIResourceReplacerResource {
     } catch (IOException ex) {
       return List.of(
           new LootModelScaleReport.File(
-              managedSubfolder,
-              managedSubfolder,
-              null,
-              null,
-              0,
-              0,
-              null,
-              null,
-              ex.getMessage()));
+              managedSubfolder, managedSubfolder, null, null, 0, 0, null, null, ex.getMessage()));
     }
   }
 
@@ -349,15 +341,7 @@ public class LootManager extends BaseIResourceReplacerResource {
           folderName,
           List.of(
               new LootModelScaleReport.File(
-                  folderName,
-                  folderName,
-                  null,
-                  null,
-                  0,
-                  0,
-                  null,
-                  null,
-                  ex.getMessage())),
+                  folderName, folderName, null, null, 0, 0, null, null, ex.getMessage())),
           List.of());
     }
   }

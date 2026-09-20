@@ -23,9 +23,7 @@ class LootServiceControllerTests {
   void setUp() {
     controller =
         new LootServiceController(
-            mock(LootManager.class),
-            mock(AppConfigService.class),
-            new DefaultResourceLoader());
+            mock(LootManager.class), mock(AppConfigService.class), new DefaultResourceLoader());
   }
 
   @Test
@@ -41,7 +39,8 @@ class LootServiceControllerTests {
     assertNotNull(previews);
     assertFalse(previews.isEmpty());
     assertTrue(previews.containsKey("DI55") || previews.containsKey("di55"));
-    List<String> di55Previews = previews.get("DI55") != null ? previews.get("DI55") : previews.get("di55");
+    List<String> di55Previews =
+        previews.get("DI55") != null ? previews.get("DI55") : previews.get("di55");
     assertNotNull(di55Previews);
     assertFalse(di55Previews.isEmpty());
     assertTrue(di55Previews.get(0).startsWith("/ITEM_previews/"));
