@@ -1,5 +1,16 @@
 ﻿# RO Toolbox – Release Notes
 
+
+## v1.0.5 – Bug fix
+
+This update improves uninstall behavior for resource managers.
+
+### Resource Managers
+
+* **Uninstall resource fix**: Fixed an issue where uninstalling a resource would sometimes do not delete all files.
+
+
+
 ## v1.0.4 – Resource Update Cleanup
 
 This update improves package downloads, package browsing, and cleanup behavior for resource managers.

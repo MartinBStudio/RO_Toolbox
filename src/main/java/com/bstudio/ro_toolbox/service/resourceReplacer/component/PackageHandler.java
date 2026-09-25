@@ -163,6 +163,9 @@ public class PackageHandler implements ICommonResourceMethods {
     List<Path> managedFiles =
         readDefaultFileList(
             resolveInstalledPackageFileList(resourcesDir, installedPackage, manifestFileName));
+    if (managedFiles.isEmpty() && installedPackage == null) {
+      managedFiles = readAllPackageFileLists(resourcesDir);
+    }
 
     // Always clear the installed manifest so the app no longer shows the profile as installed
     packageManifestReader.deleteManifestFiles(installedDir, manifestFileName);
@@ -175,7 +178,7 @@ public class PackageHandler implements ICommonResourceMethods {
     }
     for (Path relativeFile : managedFiles) {
       Path defaultFile = defaultProfile.resolve(relativeFile);
-      Path target = resolveManagedFile(installedDir, relativeFile);
+      Path target = resolveInstalledManagedFile(installedDir, relativeFile);
       if (Files.isDirectory(target)) {
         continue;
       }
@@ -225,6 +228,42 @@ public class PackageHandler implements ICommonResourceMethods {
       }
     }
     return null;
+  }
+
+  private List<Path> readAllPackageFileLists(Path resourcesDir) throws IOException {
+    if (resourcesDir == null || !Files.isDirectory(resourcesDir)) {
+      return List.of();
+    }
+
+    Set<Path> files = new LinkedHashSet<>();
+    try (var stream = Files.list(resourcesDir)) {
+      for (Path candidate : (Iterable<Path>) stream::iterator) {
+        if (!Files.isDirectory(candidate)) continue;
+        String name = candidate.getFileName().toString();
+        if (name.startsWith(".")) continue;
+        files.addAll(readDefaultFileList(candidate.resolve(".pack").resolve("FILE_LIST.txt")));
+      }
+    }
+    return new ArrayList<>(files);
+  }
+
+  private Path resolveInstalledManagedFile(Path installedDir, Path relativeFile) {
+    Path directTarget = resolveManagedFile(installedDir, relativeFile);
+    if (Files.exists(directTarget) || installedDir == null || installedDir.getFileName() == null) {
+      return directTarget;
+    }
+
+    Path normalized = relativeFile == null ? null : relativeFile.normalize();
+    if (normalized == null || normalized.getNameCount() < 2) {
+      return directTarget;
+    }
+
+    String installFolderName = installedDir.getFileName().toString();
+    if (!installFolderName.equalsIgnoreCase(normalized.getName(0).toString())) {
+      return directTarget;
+    }
+
+    return resolveManagedFile(installedDir, normalized.subpath(1, normalized.getNameCount()));
   }
 
   private List<String> loadPreviewImages(Path profileDir) {
