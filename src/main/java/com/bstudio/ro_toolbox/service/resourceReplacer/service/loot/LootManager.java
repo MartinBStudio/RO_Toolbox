@@ -58,8 +58,7 @@ public class LootManager extends BaseIResourceReplacerResource {
             packageHandler.listAvailablePackages(
                 RESOURCES_DIR, appConfigService.getSelectedGameBase(), MANIFEST_FILE_NAME));
     packages.sort(
-        Comparator.comparing(
-            resource -> !matchesFeaturedPackage(resource), Boolean::compareTo));
+        Comparator.comparing(resource -> !matchesFeaturedPackage(resource), Boolean::compareTo));
     return packages;
   }
 
@@ -392,6 +391,42 @@ public class LootManager extends BaseIResourceReplacerResource {
       return folderName.substring("disabled_".length());
     }
     return folderName;
+  }
+
+  public LootModelPreview getManagedModelPreview(String managedSubfolder) throws IOException {
+    if (managedSubfolder == null || managedSubfolder.isBlank()) {
+      throw new IllegalArgumentException("folder is required.");
+    }
+    Path itemFolder = getGameDataDir();
+    if (itemFolder == null) {
+      throw new IllegalStateException("No game installation folder is selected.");
+    }
+    Path scanFolder = resolveManagedOrDisabledFolder(itemFolder, managedSubfolder);
+    if (scanFolder == null || !Files.isDirectory(scanFolder)) {
+      throw new IllegalArgumentException("Managed folder is not installed: " + managedSubfolder);
+    }
+    return ZmsPreviewParser.parseLargestFile(scanFolder, itemFolder, managedSubfolder.trim());
+  }
+
+  public LootModelPreview getPackageModelPreview(String profileId, String managedSubfolder)
+      throws IOException {
+    if (managedSubfolder == null || managedSubfolder.isBlank()) {
+      throw new IllegalArgumentException("folder is required.");
+    }
+    Resource profile = findSelectedPackage(profileId, listPackages());
+    Path packageFolder = profile.getSource();
+    if (packageFolder == null || !Files.isDirectory(packageFolder)) {
+      throw new IllegalArgumentException("Package folder was not found: " + profileId);
+    }
+    Path relative = Paths.get(managedSubfolder).normalize();
+    if (relative.isAbsolute() || relative.startsWith("..")) {
+      throw new IllegalArgumentException("Invalid managed folder: " + managedSubfolder);
+    }
+    Path scanFolder = packageFolder.resolve(relative).normalize();
+    if (!scanFolder.startsWith(packageFolder) || !Files.isDirectory(scanFolder)) {
+      throw new IllegalArgumentException("Managed folder is not in package: " + managedSubfolder);
+    }
+    return ZmsPreviewParser.parseLargestFile(scanFolder, packageFolder, managedSubfolder.trim());
   }
 
   private boolean matchesFeaturedPackage(Resource resource) {

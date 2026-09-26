@@ -3126,26 +3126,6 @@ a {
   text-align: center;
 }
 
-.includedPackagesTable th:nth-child(1),
-.includedPackagesTable td:nth-child(1) {
-  width: 16%;
-}
-
-.includedPackagesTable th:nth-child(2),
-.includedPackagesTable td:nth-child(2) {
-  width: 20%;
-}
-
-.includedPackagesTable th:nth-child(3),
-.includedPackagesTable td:nth-child(3) {
-  width: auto;
-}
-
-.includedPackagesTable th:nth-child(4),
-.includedPackagesTable td:nth-child(4) {
-  width: 140px;
-}
-
 .lootManageTable tbody tr:last-child td {
   border-bottom: 0;
 }
@@ -3270,14 +3250,18 @@ a {
 }
 
 .lootManageSize {
-  display: flex;
+  text-align: center;
+  font-family: "Consolas", "Courier New", monospace;
+  color: #cfe0f7;
+  white-space: nowrap;
+}
+
+.lootManageSizeInner {
+  display: inline-flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 0.34rem;
-  font-family: "Consolas", "Courier New", monospace;
-  color: #cfe0f7;
-  white-space: nowrap;
 }
 
 
@@ -3375,9 +3359,72 @@ a {
   font-size: 0.66rem;
 }
 
-.lootManagePreviewHeader {
-  width: 64px;
-  min-width: 64px;
+.lootManageToggleCol {
+  width: 70px;
+}
+
+.lootManageFolderCol {
+  width: 12%;
+}
+
+.lootManageRenderCol {
+  width: 76px;
+}
+
+.lootManageVisualCol {
+  width: 42px;
+}
+
+.includedPackagesTable .lootManageVisualCol {
+  width: 58px;
+}
+
+.lootManageSizeCol {
+  width: 170px;
+}
+
+.lootManageLabelCol {
+  width: 18%;
+}
+
+.lootManageRenderHeader {
+  width: 76px;
+  min-width: 76px;
+  text-align: center;
+}
+
+.lootManageVisualHeader {
+  width: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  padding-left: 0.1rem !important;
+  padding-right: 0.1rem !important;
+  text-align: center;
+  white-space: normal;
+  line-height: 1.05;
+}
+
+.lootManagePreviewCell {
+  text-align: center;
+}
+
+.lootManageRenderCell {
+  padding-left: 0.45rem;
+  padding-right: 0.45rem;
+}
+
+.lootManageVisualCell {
+  width: 42px;
+  min-width: 42px;
+  max-width: 42px;
+  padding-left: 0.12rem !important;
+  padding-right: 0.12rem !important;
+}
+
+.includedPackagesTable .lootManageVisualCell {
+  width: 58px;
+  min-width: 58px;
+  max-width: 58px;
 }
 
 .lootFolderPreviewThumbnails {
@@ -3391,6 +3438,7 @@ a {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  flex: 0 0 auto;
   padding: 0;
   border: none;
   background: transparent;
@@ -3413,6 +3461,76 @@ a {
   border-color: #6a9eff;
   transform: scale(1.12);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.lootModelPreviewCanvas,
+.lootModelPreviewCanvasButton {
+  width: 54px;
+  height: 54px;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  border: 1px solid #2d3f59;
+  background: radial-gradient(circle at 50% 38%, #1d2b42 0%, #080c14 72%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+}
+
+.lootModelPreviewCanvasButton {
+  cursor: pointer;
+}
+
+.lootModelPreviewCanvasButton:hover {
+  border-color: #6a9eff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.lootModelPreviewCanvas.is-card,
+.lootModelPreviewCanvasButton.is-card {
+  width: 112px;
+  height: 92px;
+}
+
+.lootModelPreviewCanvas.is-modal,
+.lootModelPreviewCanvasButton.is-modal {
+  width: min(82vw, 820px);
+  height: min(76vh, 680px);
+  border-radius: 8px;
+}
+
+.lootModelPreviewCanvasButton .lootFolderPreviewThumb {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.lootModelPreviewCanvasMount {
+  width: 100%;
+  height: 100%;
+}
+
+.lootModelPreviewCanvasMount canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.lootModelPreviewCanvas.isFailed .lootModelPreviewCanvasMount {
+  display: none;
+}
+
+.lootFolderPreviewStaticFallback {
+  display: none;
+}
+
+.lootModelPreviewModalContent {
+  width: min(82vw, 820px);
+  height: min(76vh, 680px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .lootFolderPreviewEmpty {

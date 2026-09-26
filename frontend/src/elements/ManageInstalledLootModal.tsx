@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PhotoIcon, XMarkIcon } from "@heroicons/react/24/outline";
+import { XMarkIcon } from "@heroicons/react/24/outline";
 import {
   getLootModelScales,
   scaleLootModelFolder,
@@ -16,6 +16,8 @@ import {
   loadLootDictionary
 } from "../utils/lootDictionary";
 import { ImagePreviewModal } from "./ImagePreviewModal";
+import { LootModelPreviewCanvas } from "./LootModelPreviewCanvas";
+import { LootModelPreviewModal } from "./LootModelPreviewModal";
 
 type ModelScaleDisplay = {
   label: string;
@@ -103,7 +105,6 @@ function getScaleState(ratio: number): ModelScaleDisplay["state"] {
 
 interface ManageInstalledLootModalProps {
   isOpen: boolean;
-  profileName?: string | null;
   showPreviews?: boolean;
   managedSubfolders: string[];
   disabledManagedSubfolders: string[];
@@ -113,7 +114,6 @@ interface ManageInstalledLootModalProps {
 
 export function ManageInstalledLootModal({
   isOpen,
-  profileName,
   showPreviews,
   managedSubfolders,
   disabledManagedSubfolders,
@@ -127,8 +127,9 @@ export function ManageInstalledLootModal({
   const [saving, setSaving] = useState(false);
   const [scalingFolder, setScalingFolder] = useState<string | null>(null);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
+  const [selectedModelPreviewFolder, setSelectedModelPreviewFolder] = useState<string | null>(null);
 
-  const displayPreviews = showPreviews ?? Boolean(profileName?.toLowerCase().includes("farming meta"));
+  const displayPreviews = showPreviews ?? true;
 
   useEffect(() => {
     const promises: [Promise<Record<string, LootFolderInfo>>, Promise<Record<string, string[]>> | Promise<Record<string, string[]>>] = [
@@ -245,12 +246,28 @@ export function ManageInstalledLootModal({
           ) : (
             <div className="lootManageTableWrap">
               <table className="lootManageTable">
+                <colgroup>
+                  <col className="lootManageToggleCol" />
+                  <col className="lootManageFolderCol" />
+                  {displayPreviews ? (
+                    <>
+                      <col className="lootManageRenderCol" />
+                      <col className="lootManageVisualCol" />
+                    </>
+                  ) : null}
+                  <col className="lootManageSizeCol" />
+                  <col className="lootManageLabelCol" />
+                  <col />
+                </colgroup>
                 <thead>
                   <tr>
                     <th className="lootManageToggleHeader">Enabled</th>
-                    <th style={{ width: displayPreviews ? "12%" : "15%" }}>Folder</th>
+                    <th>Folder</th>
                     {displayPreviews ? (
-                      <th className="lootManagePreviewHeader">Preview</th>
+                      <>
+                        <th className="lootManageRenderHeader">3D render</th>
+                        <th className="lootManageVisualHeader">Default visual</th>
+                      </>
                     ) : null}
                     <th
                       className="lootManageSizeHeader"
@@ -258,7 +275,7 @@ export function ManageInstalledLootModal({
                     >
                       Size
                     </th>
-                    <th style={{ width: displayPreviews ? "18%" : "25%" }}>Label</th>
+                    <th>Label</th>
                     <th>Description</th>
                   </tr>
                 </thead>
@@ -270,6 +287,7 @@ export function ManageInstalledLootModal({
                     const folderPreviews = displayPreviews ? getFolderPreviews(folder, previews) : [];
                     const firstFolderPreview = folderPreviews[0];
                     const folderScale = getFolderScale(folder);
+                    const hasModelScale = Boolean(folderScale);
 
                     return (
                       <tr key={folder}>
@@ -293,9 +311,17 @@ export function ManageInstalledLootModal({
                         </td>
                         <td className="lootManageFolder">{folder}</td>
                         {displayPreviews ? (
-                          <td>
-                            {firstFolderPreview ? (
-                              <div className="lootFolderPreviewThumbnails">
+                          <>
+                            <td className="lootManagePreviewCell lootManageRenderCell">
+                              {hasModelScale ? (
+                                <LootModelPreviewCanvas
+                                  folder={folder}
+                                  onOpen={() => setSelectedModelPreviewFolder(folder)}
+                                />
+                              ) : null}
+                            </td>
+                            <td className="lootManagePreviewCell lootManageVisualCell">
+                              {hasModelScale && firstFolderPreview ? (
                                 <button
                                   type="button"
                                   className="lootFolderPreviewThumbBtn"
@@ -310,74 +336,73 @@ export function ManageInstalledLootModal({
                                     loading="lazy"
                                   />
                                 </button>
-                              </div>
-                            ) : (
-                              <span className="lootFolderPreviewEmpty" title="No preview available">
-                                <PhotoIcon className="lootFolderPreviewEmptyIcon" />
-                                <span className="lootFolderPreviewEmptyText">—</span>
-                              </span>
-                            )}
-                          </td>
+                              ) : null}
+                            </td>
+                          </>
                         ) : null}
                         <td className="lootManageSize">
-                          <span
-                            className={`lootManageSizeDelta${folderScale ? ` is-${folderScale.state}` : ""}`}
-                            title={folderScale?.detail ?? "Size could not be measured"}
-                          >
-                            {folderScale?.label ?? "-"}
-                          </span>
-                          <span className="lootManageSizeActions">
-                            <button
-                              type="button"
-                              className="lootManageSizeButton lootManageSizeLimitButton"
-                              onClick={() => handleScaleFolder(folder, "min")}
-                              disabled={scalingFolder === folder}
-                              title="Set model size to the minimum, about -96%"
-                              aria-label={`Set ${folder} model size to minimum`}
-                            >
-                              Min
-                            </button>
-                            <button
-                              type="button"
-                              className="lootManageSizeButton"
-                              onClick={() => handleScaleFolder(folder, "decrease")}
-                              disabled={scalingFolder === folder}
-                              title="Decrease model size by 10%"
-                              aria-label={`Decrease ${folder} model size by 10%`}
-                            >
-                              -
-                            </button>
-                            <button
-                              type="button"
-                              className="lootManageSizeButton lootManageSizeResetButton"
-                              onClick={() => handleScaleFolder(folder, "reset")}
-                              disabled={scalingFolder === folder}
-                              title="Reset model size to the original package value"
-                              aria-label={`Reset ${folder} model size to the original package value`}
-                            >
-                              R
-                            </button>
-                            <button
-                              type="button"
-                              className="lootManageSizeButton"
-                              onClick={() => handleScaleFolder(folder, "increase")}
-                              disabled={scalingFolder === folder}
-                              title="Increase model size by 10%"
-                              aria-label={`Increase ${folder} model size by 10%`}
-                            >
-                              +
-                            </button>
-                            <button
-                              type="button"
-                              className="lootManageSizeButton lootManageSizeLimitButton"
-                              onClick={() => handleScaleFolder(folder, "max")}
-                              disabled={scalingFolder === folder}
-                              title="Set model size to +1000%"
-                              aria-label={`Set ${folder} model size to maximum`}
-                            >
-                              Max
-                            </button>
-                          </span>
+                          {hasModelScale ? (
+                            <div className="lootManageSizeInner">
+                              <span
+                                className={`lootManageSizeDelta is-${folderScale.state}`}
+                                title={folderScale.detail}
+                              >
+                                {folderScale.label}
+                              </span>
+                              <span className="lootManageSizeActions">
+                                <button
+                                  type="button"
+                                  className="lootManageSizeButton lootManageSizeLimitButton"
+                                  onClick={() => handleScaleFolder(folder, "min")}
+                                  disabled={scalingFolder === folder}
+                                  title="Set model size to the minimum, about -96%"
+                                  aria-label={`Set ${folder} model size to minimum`}
+                                >
+                                  Min
+                                </button>
+                                <button
+                                  type="button"
+                                  className="lootManageSizeButton"
+                                  onClick={() => handleScaleFolder(folder, "decrease")}
+                                  disabled={scalingFolder === folder}
+                                  title="Decrease model size by 10%"
+                                  aria-label={`Decrease ${folder} model size by 10%`}
+                                >
+                                  -
+                                </button>
+                                <button
+                                  type="button"
+                                  className="lootManageSizeButton lootManageSizeResetButton"
+                                  onClick={() => handleScaleFolder(folder, "reset")}
+                                  disabled={scalingFolder === folder}
+                                  title="Reset model size to the original package value"
+                                  aria-label={`Reset ${folder} model size to the original package value`}
+                                >
+                                  R
+                                </button>
+                                <button
+                                  type="button"
+                                  className="lootManageSizeButton"
+                                  onClick={() => handleScaleFolder(folder, "increase")}
+                                  disabled={scalingFolder === folder}
+                                  title="Increase model size by 10%"
+                                  aria-label={`Increase ${folder} model size by 10%`}
+                                >
+                                  +
+                                </button>
+                                <button
+                                  type="button"
+                                  className="lootManageSizeButton lootManageSizeLimitButton"
+                                  onClick={() => handleScaleFolder(folder, "max")}
+                                  disabled={scalingFolder === folder}
+                                  title="Set model size to +1000%"
+                                  aria-label={`Set ${folder} model size to maximum`}
+                                >
+                                  Max
+                                </button>
+                              </span>
+                            </div>
+                          ) : null}
                         </td>
                         <td>{label}</td>
                         <td>{description}</td>
@@ -403,6 +428,10 @@ export function ManageInstalledLootModal({
       <ImagePreviewModal
         imageUrl={selectedPreviewImage}
         onClose={() => setSelectedPreviewImage(null)}
+      />
+      <LootModelPreviewModal
+        folder={selectedModelPreviewFolder}
+        onClose={() => setSelectedModelPreviewFolder(null)}
       />
     </>
   );

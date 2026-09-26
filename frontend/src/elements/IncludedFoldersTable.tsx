@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ChevronDownIcon, ChevronUpIcon, PhotoIcon } from "@heroicons/react/24/outline";
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/outline";
 import type { LootFolderInfo } from "../utils/lootDictionary";
 import {
   loadLootDictionary,
@@ -9,21 +9,24 @@ import {
   getFolderPreviews
 } from "../utils/lootDictionary";
 import { ImagePreviewModal } from "./ImagePreviewModal";
+import { LootModelPreviewCanvas } from "./LootModelPreviewCanvas";
+import { LootModelPreviewModal } from "./LootModelPreviewModal";
 
 interface IncludedFoldersTableProps {
   folders: string[];
-  profileName?: string | null;
+  profileId?: string | null;
   showPreviews?: boolean;
 }
 
-export function IncludedFoldersTable({ folders, profileName, showPreviews }: IncludedFoldersTableProps) {
+export function IncludedFoldersTable({ folders, profileId, showPreviews }: IncludedFoldersTableProps) {
   const [dictionary, setDictionary] = useState<Record<string, LootFolderInfo>>({});
   const [previews, setPreviews] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(true);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
+  const [selectedModelPreviewFolder, setSelectedModelPreviewFolder] = useState<string | null>(null);
 
-  const displayPreviews = showPreviews ?? Boolean(profileName?.toLowerCase().includes("farming meta"));
+  const displayPreviews = showPreviews ?? true;
 
   useEffect(() => {
     setLoading(true);
@@ -64,13 +67,27 @@ export function IncludedFoldersTable({ folders, profileName, showPreviews }: Inc
           <div className="accordionContent includedPackagesContent">
             <div className="lootManageTableWrap includedPackagesTableWrap" style={{ opacity: loading ? 0.6 : 1 }}>
               <table className="lootManageTable includedPackagesTable">
+                <colgroup>
+                  <col className="lootManageFolderCol" />
+                  {displayPreviews ? (
+                    <>
+                      <col className="lootManageRenderCol" />
+                      <col className="lootManageVisualCol" />
+                    </>
+                  ) : null}
+                  <col className="lootManageLabelCol" />
+                  <col />
+                </colgroup>
                 <thead>
                   <tr>
-                    <th style={{ width: displayPreviews ? "12%" : "15%" }}>Folder</th>
+                    <th>Folder</th>
                     {displayPreviews ? (
-                      <th style={{ width: "160px", minWidth: "120px" }}>Preview</th>
+                      <>
+                        <th className="lootManageRenderHeader">3D render</th>
+                        <th className="lootManageVisualHeader">Default visual</th>
+                      </>
                     ) : null}
-                    <th style={{ width: displayPreviews ? "18%" : "25%" }}>Label</th>
+                    <th>Label</th>
                     <th>Description</th>
                   </tr>
                 </thead>
@@ -79,39 +96,39 @@ export function IncludedFoldersTable({ folders, profileName, showPreviews }: Inc
                     const label = getFolderLabel(folder, dictionary);
                     const description = getFolderDescription(folder, dictionary);
                     const folderPreviews = displayPreviews ? getFolderPreviews(folder, previews) : [];
+                    const firstFolderPreview = folderPreviews[0];
 
                     return (
                       <tr key={folder}>
                         <td className="lootManageFolder">{folder}</td>
                         {displayPreviews ? (
-                          <td>
-                            {folderPreviews.length > 0 ? (
-                              <div className="lootFolderPreviewThumbnails">
-                                {folderPreviews.map((imgUrl, imgIndex) => (
-                                  <button
-                                    key={`${folder}-img-${imgIndex}`}
-                                    type="button"
-                                    className="lootFolderPreviewThumbBtn"
-                                    onClick={() => setSelectedPreviewImage(imgUrl)}
-                                    title={`Click to view ${folder} preview ${imgIndex + 1}`}
-                                    aria-label={`View ${folder} preview ${imgIndex + 1}`}
-                                  >
-                                    <img
-                                      src={imgUrl}
-                                      alt={`${folder} preview ${imgIndex + 1}`}
-                                      className="lootFolderPreviewThumb"
-                                      loading="lazy"
-                                    />
-                                  </button>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="lootFolderPreviewEmpty" title="No preview available">
-                                <PhotoIcon className="lootFolderPreviewEmptyIcon" />
-                                <span className="lootFolderPreviewEmptyText">—</span>
-                              </span>
-                            )}
-                          </td>
+                          <>
+                            <td className="lootManagePreviewCell lootManageRenderCell">
+                              <LootModelPreviewCanvas
+                                folder={folder}
+                                profileId={profileId}
+                                onOpen={() => setSelectedModelPreviewFolder(folder)}
+                              />
+                            </td>
+                            <td className="lootManagePreviewCell lootManageVisualCell">
+                              {firstFolderPreview ? (
+                                <button
+                                  type="button"
+                                  className="lootFolderPreviewThumbBtn"
+                                  onClick={() => setSelectedPreviewImage(firstFolderPreview)}
+                                  title={`Click to view ${folder} preview`}
+                                  aria-label={`View ${folder} preview`}
+                                >
+                                  <img
+                                    src={firstFolderPreview}
+                                    alt={`${folder} preview`}
+                                    className="lootFolderPreviewThumb"
+                                    loading="lazy"
+                                  />
+                                </button>
+                              ) : null}
+                            </td>
+                          </>
                         ) : null}
                         <td>{label}</td>
                         <td>{description || "—"}</td>
@@ -128,6 +145,11 @@ export function IncludedFoldersTable({ folders, profileName, showPreviews }: Inc
       <ImagePreviewModal
         imageUrl={selectedPreviewImage}
         onClose={() => setSelectedPreviewImage(null)}
+      />
+      <LootModelPreviewModal
+        folder={selectedModelPreviewFolder}
+        profileId={profileId}
+        onClose={() => setSelectedModelPreviewFolder(null)}
       />
     </>
   );

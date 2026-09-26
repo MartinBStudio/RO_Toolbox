@@ -37,6 +37,23 @@ export type LootModelScaleReport = {
   folders: LootModelScaleFolder[];
 };
 
+export type LootModelPreview = {
+  folder: string;
+  fileName: string | null;
+  relativePath: string | null;
+  version: number | null;
+  flags: number | null;
+  vertexCount: number;
+  triangleCount: number;
+  positions: number[];
+  normals: number[];
+  uvs: number[];
+  colors: number[];
+  indices: number[];
+  bounds: LootModelScaleBounds | null;
+  error: string | null;
+};
+
 export function downloadProfiles() {
   return request<{ message: string }>("/loot/download", { method: "POST" });
 }
@@ -70,6 +87,14 @@ export function checkLootResourcesUpdate() {
 
 export function getLootModelScales() {
   return request<LootModelScaleReport>("/loot/model-scales");
+}
+
+export function getLootModelPreview(folder: string, profileId?: string | null) {
+  const params = new URLSearchParams({ folder });
+  if (profileId) {
+    params.set("profileId", profileId);
+  }
+  return request<LootModelPreview>(`/loot/model-preview?${params.toString()}`);
 }
 
 export type LootModelScaleDirection = "increase" | "decrease" | "reset" | "min" | "max";

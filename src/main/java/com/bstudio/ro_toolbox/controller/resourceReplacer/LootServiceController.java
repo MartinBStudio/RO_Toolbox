@@ -7,6 +7,7 @@ import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdater;
 import com.bstudio.ro_toolbox.service.resourceReplacer.model.Resource;
 import com.bstudio.ro_toolbox.service.resourceReplacer.service.loot.LootManager;
+import com.bstudio.ro_toolbox.service.resourceReplacer.service.loot.LootModelPreview;
 import com.bstudio.ro_toolbox.service.resourceReplacer.service.loot.LootModelScaleReport;
 import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import java.io.IOException;
@@ -98,6 +99,22 @@ public class LootServiceController extends BaseResourceReplacerController {
   @GetMapping("/model-scales")
   public LootModelScaleReport getModelScales() throws IOException {
     return lootManager.scanInstalledModelScales();
+  }
+
+  @GetMapping(value = "/model-preview/{folder}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public LootModelPreview getModelPreview(@PathVariable String folder) throws IOException {
+    return lootManager.getManagedModelPreview(folder);
+  }
+
+  @GetMapping(value = "/model-preview", produces = MediaType.APPLICATION_JSON_VALUE)
+  public LootModelPreview getModelPreview(
+      @RequestParam String folder,
+      @RequestParam(value = "profileId", required = false) String profileId)
+      throws IOException {
+    if (profileId != null && !profileId.isBlank()) {
+      return lootManager.getPackageModelPreview(profileId.trim(), folder);
+    }
+    return lootManager.getManagedModelPreview(folder);
   }
 
   @PostMapping("/model-scales/scale")

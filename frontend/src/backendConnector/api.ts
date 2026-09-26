@@ -24,6 +24,7 @@ export {
   openItemFolder,
   checkLootResourcesUpdate,
   getLootModelScales,
+  getLootModelPreview,
   scaleLootModelFolder,
   getItemPreviews
 } from "./lootApi.ts";
@@ -33,7 +34,8 @@ export type {
   LootModelScaleFile,
   LootModelScaleFolder,
   LootModelScaleReport,
-  LootModelScaleVector
+  LootModelScaleVector,
+  LootModelPreview
 } from "./lootApi.ts";
 export {
   downloadCombatTextProfiles,

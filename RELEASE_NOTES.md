@@ -1,6 +1,18 @@
 ﻿# RO Toolbox – Release Notes
 
 
+## v1.0.6 - Live Loot Model Previews
+
+This update adds live 3D previews for loot models.
+
+### Loot Manager
+
+* **Live model previews**: Loot tables now show a 3D render beside the default visual preview.
+* **Fullscreen preview**: Click a rendered model to inspect it in a larger view.
+* **Cleaner model tools**: Scale controls and previews now appear only for models that can be measured and resized.
+* **Smoother browsing**: Model thumbnails are normalized and lazy-rendered for more stable scrolling.
+
+
 ## v1.0.5 – Bug fix
 
 This update improves uninstall behavior for resource managers.
