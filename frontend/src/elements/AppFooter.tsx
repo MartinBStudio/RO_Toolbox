@@ -8,16 +8,16 @@ export function AppFooter({ loading, onOpenWhatsNew }: AppFooterProps) {
     <footer className="card appFooter">
       <p className="appFooterLine">
         Created by BStudio 2026 •{" "}
-        <a href="https://github.com/MartinBStudio/RO_Toolbox/releases" target="_blank" rel="noreferrer">
-          GitHub
+        <a href="https://martinbstudio.github.io/RO_Toolbox/" target="_blank" rel="noreferrer">
+          RO Toolbox website
         </a>{" "}
         •{" "}
         <a
-          href="https://forum.roseonlinegame.com/topic/7761-ro_toolbox-loot-models/#comment-26680"
+          href="https://www.roseonlinegame.com/"
           target="_blank"
           rel="noreferrer"
         >
-          Forum thread
+          Official ROSE Online
         </a>{" "}
         •{" "}
         <button
