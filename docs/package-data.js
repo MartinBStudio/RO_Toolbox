@@ -1,423 +1,484 @@
-﻿window.RO_TOOLBOX_PACKAGES = [
-    {
-        "id":  "buff-animations-modern",
-        "category":  "Buff animations",
-        "repo":  "RO_BuffAnimations_resources",
-        "name":  "Modern",
-        "folder":  "Modern",
-        "version":  "0.0.1",
-        "author":  "Kyio",
-        "description":  "Modern themed buff animations. Sleek and contemporary design.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_BuffAnimations_resources/tree/master/Modern",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_BuffAnimations_resources",
-        "previews":  [
-                         "./assets/package-previews/buff-animations-modern-1.gif"
-                     ]
-    },
-    {
-        "id":  "buff-animations-spookyhalloween",
-        "category":  "Buff animations",
-        "repo":  "RO_BuffAnimations_resources",
-        "name":  "Spooky Halloween",
-        "folder":  "SpookyHalloween",
-        "version":  "1.0.0",
-        "author":  "Kyio",
-        "description":  "Void Halloween buff animations: bats, will-o-wisps, a skull, a magic circle, an after-image, a soul lantern, a familiar, a well of souls, and an aurora around every summon.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_BuffAnimations_resources/tree/master/SpookyHalloween",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_BuffAnimations_resources",
-        "previews":  [
-                         "./assets/package-previews/buff-animations-spookyhalloween-1.gif",
-                         "./assets/package-previews/buff-animations-spookyhalloween-2.jpg",
-                         "./assets/package-previews/buff-animations-spookyhalloween-3.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-ancient",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "ancient",
-        "folder":  "ancient",
-        "version":  "0.0.4",
-        "author":  "Kyio",
-        "description":  "Ancient themed combat text recolors",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancient",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-ancient-1.png",
-                         "./assets/package-previews/combat-text-ancient-2.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-ancientcritsonly",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "ancient - crits only",
-        "folder":  "ancientCritsOnly",
-        "version":  "0.0.5",
-        "author":  "Kyio",
-        "description":  "Ancient themed combat text recolors - display only crits",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancientCritsOnly",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-ancientcritsonly-1.png",
-                         "./assets/package-previews/combat-text-ancientcritsonly-2.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-ancientlarge",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "Ancient - large",
-        "folder":  "ancientLarge",
-        "version":  "1.0.2",
-        "author":  "Kyio",
-        "description":  "Ancient combat text at double height. Same colours, bigger numbers.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancientLarge",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-ancientlarge-1.png",
-                         "./assets/package-previews/combat-text-ancientlarge-2.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-crimson",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "crimson",
-        "folder":  "crimson",
-        "version":  "0.0.4",
-        "author":  "Kyio",
-        "description":  "Crimson themed combat text recolors",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/crimson",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-crimson-1.png",
-                         "./assets/package-previews/combat-text-crimson-2.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-crimsonlarge",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "Crimson - large",
-        "folder":  "crimsonLarge",
-        "version":  "1.0.2",
-        "author":  "Kyio",
-        "description":  "Crimson combat text at double height. Same colours, bigger numbers.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/crimsonLarge",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-crimsonlarge-1.png",
-                         "./assets/package-previews/combat-text-crimsonlarge-2.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-moldie",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "moldie",
-        "folder":  "moldie",
-        "version":  "0.0.4",
-        "author":  "Kyio",
-        "description":  "Moldie themed combat text recolors",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/moldie",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-moldie-1.png",
-                         "./assets/package-previews/combat-text-moldie-2.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-moldielarge",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "Moldie - large",
-        "folder":  "moldieLarge",
-        "version":  "1.0.2",
-        "author":  "Kyio",
-        "description":  "Moldie combat text at double height. Same colours, bigger numbers.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/moldieLarge",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-moldielarge-1.png",
-                         "./assets/package-previews/combat-text-moldielarge-2.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-scary-crits",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "Scary crits",
-        "folder":  "Scary crits",
-        "version":  "0.0.2",
-        "author":  "Stelfy",
-        "description":  "Red and black crits",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/Scary crits",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-scary-crits-1.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-simpcrits",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "Simp crits",
-        "folder":  "simpCrits",
-        "version":  "0.0.2",
-        "author":  "Griff",
-        "description":  "Simp crit themed combat text recolors, this change only the crits other combat text remains the same",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/simpCrits",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-simpcrits-1.png"
-                     ]
-    },
-    {
-        "id":  "combat-text-spookyhalloween",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "Spooky Halloween",
-        "folder":  "SpookyHalloween",
-        "version":  "1.0.0",
-        "author":  "Kyio",
-        "description":  "Void Halloween combat text: damage numbers in six colours, the miss, evade, block, immune and absorb words, status words, and a flock of bats on every crit.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/SpookyHalloween",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-spookyhalloween-1.gif",
-                         "./assets/package-previews/combat-text-spookyhalloween-2.jpg",
-                         "./assets/package-previews/combat-text-spookyhalloween-3.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-void",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "void",
-        "folder":  "void",
-        "version":  "1.0.0",
-        "author":  "Kyio",
-        "description":  "Void themed combat text recolors",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/void",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-void-1.png",
-                         "./assets/package-previews/combat-text-void-2.jpg"
-                     ]
-    },
-    {
-        "id":  "combat-text-voidlarge",
-        "category":  "Combat text",
-        "repo":  "RO_CombatText_resources",
-        "name":  "Void - large",
-        "folder":  "voidLarge",
-        "version":  "1.0.2",
-        "author":  "Kyio",
-        "description":  "Void combat text at double height. Same colours, bigger numbers.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/voidLarge",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
-        "previews":  [
-                         "./assets/package-previews/combat-text-voidlarge-1.png",
-                         "./assets/package-previews/combat-text-voidlarge-2.jpg"
-                     ]
-    },
-    {
-        "id":  "loot-crimson",
-        "category":  "Loot models",
-        "repo":  "RO_LootFilter_resources",
-        "name":  "Crimson Beams",
-        "folder":  "crimson",
-        "version":  "1.5.2",
-        "author":  "Kyio",
-        "description":  "Red beams and drop models across every drop group.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/crimson",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources",
-        "previews":  [
-                         "./assets/package-previews/loot-crimson-1.jpg"
-                     ]
-    },
-    {
-        "id":  "loot-meta",
-        "category":  "Loot models",
-        "repo":  "RO_LootFilter_resources",
-        "name":  "Farming meta",
-        "folder":  "Meta",
-        "version":  "1.1.3",
-        "author":  "Martin",
-        "description":  "Most efficient - Chemicals, Dirty, Effi, Event stuff and more",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/Meta",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources",
-        "previews":  [
-                         "./assets/package-previews/loot-meta-1.webp"
-                     ]
-    },
-    {
-        "id":  "loot-lime",
-        "category":  "Loot models",
-        "repo":  "RO_LootFilter_resources",
-        "name":  "Lime Beams",
-        "folder":  "lime",
-        "version":  "1.5.1",
-        "author":  "Kyio",
-        "description":  "Yellow-green beams and drop models across every drop group.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/lime",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources",
-        "previews":  [
-                         "./assets/package-previews/loot-lime-1.jpg"
-                     ]
-    },
-    {
-        "id":  "loot-moldie",
-        "category":  "Loot models",
-        "repo":  "RO_LootFilter_resources",
-        "name":  "Moldie Beams",
-        "folder":  "moldie",
-        "version":  "1.5.1",
-        "author":  "Kyio",
-        "description":  "Blue beams and drop models across every drop group.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/moldie",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources",
-        "previews":  [
-                         "./assets/package-previews/loot-moldie-1.jpg"
-                     ]
-    },
-    {
-        "id":  "loot-spookyhalloween",
-        "category":  "Loot models",
-        "repo":  "RO_LootFilter_resources",
-        "name":  "Spooky Halloween",
-        "folder":  "SpookyHalloween",
-        "version":  "1.0.0",
-        "author":  "Kyio",
-        "description":  "Void Halloween loot beams: bubbling cauldrons in six colours across every drop group.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/SpookyHalloween",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources",
-        "previews":  [
-                         "./assets/package-previews/loot-spookyhalloween-1.jpg",
-                         "./assets/package-previews/loot-spookyhalloween-2.jpg"
-                     ]
-    },
-    {
-        "id":  "loot-themed",
-        "category":  "Loot models",
-        "repo":  "RO_LootFilter_resources",
-        "name":  "Themed Beams",
-        "folder":  "themed",
-        "version":  "1.5.0",
-        "author":  "Kyio",
-        "description":  "Each drop group in the colour that echoes its own vanilla artwork, so the set is deliberately mixed rather than one colour.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/themed",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources",
-        "previews":  [
-                         "./assets/package-previews/loot-themed-1.jpg"
-                     ]
-    },
-    {
-        "id":  "loot-verdigris",
-        "category":  "Loot models",
-        "repo":  "RO_LootFilter_resources",
-        "name":  "Verdigris Beams",
-        "folder":  "verdigris",
-        "version":  "1.5.1",
-        "author":  "Kyio",
-        "description":  "Teal beams and drop models across every drop group.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/verdigris",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources",
-        "previews":  [
-                         "./assets/package-previews/loot-verdigris-1.jpg"
-                     ]
-    },
-    {
-        "id":  "loot-void",
-        "category":  "Loot models",
-        "repo":  "RO_LootFilter_resources",
-        "name":  "Void Beams",
-        "folder":  "void",
-        "version":  "1.5.1",
-        "author":  "Kyio",
-        "description":  "Violet beams and drop models across every drop group.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/void",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources",
-        "previews":  [
-                         "./assets/package-previews/loot-void-1.jpg"
-                     ]
-    },
-    {
-        "id":  "ui-ancient",
-        "category":  "UI themes",
-        "repo":  "RO_UserInterface_resources",
-        "name":  "Ancient",
-        "folder":  "Ancient",
-        "version":  "1.5.3",
-        "author":  "Kyio",
-        "description":  "Ancient themed UI and cursors. Aged green glass with a gold accent.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/Ancient",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources",
-        "previews":  [
-                         "./assets/package-previews/ui-ancient-1.jpg"
-                     ]
-    },
-    {
-        "id":  "ui-crimson",
-        "category":  "UI themes",
-        "repo":  "RO_UserInterface_resources",
-        "name":  "Crimson",
-        "folder":  "Crimson",
-        "version":  "1.5.3",
-        "author":  "Kyio",
-        "description":  "Crimson themed UI and cursors. Dark red glass with a warm accent.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/Crimson",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources",
-        "previews":  [
-                         "./assets/package-previews/ui-crimson-1.jpg"
-                     ]
-    },
-    {
-        "id":  "ui-moldie",
-        "category":  "UI themes",
-        "repo":  "RO_UserInterface_resources",
-        "name":  "Moldie",
-        "folder":  "Moldie",
-        "version":  "1.5.3",
-        "author":  "Kyio",
-        "description":  "Moldie themed UI and cursors. Blue-green glass.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/Moldie",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources",
-        "previews":  [
-                         "./assets/package-previews/ui-moldie-1.jpg"
-                     ]
-    },
-    {
-        "id":  "ui-spookyhalloween",
-        "category":  "UI themes",
-        "repo":  "RO_UserInterface_resources",
-        "name":  "Spooky Halloween",
-        "folder":  "SpookyHalloween",
-        "version":  "1.0.0",
-        "author":  "Kyio",
-        "description":  "Void Halloween interface: the spooky theme and its cursors, a tombstone around the minimap, and a reworked summon gauge.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/SpookyHalloween",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources",
-        "previews":  [
-                         "./assets/package-previews/ui-spookyhalloween-1.jpg",
-                         "./assets/package-previews/ui-spookyhalloween-2.jpg",
-                         "./assets/package-previews/ui-spookyhalloween-3.jpg"
-                     ]
-    },
-    {
-        "id":  "ui-void",
-        "category":  "UI themes",
-        "repo":  "RO_UserInterface_resources",
-        "name":  "Void",
-        "folder":  "Void",
-        "version":  "1.5.3",
-        "author":  "Kyio",
-        "description":  "Void themed UI and cursors. Dark violet glass with a magenta accent.",
-        "packageUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/Void",
-        "repoUrl":  "https://github.com/MartinBStudio/RO_UserInterface_resources",
-        "previews":  [
-                         "./assets/package-previews/ui-void-1.jpg"
-                     ]
-    }
-];
+window.RO_TOOLBOX_PACKAGES = [
+  {
+    "id": "buff-animations-modern",
+    "category": "Buff animations",
+    "repo": "RO_BuffAnimations_resources",
+    "name": "Modern",
+    "folder": "Modern",
+    "version": "0.0.1",
+    "author": "Kyio",
+    "description": "Modern themed buff animations. Sleek and contemporary design.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_BuffAnimations_resources/tree/master/Modern",
+    "repoUrl": "https://github.com/MartinBStudio/RO_BuffAnimations_resources",
+    "previews": [
+      "./assets/package-previews/buff-animations-modern-1.gif"
+    ]
+  },
+  {
+    "id": "buff-animations-spookyhalloween",
+    "category": "Buff animations",
+    "repo": "RO_BuffAnimations_resources",
+    "name": "Spooky Halloween",
+    "folder": "SpookyHalloween",
+    "version": "1.0.0",
+    "author": "Kyio",
+    "description": "Void Halloween buff animations: bats, will-o-wisps, a skull, a magic circle, an after-image, a soul lantern, a familiar, a well of souls, and an aurora around every summon.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_BuffAnimations_resources/tree/master/SpookyHalloween",
+    "repoUrl": "https://github.com/MartinBStudio/RO_BuffAnimations_resources",
+    "previews": [
+      "./assets/package-previews/buff-animations-spookyhalloween-1.gif",
+      "./assets/package-previews/buff-animations-spookyhalloween-2.jpg",
+      "./assets/package-previews/buff-animations-spookyhalloween-3.jpg"
+    ]
+  },
+  {
+    "id": "buff-icons-modern-background",
+    "category": "Buff icons",
+    "repo": "RO_BuffIcons_resources",
+    "name": "Modern Background",
+    "folder": "Modern Background",
+    "version": "0.0.4",
+    "author": "Kyio",
+    "description": "Symbols only themed buff icons with background.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_BuffIcons_resources/tree/master/Modern%20Background",
+    "repoUrl": "https://github.com/MartinBStudio/RO_BuffIcons_resources",
+    "previews": [
+      "./assets/package-previews/buff-icons-modern-background-1.jpg"
+    ]
+  },
+  {
+    "id": "buff-icons-modern-bordered",
+    "category": "Buff icons",
+    "repo": "RO_BuffIcons_resources",
+    "name": "Modern Bordered",
+    "folder": "Modern Bordered",
+    "version": "0.0.3",
+    "author": "Kyio",
+    "description": "Regal themed buff icons.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_BuffIcons_resources/tree/master/Modern%20Bordered",
+    "repoUrl": "https://github.com/MartinBStudio/RO_BuffIcons_resources",
+    "previews": [
+      "./assets/package-previews/buff-icons-modern-bordered-1.jpg"
+    ]
+  },
+  {
+    "id": "buff-icons-modern-compact",
+    "category": "Buff icons",
+    "repo": "RO_BuffIcons_resources",
+    "name": "Modern Compact",
+    "folder": "Modern Compact",
+    "version": "0.0.3",
+    "author": "Kyio",
+    "description": "Symbols only themed buff icons with no background.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_BuffIcons_resources/tree/master/Modern%20Compact",
+    "repoUrl": "https://github.com/MartinBStudio/RO_BuffIcons_resources",
+    "previews": [
+      "./assets/package-previews/buff-icons-modern-compact-1.jpg"
+    ]
+  },
+  {
+    "id": "buff-icons-spookyhalloween",
+    "category": "Buff icons",
+    "repo": "RO_BuffIcons_resources",
+    "name": "Spooky Halloween",
+    "folder": "SpookyHalloween",
+    "version": "1.0.0",
+    "author": "Kyio",
+    "description": "Void Halloween buff icons: a colour for every class, with a few seasonal treats to find.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_BuffIcons_resources/tree/master/SpookyHalloween",
+    "repoUrl": "https://github.com/MartinBStudio/RO_BuffIcons_resources",
+    "previews": [
+      "./assets/package-previews/buff-icons-spookyhalloween-1.jpg",
+      "./assets/package-previews/buff-icons-spookyhalloween-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-ancient",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "ancient",
+    "folder": "ancient",
+    "version": "0.0.4",
+    "author": "Kyio",
+    "description": "Ancient themed combat text recolors",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancient",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-ancient-1.png",
+      "./assets/package-previews/combat-text-ancient-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-ancientcritsonly",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "ancient - crits only",
+    "folder": "ancientCritsOnly",
+    "version": "0.0.5",
+    "author": "Kyio",
+    "description": "Ancient themed combat text recolors - display only crits",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancientCritsOnly",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-ancientcritsonly-1.png",
+      "./assets/package-previews/combat-text-ancientcritsonly-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-ancientlarge",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "Ancient - large",
+    "folder": "ancientLarge",
+    "version": "1.0.2",
+    "author": "Kyio",
+    "description": "Ancient combat text at double height. Same colours, bigger numbers.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancientLarge",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-ancientlarge-1.png",
+      "./assets/package-previews/combat-text-ancientlarge-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-crimson",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "crimson",
+    "folder": "crimson",
+    "version": "0.0.4",
+    "author": "Kyio",
+    "description": "Crimson themed combat text recolors",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/crimson",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-crimson-1.png",
+      "./assets/package-previews/combat-text-crimson-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-crimsonlarge",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "Crimson - large",
+    "folder": "crimsonLarge",
+    "version": "1.0.2",
+    "author": "Kyio",
+    "description": "Crimson combat text at double height. Same colours, bigger numbers.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/crimsonLarge",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-crimsonlarge-1.png",
+      "./assets/package-previews/combat-text-crimsonlarge-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-moldie",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "moldie",
+    "folder": "moldie",
+    "version": "0.0.4",
+    "author": "Kyio",
+    "description": "Moldie themed combat text recolors",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/moldie",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-moldie-1.png",
+      "./assets/package-previews/combat-text-moldie-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-moldielarge",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "Moldie - large",
+    "folder": "moldieLarge",
+    "version": "1.0.2",
+    "author": "Kyio",
+    "description": "Moldie combat text at double height. Same colours, bigger numbers.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/moldieLarge",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-moldielarge-1.png",
+      "./assets/package-previews/combat-text-moldielarge-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-scary-crits",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "Scary crits",
+    "folder": "Scary crits",
+    "version": "0.0.2",
+    "author": "Stelfy",
+    "description": "Red and black crits",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/Scary crits",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-scary-crits-1.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-simpcrits",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "Simp crits",
+    "folder": "simpCrits",
+    "version": "0.0.2",
+    "author": "Griff",
+    "description": "Simp crit themed combat text recolors, this change only the crits other combat text remains the same",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/simpCrits",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-simpcrits-1.png"
+    ]
+  },
+  {
+    "id": "combat-text-spookyhalloween",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "Spooky Halloween",
+    "folder": "SpookyHalloween",
+    "version": "1.0.0",
+    "author": "Kyio",
+    "description": "Void Halloween combat text: damage numbers in six colours, the miss, evade, block, immune and absorb words, status words, and a flock of bats on every crit.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/SpookyHalloween",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-spookyhalloween-1.gif",
+      "./assets/package-previews/combat-text-spookyhalloween-2.jpg",
+      "./assets/package-previews/combat-text-spookyhalloween-3.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-void",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "void",
+    "folder": "void",
+    "version": "1.0.0",
+    "author": "Kyio",
+    "description": "Void themed combat text recolors",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/void",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-void-1.png",
+      "./assets/package-previews/combat-text-void-2.jpg"
+    ]
+  },
+  {
+    "id": "combat-text-voidlarge",
+    "category": "Combat text",
+    "repo": "RO_CombatText_resources",
+    "name": "Void - large",
+    "folder": "voidLarge",
+    "version": "1.0.2",
+    "author": "Kyio",
+    "description": "Void combat text at double height. Same colours, bigger numbers.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/voidLarge",
+    "repoUrl": "https://github.com/MartinBStudio/RO_CombatText_resources",
+    "previews": [
+      "./assets/package-previews/combat-text-voidlarge-1.png",
+      "./assets/package-previews/combat-text-voidlarge-2.jpg"
+    ]
+  },
+  {
+    "id": "loot-crimson",
+    "category": "Loot models",
+    "repo": "RO_LootFilter_resources",
+    "name": "Crimson Beams",
+    "folder": "crimson",
+    "version": "1.5.2",
+    "author": "Kyio",
+    "description": "Red beams and drop models across every drop group.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/crimson",
+    "repoUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources",
+    "previews": [
+      "./assets/package-previews/loot-crimson-1.jpg"
+    ]
+  },
+  {
+    "id": "loot-meta",
+    "category": "Loot models",
+    "repo": "RO_LootFilter_resources",
+    "name": "Farming meta",
+    "folder": "Meta",
+    "version": "1.1.3",
+    "author": "Martin",
+    "description": "Most efficient - Chemicals, Dirty, Effi, Event stuff and more",
+    "packageUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/Meta",
+    "repoUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources",
+    "previews": [
+      "./assets/package-previews/loot-meta-1.webp"
+    ]
+  },
+  {
+    "id": "loot-lime",
+    "category": "Loot models",
+    "repo": "RO_LootFilter_resources",
+    "name": "Lime Beams",
+    "folder": "lime",
+    "version": "1.5.1",
+    "author": "Kyio",
+    "description": "Yellow-green beams and drop models across every drop group.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/lime",
+    "repoUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources",
+    "previews": [
+      "./assets/package-previews/loot-lime-1.jpg"
+    ]
+  },
+  {
+    "id": "loot-moldie",
+    "category": "Loot models",
+    "repo": "RO_LootFilter_resources",
+    "name": "Moldie Beams",
+    "folder": "moldie",
+    "version": "1.5.1",
+    "author": "Kyio",
+    "description": "Blue beams and drop models across every drop group.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/moldie",
+    "repoUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources",
+    "previews": [
+      "./assets/package-previews/loot-moldie-1.jpg"
+    ]
+  },
+  {
+    "id": "loot-spookyhalloween",
+    "category": "Loot models",
+    "repo": "RO_LootFilter_resources",
+    "name": "Spooky Halloween",
+    "folder": "SpookyHalloween",
+    "version": "1.0.0",
+    "author": "Kyio",
+    "description": "Void Halloween loot beams: bubbling cauldrons in six colours across every drop group.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/SpookyHalloween",
+    "repoUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources",
+    "previews": [
+      "./assets/package-previews/loot-spookyhalloween-1.jpg",
+      "./assets/package-previews/loot-spookyhalloween-2.jpg"
+    ]
+  },
+  {
+    "id": "loot-themed",
+    "category": "Loot models",
+    "repo": "RO_LootFilter_resources",
+    "name": "Themed Beams",
+    "folder": "themed",
+    "version": "1.5.0",
+    "author": "Kyio",
+    "description": "Each drop group in the colour that echoes its own vanilla artwork, so the set is deliberately mixed rather than one colour.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/themed",
+    "repoUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources",
+    "previews": [
+      "./assets/package-previews/loot-themed-1.jpg"
+    ]
+  },
+  {
+    "id": "loot-verdigris",
+    "category": "Loot models",
+    "repo": "RO_LootFilter_resources",
+    "name": "Verdigris Beams",
+    "folder": "verdigris",
+    "version": "1.5.1",
+    "author": "Kyio",
+    "description": "Teal beams and drop models across every drop group.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/verdigris",
+    "repoUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources",
+    "previews": [
+      "./assets/package-previews/loot-verdigris-1.jpg"
+    ]
+  },
+  {
+    "id": "loot-void",
+    "category": "Loot models",
+    "repo": "RO_LootFilter_resources",
+    "name": "Void Beams",
+    "folder": "void",
+    "version": "1.5.1",
+    "author": "Kyio",
+    "description": "Violet beams and drop models across every drop group.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/void",
+    "repoUrl": "https://github.com/MartinBStudio/RO_LootFilter_resources",
+    "previews": [
+      "./assets/package-previews/loot-void-1.jpg"
+    ]
+  },
+  {
+    "id": "ui-ancient",
+    "category": "UI themes",
+    "repo": "RO_UserInterface_resources",
+    "name": "Ancient",
+    "folder": "Ancient",
+    "version": "1.5.3",
+    "author": "Kyio",
+    "description": "Ancient themed UI and cursors. Aged green glass with a gold accent.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/Ancient",
+    "repoUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources",
+    "previews": [
+      "./assets/package-previews/ui-ancient-1.jpg"
+    ]
+  },
+  {
+    "id": "ui-crimson",
+    "category": "UI themes",
+    "repo": "RO_UserInterface_resources",
+    "name": "Crimson",
+    "folder": "Crimson",
+    "version": "1.5.3",
+    "author": "Kyio",
+    "description": "Crimson themed UI and cursors. Dark red glass with a warm accent.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/Crimson",
+    "repoUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources",
+    "previews": [
+      "./assets/package-previews/ui-crimson-1.jpg"
+    ]
+  },
+  {
+    "id": "ui-moldie",
+    "category": "UI themes",
+    "repo": "RO_UserInterface_resources",
+    "name": "Moldie",
+    "folder": "Moldie",
+    "version": "1.5.3",
+    "author": "Kyio",
+    "description": "Moldie themed UI and cursors. Blue-green glass.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/Moldie",
+    "repoUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources",
+    "previews": [
+      "./assets/package-previews/ui-moldie-1.jpg"
+    ]
+  },
+  {
+    "id": "ui-spookyhalloween",
+    "category": "UI themes",
+    "repo": "RO_UserInterface_resources",
+    "name": "Spooky Halloween",
+    "folder": "SpookyHalloween",
+    "version": "1.0.0",
+    "author": "Kyio",
+    "description": "Void Halloween interface: the spooky theme and its cursors, a tombstone around the minimap, and a reworked summon gauge.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/SpookyHalloween",
+    "repoUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources",
+    "previews": [
+      "./assets/package-previews/ui-spookyhalloween-1.jpg",
+      "./assets/package-previews/ui-spookyhalloween-2.jpg",
+      "./assets/package-previews/ui-spookyhalloween-3.jpg"
+    ]
+  },
+  {
+    "id": "ui-void",
+    "category": "UI themes",
+    "repo": "RO_UserInterface_resources",
+    "name": "Void",
+    "folder": "Void",
+    "version": "1.5.3",
+    "author": "Kyio",
+    "description": "Void themed UI and cursors. Dark violet glass with a magenta accent.",
+    "packageUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources/tree/master/Void",
+    "repoUrl": "https://github.com/MartinBStudio/RO_UserInterface_resources",
+    "previews": [
+      "./assets/package-previews/ui-void-1.jpg"
+    ]
+  }
+]
