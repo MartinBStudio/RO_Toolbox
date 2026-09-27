@@ -19,7 +19,18 @@ const packages = Array.isArray(window.RO_TOOLBOX_PACKAGES) ? window.RO_TOOLBOX_P
 const packageGrid = document.getElementById("packageGrid");
 const packageFilters = document.getElementById("packageFilters");
 const packageSearch = document.getElementById("packageSearch");
+const contributorGrid = document.getElementById("contributorGrid");
+const previewModal = document.getElementById("previewModal");
+const previewModalTitle = document.getElementById("previewModalTitle");
+const previewModalMeta = document.getElementById("previewModalMeta");
+const previewModalImage = document.getElementById("previewModalImage");
+const previewModalCounter = document.getElementById("previewModalCounter");
+const previewModalPackageLink = document.getElementById("previewModalPackageLink");
+const previewPrev = document.getElementById("previewPrev");
+const previewNext = document.getElementById("previewNext");
 let activeCategory = "All";
+let activePreviewPackage = null;
+let activePreviewIndex = 0;
 
 function escapeHtml(value) {
   return String(value || "")
@@ -97,10 +108,10 @@ function renderPackages() {
 
       return `
         <article class="package-card is-${escapeHtml(categoryClass)}">
-          <a class="package-media" href="${escapeHtml(pkg.packageUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHtml(pkg.name)} package">
+          <button type="button" class="package-media" data-preview-package="${escapeHtml(pkg.id)}" aria-label="Open ${escapeHtml(pkg.name)} preview">
             <img src="${escapeHtml(firstPreview)}" alt="${escapeHtml(pkg.name)} preview" loading="lazy" />
             ${previewCount}
-          </a>
+          </button>
           <div>
             <div class="package-meta">
               <span class="package-pill">${escapeHtml(pkg.category)}</span>
@@ -118,6 +129,118 @@ function renderPackages() {
       `;
     })
     .join("");
+
+  packageGrid.querySelectorAll("[data-preview-package]").forEach((button) => {
+    button.addEventListener("click", () => {
+      openPreview(button.dataset.previewPackage || "");
+    });
+  });
+}
+
+function renderContributors() {
+  if (!contributorGrid) {
+    return;
+  }
+
+  const contributors = new Map();
+  packages.forEach((pkg) => {
+    const author = pkg.author && pkg.author.trim() ? pkg.author.trim() : "Unknown";
+    if (!contributors.has(author)) {
+      contributors.set(author, {
+        name: author,
+        count: 0,
+        categories: new Set(),
+        packages: []
+      });
+    }
+
+    const contributor = contributors.get(author);
+    contributor.count += 1;
+    contributor.categories.add(pkg.category);
+    contributor.packages.push(pkg.name);
+  });
+
+  contributorGrid.innerHTML = Array.from(contributors.values())
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .map((contributor) => {
+      const categories = Array.from(contributor.categories).sort();
+      const packageList = contributor.packages.slice(0, 4).join(", ");
+      const extraCount = contributor.packages.length > 4 ? ` and ${contributor.packages.length - 4} more` : "";
+      return `
+        <article class="contributor-card">
+          <div>
+            <p class="eyebrow">Contributor</p>
+            <h3>${escapeHtml(contributor.name)}</h3>
+          </div>
+          <div class="contributor-stats">
+            <span class="package-pill">${contributor.count} package${contributor.count === 1 ? "" : "s"}</span>
+            ${categories.map((category) => `<span class="package-pill">${escapeHtml(category)}</span>`).join("")}
+          </div>
+          <p>${escapeHtml(packageList + extraCount)}</p>
+        </article>
+      `;
+    })
+    .join("");
+}
+
+function updatePreviewModal() {
+  if (!activePreviewPackage || !previewModalImage || !previewModalTitle) {
+    return;
+  }
+
+  const previews = activePreviewPackage.previews || [];
+  const src = previews[activePreviewIndex] || "";
+  previewModalTitle.textContent = activePreviewPackage.name || "Preview";
+  previewModalMeta.textContent = `${activePreviewPackage.category || "Package"} · ${activePreviewPackage.repo || ""}`;
+  previewModalImage.src = src;
+  previewModalImage.alt = `${activePreviewPackage.name || "Package"} preview ${activePreviewIndex + 1}`;
+  previewModalCounter.textContent = `${activePreviewIndex + 1} of ${previews.length}`;
+  previewModalPackageLink.href = activePreviewPackage.packageUrl || "#";
+
+  const hasMultiple = previews.length > 1;
+  previewPrev.disabled = !hasMultiple;
+  previewNext.disabled = !hasMultiple;
+}
+
+function openPreview(packageId) {
+  const pkg = packages.find((item) => item.id === packageId);
+  if (!pkg || !previewModal) {
+    return;
+  }
+
+  activePreviewPackage = pkg;
+  activePreviewIndex = 0;
+  updatePreviewModal();
+  previewModal.classList.add("is-open");
+  previewModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+  previewModal.querySelector("[data-preview-close]").focus();
+}
+
+function closePreview() {
+  if (!previewModal) {
+    return;
+  }
+
+  previewModal.classList.remove("is-open");
+  previewModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("modal-open");
+  activePreviewPackage = null;
+  activePreviewIndex = 0;
+}
+
+function movePreview(direction) {
+  if (!activePreviewPackage) {
+    return;
+  }
+
+  const total = activePreviewPackage.previews.length;
+  if (total <= 1) {
+    return;
+  }
+
+  activePreviewIndex = (activePreviewIndex + direction + total) % total;
+  updatePreviewModal();
 }
 
 if (packageSearch) {
@@ -126,6 +249,33 @@ if (packageSearch) {
 
 renderPackageFilters();
 renderPackages();
+renderContributors();
+
+document.querySelectorAll("[data-preview-close]").forEach((button) => {
+  button.addEventListener("click", closePreview);
+});
+
+if (previewPrev) {
+  previewPrev.addEventListener("click", () => movePreview(-1));
+}
+
+if (previewNext) {
+  previewNext.addEventListener("click", () => movePreview(1));
+}
+
+window.addEventListener("keydown", (event) => {
+  if (!previewModal || !previewModal.classList.contains("is-open")) {
+    return;
+  }
+
+  if (event.key === "Escape") {
+    closePreview();
+  } else if (event.key === "ArrowLeft") {
+    movePreview(-1);
+  } else if (event.key === "ArrowRight") {
+    movePreview(1);
+  }
+});
 
 connectSearch("releaseSearch", "#releaseTimeline article", (item) => {
   return `${item.dataset.text || ""} ${item.textContent || ""}`;
