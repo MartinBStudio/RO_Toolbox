@@ -16,6 +16,7 @@ function connectSearch(inputId, itemSelector, textReader) {
 }
 
 const packages = Array.isArray(window.RO_TOOLBOX_PACKAGES) ? window.RO_TOOLBOX_PACKAGES : [];
+const displayPackages = buildDisplayPackages(packages);
 const packageGrid = document.getElementById("packageGrid");
 const packageFilters = document.getElementById("packageFilters");
 const packageSearch = document.getElementById("packageSearch");
@@ -45,10 +46,86 @@ function packageSearchText(pkg) {
     pkg.repo,
     pkg.name,
     pkg.folder,
+    ...(pkg.variantNames || []),
+    ...(pkg.variantFolders || []),
     pkg.version,
     pkg.author,
     pkg.description
   ].join(" ").toLowerCase();
+}
+
+function titleCasePackageName(value) {
+  return String(value || "")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .split(" ")
+    .map((word) => word ? word.charAt(0).toUpperCase() + word.slice(1) : "")
+    .join(" ");
+}
+
+function normalizedPackageFamily(pkg) {
+  const source = String(pkg.folder || pkg.name || pkg.id || "").trim();
+  const normalized = source
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+
+  if (pkg.category !== "Combat text") {
+    return normalized;
+  }
+
+  return normalized
+    .replace(/\s+crits\s+only$/i, "")
+    .replace(/\s+large$/i, "")
+    .trim();
+}
+
+function packageFamilyKey(pkg) {
+  return `${pkg.category || "Package"}:${normalizedPackageFamily(pkg)}`;
+}
+
+function mergeUnique(values) {
+  const seen = new Set();
+  return values.filter((value) => {
+    if (!value || seen.has(value)) {
+      return false;
+    }
+
+    seen.add(value);
+    return true;
+  });
+}
+
+function buildDisplayPackages(sourcePackages) {
+  const groups = new Map();
+
+  sourcePackages.forEach((pkg) => {
+    const key = packageFamilyKey(pkg);
+    if (!groups.has(key)) {
+      groups.set(key, []);
+    }
+
+    groups.get(key).push(pkg);
+  });
+
+  return Array.from(groups.entries()).map(([familyKey, group]) => {
+    const family = familyKey.split(":").slice(1).join(":");
+    const base = group.find((pkg) => String(pkg.folder || "").trim().toLowerCase() === family) || group[0];
+
+    return {
+      ...base,
+      id: familyKey,
+      name: titleCasePackageName(family || base.name),
+      previews: mergeUnique(group.flatMap((pkg) => pkg.previews || [])),
+      variantNames: mergeUnique(group.map((pkg) => pkg.name)),
+      variantFolders: mergeUnique(group.map((pkg) => pkg.folder)),
+      variantCount: group.length
+    };
+  });
 }
 
 function toClassName(value) {
@@ -63,10 +140,10 @@ function renderPackageFilters() {
     return;
   }
 
-  const categories = ["All", ...new Set(packages.map((pkg) => pkg.category).filter(Boolean))];
+  const categories = ["All", ...new Set(displayPackages.map((pkg) => pkg.category).filter(Boolean))];
   packageFilters.innerHTML = categories
     .map((category) => {
-      const count = category === "All" ? packages.length : packages.filter((pkg) => pkg.category === category).length;
+      const count = category === "All" ? displayPackages.length : displayPackages.filter((pkg) => pkg.category === category).length;
       return `<button type="button" class="filter-button${category === activeCategory ? " is-active" : ""}" data-category="${escapeHtml(category)}">${escapeHtml(category)} (${count})</button>`;
     })
     .join("");
@@ -86,7 +163,7 @@ function renderPackages() {
   }
 
   const query = packageSearch ? packageSearch.value.trim().toLowerCase() : "";
-  const visible = packages.filter((pkg) => {
+  const visible = displayPackages.filter((pkg) => {
     const categoryMatches = activeCategory === "All" || pkg.category === activeCategory;
     const searchMatches = !query || packageSearchText(pkg).includes(query);
     return categoryMatches && searchMatches;
@@ -103,6 +180,7 @@ function renderPackages() {
       const previewCount = pkg.previews && pkg.previews.length > 1 ? `<span class="preview-count">${pkg.previews.length} previews</span>` : "";
       const version = pkg.version ? `<span class="package-pill">v${escapeHtml(pkg.version)}</span>` : "";
       const author = pkg.author ? `<span class="package-pill">by ${escapeHtml(pkg.author)}</span>` : "";
+      const variants = pkg.variantCount > 1 ? `<span class="package-pill">${pkg.variantCount} variants</span>` : "";
       const categoryClass = toClassName(pkg.category);
 
       return `
@@ -116,6 +194,7 @@ function renderPackages() {
               <span class="package-pill">${escapeHtml(pkg.category)}</span>
               ${version}
               ${author}
+              ${variants}
             </div>
             <h3>${escapeHtml(pkg.name)}</h3>
             <p>${escapeHtml(pkg.description)}</p>
@@ -156,7 +235,7 @@ function updatePreviewModal() {
 }
 
 function openPreview(packageId) {
-  const pkg = packages.find((item) => item.id === packageId);
+  const pkg = displayPackages.find((item) => item.id === packageId);
   if (!pkg || !previewModal) {
     return;
   }
