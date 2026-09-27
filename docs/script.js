@@ -19,7 +19,6 @@ const packages = Array.isArray(window.RO_TOOLBOX_PACKAGES) ? window.RO_TOOLBOX_P
 const packageGrid = document.getElementById("packageGrid");
 const packageFilters = document.getElementById("packageFilters");
 const packageSearch = document.getElementById("packageSearch");
-const contributorGrid = document.getElementById("contributorGrid");
 const previewModal = document.getElementById("previewModal");
 const previewModalTitle = document.getElementById("previewModalTitle");
 const previewModalMeta = document.getElementById("previewModalMeta");
@@ -137,52 +136,6 @@ function renderPackages() {
   });
 }
 
-function renderContributors() {
-  if (!contributorGrid) {
-    return;
-  }
-
-  const contributors = new Map();
-  packages.forEach((pkg) => {
-    const author = pkg.author && pkg.author.trim() ? pkg.author.trim() : "Unknown";
-    if (!contributors.has(author)) {
-      contributors.set(author, {
-        name: author,
-        count: 0,
-        categories: new Set(),
-        packages: []
-      });
-    }
-
-    const contributor = contributors.get(author);
-    contributor.count += 1;
-    contributor.categories.add(pkg.category);
-    contributor.packages.push(pkg.name);
-  });
-
-  contributorGrid.innerHTML = Array.from(contributors.values())
-    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
-    .map((contributor) => {
-      const categories = Array.from(contributor.categories).sort();
-      const packageList = contributor.packages.slice(0, 4).join(", ");
-      const extraCount = contributor.packages.length > 4 ? ` and ${contributor.packages.length - 4} more` : "";
-      return `
-        <article class="contributor-card">
-          <div>
-            <p class="eyebrow">Contributor</p>
-            <h3>${escapeHtml(contributor.name)}</h3>
-          </div>
-          <div class="contributor-stats">
-            <span class="package-pill">${contributor.count} package${contributor.count === 1 ? "" : "s"}</span>
-            ${categories.map((category) => `<span class="package-pill">${escapeHtml(category)}</span>`).join("")}
-          </div>
-          <p>${escapeHtml(packageList + extraCount)}</p>
-        </article>
-      `;
-    })
-    .join("");
-}
-
 function updatePreviewModal() {
   if (!activePreviewPackage || !previewModalImage || !previewModalTitle) {
     return;
@@ -249,7 +202,6 @@ if (packageSearch) {
 
 renderPackageFilters();
 renderPackages();
-renderContributors();
 
 document.querySelectorAll("[data-preview-close]").forEach((button) => {
   button.addEventListener("click", closePreview);
