@@ -41,6 +41,13 @@ function packageSearchText(pkg) {
   ].join(" ").toLowerCase();
 }
 
+function toClassName(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 function renderPackageFilters() {
   if (!packageFilters) {
     return;
@@ -86,9 +93,10 @@ function renderPackages() {
       const previewCount = pkg.previews && pkg.previews.length > 1 ? `<span class="preview-count">${pkg.previews.length} previews</span>` : "";
       const version = pkg.version ? `<span class="package-pill">v${escapeHtml(pkg.version)}</span>` : "";
       const author = pkg.author ? `<span class="package-pill">by ${escapeHtml(pkg.author)}</span>` : "";
+      const categoryClass = toClassName(pkg.category);
 
       return `
-        <article class="package-card">
+        <article class="package-card is-${escapeHtml(categoryClass)}">
           <a class="package-media" href="${escapeHtml(pkg.packageUrl)}" target="_blank" rel="noopener noreferrer" aria-label="Open ${escapeHtml(pkg.name)} package">
             <img src="${escapeHtml(firstPreview)}" alt="${escapeHtml(pkg.name)} preview" loading="lazy" />
             ${previewCount}
