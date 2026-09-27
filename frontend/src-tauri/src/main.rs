@@ -12,17 +12,25 @@ use tauri::{AppHandle, Manager, RunEvent};
 
 #[cfg(windows)]
 use std::os::windows::process::CommandExt;
+#[cfg(windows)]
+use std::os::windows::io::AsRawHandle;
 
 #[cfg(windows)]
 use windows::core::{Interface, GUID, HSTRING};
 #[cfg(windows)]
-use windows::Win32::Foundation::PROPERTYKEY;
+use windows::Win32::Foundation::{CloseHandle, HANDLE, PROPERTYKEY};
 #[cfg(windows)]
 use windows::Win32::System::Com::StructuredStorage::PROPVARIANT;
 #[cfg(windows)]
 use windows::Win32::System::Com::{
     CoCreateInstance, CoInitializeEx, CoUninitialize, CLSCTX_INPROC_SERVER,
     COINIT_APARTMENTTHREADED,
+};
+#[cfg(windows)]
+use windows::Win32::System::JobObjects::{
+    AssignProcessToJobObject, CreateJobObjectW, SetInformationJobObject,
+    JobObjectExtendedLimitInformation, JOBOBJECT_EXTENDED_LIMIT_INFORMATION,
+    JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
 };
 #[cfg(windows)]
 use windows::Win32::UI::Shell::Common::{IObjectArray, IObjectCollection};
@@ -44,6 +52,8 @@ const PKEY_TITLE: PROPERTYKEY = PROPERTYKEY {
 struct BackendState {
     child: Mutex<Option<Child>>,
     port: Mutex<Option<u16>>,
+    #[cfg(windows)]
+    job_handle: Mutex<Option<isize>>,
 }
 
 #[derive(Deserialize)]
@@ -131,6 +141,8 @@ fn main() {
         .manage(BackendState {
             child: Mutex::new(None),
             port: Mutex::new(None),
+            #[cfg(windows)]
+            job_handle: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             stop_backend,
@@ -165,6 +177,24 @@ fn main() {
                     ));
 
                     let state = app.state::<BackendState>();
+
+                    #[cfg(windows)]
+                    match attach_child_to_kill_on_close_job(&child) {
+                        Ok(job_handle) => {
+                            *state
+                                .job_handle
+                                .lock()
+                                .expect("backend job lock poisoned") =
+                                Some(job_handle.0 as isize);
+                        }
+
+                        Err(err) => {
+                            eprintln!(
+                                "[RO Toolbox] Failed to attach backend \
+                                 to cleanup job: {err}"
+                            );
+                        }
+                    }
 
                     *state
                         .child
@@ -215,6 +245,9 @@ fn stop_backend_child(state: &BackendState) {
     if let Some(child) = child {
         terminate_backend_process(child);
     }
+
+    #[cfg(windows)]
+    close_backend_job_handle(state);
 }
 
 fn terminate_backend_process(mut child: Child) {
@@ -262,6 +295,58 @@ fn terminate_process_tree_windows(pid: u32) {
              (PID {}): {}",
             pid, err
         );
+    }
+}
+
+#[cfg(windows)]
+fn attach_child_to_kill_on_close_job(
+    child: &Child,
+) -> Result<HANDLE, String> {
+    let job = unsafe { CreateJobObjectW(None, None) }
+        .map_err(|err| format!("CreateJobObjectW failed: {err}"))?;
+
+    let mut info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
+    info.BasicLimitInformation.LimitFlags =
+        JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+
+    unsafe {
+        SetInformationJobObject(
+            job,
+            JobObjectExtendedLimitInformation,
+            &info as *const _ as *const std::ffi::c_void,
+            std::mem::size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>()
+                as u32,
+        )
+        .map_err(|err| {
+            let _ = CloseHandle(job);
+            format!("SetInformationJobObject failed: {err}")
+        })?;
+
+        AssignProcessToJobObject(
+            job,
+            HANDLE(child.as_raw_handle()),
+        )
+        .map_err(|err| {
+            let _ = CloseHandle(job);
+            format!("AssignProcessToJobObject failed: {err}")
+        })?;
+    }
+
+    Ok(job)
+}
+
+#[cfg(windows)]
+fn close_backend_job_handle(state: &BackendState) {
+    let job_handle = state
+        .job_handle
+        .lock()
+        .expect("backend job lock poisoned")
+        .take();
+
+    if let Some(job_handle) = job_handle {
+        unsafe {
+            let _ = CloseHandle(HANDLE(job_handle as *mut std::ffi::c_void));
+        }
     }
 }
 

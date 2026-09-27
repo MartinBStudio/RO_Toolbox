@@ -9,6 +9,8 @@ This update refreshes the app footer links.
 
 * **RO Toolbox website link**: The footer now links to the RO Toolbox website.
 * **Official ROSE Online link**: Replaced the forum thread link with the official ROSE Online website.
+* **Startup close option**: If initial loading takes too long, the startup screen now shows a close button so the app can be exited cleanly.
+* **Backend cleanup**: The bundled Java backend is now tied to the app process on Windows, helping prevent OpenJDK from staying open after RO Toolbox is closed or interrupted.
 
 
 ## v1.0.6 - Live Loot Model Previews
