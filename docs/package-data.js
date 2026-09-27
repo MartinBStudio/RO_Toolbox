@@ -37,13 +37,14 @@
         "repo":  "RO_CombatText_resources",
         "name":  "ancient",
         "folder":  "ancient",
-        "version":  "0.0.3",
+        "version":  "0.0.4",
         "author":  "Kyio",
         "description":  "Ancient themed combat text recolors",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancient",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-ancient-1.jpg"
+                         "./assets/package-previews/combat-text-ancient-1.png",
+                         "./assets/package-previews/combat-text-ancient-2.jpg"
                      ]
     },
     {
@@ -52,13 +53,14 @@
         "repo":  "RO_CombatText_resources",
         "name":  "ancient - crits only",
         "folder":  "ancientCritsOnly",
-        "version":  "0.0.4",
+        "version":  "0.0.5",
         "author":  "Kyio",
         "description":  "Ancient themed combat text recolors - display only crits",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancientCritsOnly",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-ancientcritsonly-1.jpg"
+                         "./assets/package-previews/combat-text-ancientcritsonly-1.png",
+                         "./assets/package-previews/combat-text-ancientcritsonly-2.jpg"
                      ]
     },
     {
@@ -67,13 +69,14 @@
         "repo":  "RO_CombatText_resources",
         "name":  "Ancient - large",
         "folder":  "ancientLarge",
-        "version":  "1.0.1",
+        "version":  "1.0.2",
         "author":  "Kyio",
         "description":  "Ancient combat text at double height. Same colours, bigger numbers.",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/ancientLarge",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-ancientlarge-1.jpg"
+                         "./assets/package-previews/combat-text-ancientlarge-1.png",
+                         "./assets/package-previews/combat-text-ancientlarge-2.jpg"
                      ]
     },
     {
@@ -82,13 +85,14 @@
         "repo":  "RO_CombatText_resources",
         "name":  "crimson",
         "folder":  "crimson",
-        "version":  "0.0.3",
+        "version":  "0.0.4",
         "author":  "Kyio",
         "description":  "Crimson themed combat text recolors",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/crimson",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-crimson-1.jpg"
+                         "./assets/package-previews/combat-text-crimson-1.png",
+                         "./assets/package-previews/combat-text-crimson-2.jpg"
                      ]
     },
     {
@@ -97,13 +101,14 @@
         "repo":  "RO_CombatText_resources",
         "name":  "Crimson - large",
         "folder":  "crimsonLarge",
-        "version":  "1.0.1",
+        "version":  "1.0.2",
         "author":  "Kyio",
         "description":  "Crimson combat text at double height. Same colours, bigger numbers.",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/crimsonLarge",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-crimsonlarge-1.jpg"
+                         "./assets/package-previews/combat-text-crimsonlarge-1.png",
+                         "./assets/package-previews/combat-text-crimsonlarge-2.jpg"
                      ]
     },
     {
@@ -112,13 +117,14 @@
         "repo":  "RO_CombatText_resources",
         "name":  "moldie",
         "folder":  "moldie",
-        "version":  "0.0.3",
+        "version":  "0.0.4",
         "author":  "Kyio",
         "description":  "Moldie themed combat text recolors",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/moldie",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-moldie-1.jpg"
+                         "./assets/package-previews/combat-text-moldie-1.png",
+                         "./assets/package-previews/combat-text-moldie-2.jpg"
                      ]
     },
     {
@@ -127,13 +133,14 @@
         "repo":  "RO_CombatText_resources",
         "name":  "Moldie - large",
         "folder":  "moldieLarge",
-        "version":  "1.0.1",
+        "version":  "1.0.2",
         "author":  "Kyio",
         "description":  "Moldie combat text at double height. Same colours, bigger numbers.",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/moldieLarge",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-moldielarge-1.jpg"
+                         "./assets/package-previews/combat-text-moldielarge-1.png",
+                         "./assets/package-previews/combat-text-moldielarge-2.jpg"
                      ]
     },
     {
@@ -142,8 +149,8 @@
         "repo":  "RO_CombatText_resources",
         "name":  "Scary crits",
         "folder":  "Scary crits",
-        "version":  "0.0.1",
-        "author":  "Unknown",
+        "version":  "0.0.2",
+        "author":  "Stelfy",
         "description":  "Red and black crits",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/Scary crits",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
@@ -189,13 +196,14 @@
         "repo":  "RO_CombatText_resources",
         "name":  "void",
         "folder":  "void",
-        "version":  "0.0.3",
+        "version":  "1.0.0",
         "author":  "Kyio",
         "description":  "Void themed combat text recolors",
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/void",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-void-1.jpg"
+                         "./assets/package-previews/combat-text-void-1.png",
+                         "./assets/package-previews/combat-text-void-2.jpg"
                      ]
     },
     {
@@ -210,7 +218,8 @@
         "packageUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources/tree/master/voidLarge",
         "repoUrl":  "https://github.com/MartinBStudio/RO_CombatText_resources",
         "previews":  [
-                         "./assets/package-previews/combat-text-voidlarge-1.jpg"
+                         "./assets/package-previews/combat-text-voidlarge-1.png",
+                         "./assets/package-previews/combat-text-voidlarge-2.jpg"
                      ]
     },
     {
@@ -234,7 +243,7 @@
         "repo":  "RO_LootFilter_resources",
         "name":  "Farming meta",
         "folder":  "Meta",
-        "version":  "1.1.2",
+        "version":  "1.1.3",
         "author":  "Martin",
         "description":  "Most efficient - Chemicals, Dirty, Effi, Event stuff and more",
         "packageUrl":  "https://github.com/MartinBStudio/RO_LootFilter_resources/tree/master/Meta",
@@ -411,5 +420,4 @@
                          "./assets/package-previews/ui-void-1.jpg"
                      ]
     }
-]
-;
+];
