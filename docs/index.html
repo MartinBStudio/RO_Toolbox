@@ -26,6 +26,7 @@
           <a href="#features">Features</a>
           <a href="#resources">Resources</a>
           <a href="#previews">Previews</a>
+          <a href="#contributors">Contributors</a>
           <a href="#releases">Releases</a>
         </nav>
         <a class="download-link" href="https://github.com/MartinBStudio/RO_Toolbox/releases">Download</a>
@@ -143,6 +144,18 @@
           <div class="package-grid" id="packageGrid"></div>
         </section>
 
+        <section id="contributors" class="section">
+          <div class="section-heading">
+            <p class="eyebrow">Community</p>
+            <h2>Resource contributors</h2>
+            <p>
+              Authors are collected from the package manifests in the resource repositories, with a quick view of
+              the package areas they contributed to.
+            </p>
+          </div>
+          <div class="contributor-grid" id="contributorGrid"></div>
+        </section>
+
         <section id="releases" class="section">
           <div class="section-heading row-heading">
             <div>
@@ -190,6 +203,28 @@
         <span>RO Toolbox by BStudio</span>
         <a href="https://github.com/MartinBStudio/RO_Toolbox/issues">Issues and suggestions</a>
       </footer>
+    </div>
+    <div class="preview-modal" id="previewModal" aria-hidden="true">
+      <button type="button" class="preview-backdrop" data-preview-close aria-label="Close preview"></button>
+      <section class="preview-dialog" role="dialog" aria-modal="true" aria-labelledby="previewModalTitle">
+        <header class="preview-dialog-header">
+          <div>
+            <p class="eyebrow">Package preview</p>
+            <h2 id="previewModalTitle">Preview</h2>
+            <p id="previewModalMeta"></p>
+          </div>
+          <button type="button" class="preview-close" data-preview-close aria-label="Close preview">Close</button>
+        </header>
+        <div class="preview-stage">
+          <button type="button" class="preview-nav preview-nav-prev" id="previewPrev" aria-label="Previous preview">&lt;</button>
+          <img id="previewModalImage" alt="" />
+          <button type="button" class="preview-nav preview-nav-next" id="previewNext" aria-label="Next preview">&gt;</button>
+        </div>
+        <footer class="preview-dialog-footer">
+          <span id="previewModalCounter"></span>
+          <a id="previewModalPackageLink" href="#" target="_blank" rel="noopener noreferrer">Open package</a>
+        </footer>
+      </section>
     </div>
     <script src="./package-data.js"></script>
     <script src="./script.js"></script>
