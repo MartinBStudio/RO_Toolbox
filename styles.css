@@ -451,10 +451,6 @@ input[type="search"] {
 }
 
 .package-card footer {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 0.7rem;
   margin-top: 0.1rem;
   color: var(--soft);
   font-size: 0.9rem;
@@ -465,12 +461,6 @@ input[type="search"] {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.package-card footer a {
-  color: #d8e7ff;
-  font-weight: 800;
   white-space: nowrap;
 }
 

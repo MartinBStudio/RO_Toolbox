@@ -25,7 +25,6 @@ const previewModalTitle = document.getElementById("previewModalTitle");
 const previewModalMeta = document.getElementById("previewModalMeta");
 const previewModalImage = document.getElementById("previewModalImage");
 const previewModalCounter = document.getElementById("previewModalCounter");
-const previewModalPackageLink = document.getElementById("previewModalPackageLink");
 const previewPrev = document.getElementById("previewPrev");
 const previewNext = document.getElementById("previewNext");
 let activeCategory = "All";
@@ -201,7 +200,6 @@ function renderPackages() {
           </div>
           <footer>
             <span>${escapeHtml(pkg.repo)}</span>
-            <a href="${escapeHtml(pkg.packageUrl)}" target="_blank" rel="noopener noreferrer">Open package</a>
           </footer>
         </article>
       `;
@@ -227,7 +225,6 @@ function updatePreviewModal() {
   previewModalImage.src = src;
   previewModalImage.alt = `${activePreviewPackage.name || "Package"} preview ${activePreviewIndex + 1}`;
   previewModalCounter.textContent = `${activePreviewIndex + 1} of ${previews.length}`;
-  previewModalPackageLink.href = activePreviewPackage.packageUrl || "#";
 
   const hasMultiple = previews.length > 1;
   previewPrev.disabled = !hasMultiple;
