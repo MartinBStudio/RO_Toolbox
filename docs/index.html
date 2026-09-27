@@ -130,43 +130,17 @@
         <section id="previews" class="section">
           <div class="section-heading row-heading">
             <div>
-              <p class="eyebrow">Preview library</p>
-              <h2>Sample item previews</h2>
+              <p class="eyebrow">Resource packages</p>
+              <h2>Package previews from the repos</h2>
+              <p>
+                These cards are built from package manifests and `.preview` folders in the public resource
+                repositories used by RO Toolbox.
+              </p>
             </div>
-            <input id="previewSearch" type="search" placeholder="Search previews" aria-label="Search previews" />
+            <input id="packageSearch" type="search" placeholder="Search packages" aria-label="Search packages" />
           </div>
-          <div class="preview-grid" id="previewGrid">
-            <article data-name="treasure chest loot box">
-              <img src="./assets/previews/treasure-chest.png" alt="Treasure chest item preview" />
-              <h3>Treasure chest</h3>
-              <p>Generic chest pickup model.</p>
-            </article>
-            <article data-name="coin pile money gold silver copper">
-              <img src="./assets/previews/coin-pile.png" alt="Coin pile item preview" />
-              <h3>Coin pile</h3>
-              <p>Money drop preview variants.</p>
-            </article>
-            <article data-name="diamond gem jewel">
-              <img src="./assets/previews/diamond.png" alt="Diamond item preview" />
-              <h3>Diamond</h3>
-              <p>Gem-shaped loot model.</p>
-            </article>
-            <article data-name="recovery orb hp mp stamina">
-              <img src="./assets/previews/recovery-orb.png" alt="Recovery orb item preview" />
-              <h3>Recovery orb</h3>
-              <p>HP, MP, and stamina pickup family.</p>
-            </article>
-            <article data-name="gift box present event">
-              <img src="./assets/previews/gift-box.png" alt="Gift box item preview" />
-              <h3>Gift box</h3>
-              <p>Event-style gift pickup model.</p>
-            </article>
-            <article data-name="gold chest treasure box">
-              <img src="./assets/previews/gold-chest.png" alt="Gold treasure chest item preview" />
-              <h3>Gold treasure chest</h3>
-              <p>Treasure box from the item preview set.</p>
-            </article>
-          </div>
+          <div class="package-toolbar" id="packageFilters" aria-label="Package category filters"></div>
+          <div class="package-grid" id="packageGrid"></div>
         </section>
 
         <section id="releases" class="section">
@@ -217,6 +191,7 @@
         <a href="https://github.com/MartinBStudio/RO_Toolbox/issues">Issues and suggestions</a>
       </footer>
     </div>
+    <script src="./package-data.js"></script>
     <script src="./script.js"></script>
   </body>
 </html>
