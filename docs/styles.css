@@ -401,10 +401,6 @@ input[type="search"] {
   transform: scale(1.02);
 }
 
-.package-card.is-combat-text .package-media {
-  aspect-ratio: 16 / 8;
-}
-
 .package-card.is-combat-text .package-media img {
   object-position: center 18%;
 }
