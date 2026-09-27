@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="RO Toolbox website with release notes, resource repository links, and item preview examples."
+    />
+    <title>RO Toolbox</title>
+    <link rel="preconnect" href="https://fonts.bunny.net" />
+    <link
+      href="https://fonts.bunny.net/css?family=josefin-sans:400,500,600,700|spectral-sc:500,600,700"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="site-shell">
+      <header class="topbar">
+        <a class="brand" href="#top" aria-label="RO Toolbox home">
+          <img src="./assets/rose-logo-bg.webp" alt="" />
+          <span>RO Toolbox</span>
+        </a>
+        <nav class="nav-links" aria-label="Primary navigation">
+          <a href="#features">Features</a>
+          <a href="#resources">Resources</a>
+          <a href="#previews">Previews</a>
+          <a href="#releases">Releases</a>
+        </nav>
+        <a class="download-link" href="https://github.com/MartinBStudio/RO_Toolbox/releases">Download</a>
+      </header>
+
+      <main id="top">
+        <section class="hero">
+          <div class="hero-art" aria-hidden="true">
+            <img src="./assets/rose-logo-bg.webp" alt="" />
+          </div>
+          <div class="hero-content">
+            <p class="eyebrow">ROSE Online companion app</p>
+            <h1>RO Toolbox</h1>
+            <p class="hero-copy">
+              Manage resource packs, quick-launch accounts, game configs, and community links from a desktop
+              tool built around ROSE Online modding workflows.
+            </p>
+            <div class="hero-actions">
+              <a class="button primary" href="https://github.com/MartinBStudio/RO_Toolbox/releases">
+                Get the latest release
+              </a>
+              <a class="button secondary" href="https://github.com/MartinBStudio/RO_Toolbox">
+                View source
+              </a>
+            </div>
+          </div>
+          <div class="hero-panel" aria-label="Latest version summary">
+            <span class="panel-kicker">Latest</span>
+            <strong>v1.0.6</strong>
+            <span>Live Loot Model Previews</span>
+          </div>
+        </section>
+
+        <section id="features" class="section">
+          <div class="section-heading">
+            <p class="eyebrow">Toolbox</p>
+            <h2>Focused tools for a modded client</h2>
+          </div>
+          <div class="feature-grid">
+            <article>
+              <span class="feature-icon">LT</span>
+              <h3>Loot manager</h3>
+              <p>Download, install, update, preview, and resize loot model packages.</p>
+            </article>
+            <article>
+              <span class="feature-icon">CT</span>
+              <h3>Combat text</h3>
+              <p>Swap independent combat text profiles without mixing files between packs.</p>
+            </article>
+            <article>
+              <span class="feature-icon">UI</span>
+              <h3>User interface packs</h3>
+              <p>Manage UI themes and buff icon resources from public repositories.</p>
+            </article>
+            <article>
+              <span class="feature-icon">QL</span>
+              <h3>Quick launch</h3>
+              <p>Store local profiles and launch ROSE with selected login accounts.</p>
+            </article>
+            <article>
+              <span class="feature-icon">CF</span>
+              <h3>Config editor</h3>
+              <p>Edit supported TOML files with source and parsed previews.</p>
+            </article>
+            <article>
+              <span class="feature-icon">UP</span>
+              <h3>Auto update flow</h3>
+              <p>Use packaged releases with app-level update checks and bundled Java runtime.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="resources" class="section split-section">
+          <div class="section-heading">
+            <p class="eyebrow">Resource repositories</p>
+            <h2>Public packs, pulled into the app</h2>
+            <p>
+              RO Toolbox reads separate repositories for community-created files. The site links each source
+              directly so players and creators can browse or contribute.
+            </p>
+          </div>
+          <div class="resource-list">
+            <a href="https://github.com/MartinBStudio/RO_LootFilter_resources">
+              <span>Loot Models</span>
+              <small>Model replacements, previews, and metadata</small>
+            </a>
+            <a href="https://github.com/MartinBStudio/RO_CombatText_resources">
+              <span>Combat Text</span>
+              <small>Text visibility and styling profiles</small>
+            </a>
+            <a href="https://github.com/MartinBStudio/RO_UserInterface_resources">
+              <span>UI Themes</span>
+              <small>Interface and buff icon resources</small>
+            </a>
+            <a href="https://github.com/MartinBStudio/RO_BuffAnimations_resources">
+              <span>Buff Animations</span>
+              <small>Animation packs for supported buff effects</small>
+            </a>
+          </div>
+        </section>
+
+        <section id="previews" class="section">
+          <div class="section-heading row-heading">
+            <div>
+              <p class="eyebrow">Preview library</p>
+              <h2>Sample item previews</h2>
+            </div>
+            <input id="previewSearch" type="search" placeholder="Search previews" aria-label="Search previews" />
+          </div>
+          <div class="preview-grid" id="previewGrid">
+            <article data-name="treasure chest loot box">
+              <img src="./assets/previews/treasure-chest.png" alt="Treasure chest item preview" />
+              <h3>Treasure chest</h3>
+              <p>Generic chest pickup model.</p>
+            </article>
+            <article data-name="coin pile money gold silver copper">
+              <img src="./assets/previews/coin-pile.png" alt="Coin pile item preview" />
+              <h3>Coin pile</h3>
+              <p>Money drop preview variants.</p>
+            </article>
+            <article data-name="diamond gem jewel">
+              <img src="./assets/previews/diamond.png" alt="Diamond item preview" />
+              <h3>Diamond</h3>
+              <p>Gem-shaped loot model.</p>
+            </article>
+            <article data-name="recovery orb hp mp stamina">
+              <img src="./assets/previews/recovery-orb.png" alt="Recovery orb item preview" />
+              <h3>Recovery orb</h3>
+              <p>HP, MP, and stamina pickup family.</p>
+            </article>
+            <article data-name="gift box present event">
+              <img src="./assets/previews/gift-box.png" alt="Gift box item preview" />
+              <h3>Gift box</h3>
+              <p>Event-style gift pickup model.</p>
+            </article>
+            <article data-name="gold chest treasure box">
+              <img src="./assets/previews/gold-chest.png" alt="Gold treasure chest item preview" />
+              <h3>Gold treasure chest</h3>
+              <p>Treasure box from the item preview set.</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="releases" class="section">
+          <div class="section-heading row-heading">
+            <div>
+              <p class="eyebrow">Release notes</p>
+              <h2>Recent updates</h2>
+            </div>
+            <input id="releaseSearch" type="search" placeholder="Search releases" aria-label="Search releases" />
+          </div>
+          <div class="release-timeline" id="releaseTimeline">
+            <article data-text="v1.0.6 live loot model previews 3d render fullscreen scale controls smoother browsing">
+              <span>v1.0.6</span>
+              <h3>Live Loot Model Previews</h3>
+              <p>Loot tables now show live 3D renders with fullscreen inspection and cleaner model tools.</p>
+            </article>
+            <article data-text="v1.0.5 bug fix uninstall resources delete files">
+              <span>v1.0.5</span>
+              <h3>Bug fix</h3>
+              <p>Improved uninstall behavior so resource managers remove managed files more consistently.</p>
+            </article>
+            <article data-text="v1.0.4 resource update cleanup packages recommended package browser extraction">
+              <span>v1.0.4</span>
+              <h3>Resource Update Cleanup</h3>
+              <p>Package downloads now replace stale folders cleanly and browse recommended packs first.</p>
+            </article>
+            <article data-text="v1.0.3 loot manager modal polish scale limits previews packaged app loading">
+              <span>v1.0.3</span>
+              <h3>Loot Manager Modal Polish</h3>
+              <p>Added one-click scale limits, compact controls, sticky modal tables, and packaged-app preview fixes.</p>
+            </article>
+            <article data-text="v1.0.2 loot model scale tools manage packages zms editing">
+              <span>v1.0.2</span>
+              <h3>Loot Model Scale Tools</h3>
+              <p>Managed loot models can show size differences and apply scale changes from the package table.</p>
+            </article>
+            <article data-text="v1.0.0 first stable release java runtime installer dynamic backend port">
+              <span>v1.0.0</span>
+              <h3>First Stable Release</h3>
+              <p>Stable app architecture with dynamic backend ports, bundled Java, and a polished installer.</p>
+            </article>
+          </div>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>RO Toolbox by BStudio</span>
+        <a href="https://github.com/MartinBStudio/RO_Toolbox/issues">Issues and suggestions</a>
+      </footer>
+    </div>
+    <script src="./script.js"></script>
+  </body>
+</html>
