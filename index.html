@@ -26,7 +26,7 @@
           <a href="#features">Features</a>
           <a href="#resources">Resources</a>
           <a href="#previews">Previews</a>
-          <a href="#contributors">Contributors</a>
+          <a href="#contribute">Contribute</a>
           <a href="#releases">Releases</a>
         </nav>
         <a class="download-link" href="https://github.com/MartinBStudio/RO_Toolbox/releases">Download</a>
@@ -144,16 +144,44 @@
           <div class="package-grid" id="packageGrid"></div>
         </section>
 
-        <section id="contributors" class="section">
+        <section id="contribute" class="section split-section">
           <div class="section-heading">
-            <p class="eyebrow">Community</p>
-            <h2>Resource contributors</h2>
+            <p class="eyebrow">Contribute resources</p>
+            <h2>Add your own packs without changing the app</h2>
             <p>
-              Authors are collected from the package manifests in the resource repositories, with a quick view of
-              the package areas they contributed to.
+              RO Toolbox reads public resource repositories directly. If you have a loot model, combat text pack,
+              UI theme, icon set, or buff animation pack, contribute it to the matching repository and it can become
+              available through the normal update flow.
             </p>
+            <div class="contribute-actions">
+              <a href="https://github.com/MartinBStudio/RO_LootFilter_resources">Loot Models</a>
+              <a href="https://github.com/MartinBStudio/RO_CombatText_resources">Combat Text</a>
+              <a href="https://github.com/MartinBStudio/RO_UserInterface_resources">UI & Icons</a>
+              <a href="https://github.com/MartinBStudio/RO_BuffAnimations_resources">Buff Animations</a>
+            </div>
           </div>
-          <div class="contributor-grid" id="contributorGrid"></div>
+          <div class="contribute-panel">
+            <article>
+              <span class="feature-icon">1</span>
+              <h3>Choose the repository</h3>
+              <p>Open the resource repository that matches the type of pack you made.</p>
+            </article>
+            <article>
+              <span class="feature-icon">2</span>
+              <h3>Create a package folder</h3>
+              <p>Follow the structure of existing profiles, add your resource files, and include preview images in `.preview` when possible.</p>
+            </article>
+            <article>
+              <span class="feature-icon">3</span>
+              <h3>Fill in metadata</h3>
+              <p>Add the package name, author, version, date, description, and author or profile link when available.</p>
+            </article>
+            <article>
+              <span class="feature-icon">4</span>
+              <h3>Open a pull request</h3>
+              <p>After review and merge, RO Toolbox users can receive the pack through resource updates.</p>
+            </article>
+          </div>
         </section>
 
         <section id="releases" class="section">
