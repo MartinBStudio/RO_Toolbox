@@ -1,4 +1,11 @@
-import type { ConfigEditorFileState, ConfigEditorStatus, IgnoreListState, RoseConfigState } from "../types.ts";
+import type {
+  ConfigEditorFileState,
+  ConfigEditorStatus,
+  IgnoreListState,
+  OneDriveBackupResult,
+  OneDriveRestoreResult,
+  RoseConfigState
+} from "../types.ts";
 import { request } from "./apiClient.ts";
 
 export function getConfigEditorStatus() {
@@ -14,6 +21,21 @@ export function saveConfigEditorFile(fileId: "ignore" | "rose", content: string)
 
 export function openConfigEditorFolder() {
   return request<{ message: string }>("/config-editor/folders/open", { method: "POST" });
+}
+
+export function backupConfigEditorToOneDrive() {
+  return request<OneDriveBackupResult>("/config-editor/onedrive-backup", { method: "POST" });
+}
+
+export function openConfigEditorOneDriveBackupFolder() {
+  return request<{ message: string }>("/config-editor/onedrive-backup/folder/open", { method: "POST" });
+}
+
+export function restoreConfigEditorFromOneDrive(backupName: string) {
+  return request<OneDriveRestoreResult>("/config-editor/onedrive-backup/restore", {
+    method: "POST",
+    body: JSON.stringify({ backupName })
+  });
 }
 
 export function getIgnoreList() {

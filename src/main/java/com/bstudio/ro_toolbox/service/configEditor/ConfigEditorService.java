@@ -1,10 +1,16 @@
 package com.bstudio.ro_toolbox.service.configEditor;
 
+import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.backup.BackupProviderResolver;
+import com.bstudio.ro_toolbox.service.backup.BackupProviderResolver.BackupProvider;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +31,8 @@ public class ConfigEditorService {
   private static final String IGNORE_ID = "ignore";
   private static final String ROSE_ID = "rose";
   private static final String SHOW_DROPPED_ITEM_NAME_KEY = "show_dropped_item_name";
+  private static final DateTimeFormatter BACKUP_TIMESTAMP_FORMATTER =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
   private static final Pattern SHOW_DROPPED_ITEM_NAME_BOOLEAN_PATTERN =
       Pattern.compile("^(\\s*show_dropped_item_name\\s*=\\s*)(true|false)(\\s*(?:#.*)?)$");
   private static final Pattern SHOW_DROPPED_ITEM_NAME_ASSIGNMENT_PATTERN =
@@ -34,13 +42,19 @@ public class ConfigEditorService {
           new ConfigFileSpec(IGNORE_ID, "ignore.toml"), new ConfigFileSpec(ROSE_ID, "rose.toml"));
 
   private final Path configDir;
+  private final BackupProviderResolver backupProviderResolver;
 
   public ConfigEditorService() {
-    this(resolveRoseConfigDir());
+    this(resolveRoseConfigDir(), new AppConfigService());
   }
 
   ConfigEditorService(Path configDir) {
+    this(configDir, new AppConfigService());
+  }
+
+  ConfigEditorService(Path configDir, AppConfigService appConfigService) {
     this.configDir = configDir.toAbsolutePath().normalize();
+    this.backupProviderResolver = new BackupProviderResolver(appConfigService);
   }
 
   public ConfigEditorStatus readStatus() throws IOException {
@@ -49,7 +63,10 @@ public class ConfigEditorService {
       files.add(readFileState(spec));
     }
     return new ConfigEditorStatus(
-        configDir.toString(), Files.exists(configDir) && Files.isDirectory(configDir), files);
+        configDir.toString(),
+        Files.exists(configDir) && Files.isDirectory(configDir),
+        files,
+        readOneDriveBackupStatus());
   }
 
   public ConfigFileState save(String fileId, String content) throws IOException {
@@ -72,6 +89,111 @@ public class ConfigEditorService {
 
   public Path getConfigDir() {
     return configDir;
+  }
+
+  public OneDriveBackupStatus readOneDriveBackupStatus() {
+    Optional<BackupProvider> provider = backupProviderResolver.resolveDefaultProvider();
+    if (provider.isEmpty()) {
+      return new OneDriveBackupStatus(false, null, null, null, List.of());
+    }
+    Path backupRoot = resolveProviderBackupRoot(provider.get());
+    return new OneDriveBackupStatus(
+        true,
+        provider.get().name(),
+        provider.get().root().toString(),
+        backupRoot.toString(),
+        readBackups(backupRoot));
+  }
+
+  public Path getOneDriveBackupRoot() {
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    return resolveProviderBackupRoot(provider);
+  }
+
+  public OneDriveBackupResult backupToOneDrive() throws IOException {
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    if (!Files.exists(configDir) || !Files.isDirectory(configDir)) {
+      throw new IllegalStateException("ROSE config folder was not found.");
+    }
+
+    List<Path> existingFiles = new ArrayList<>();
+    for (ConfigFileSpec spec : TARGET_FILES) {
+      Path source = configDir.resolve(spec.fileName());
+      if (Files.exists(source) && Files.isRegularFile(source)) {
+        existingFiles.add(source);
+      }
+    }
+    if (existingFiles.isEmpty()) {
+      throw new IllegalStateException("No ROSE config files were found to back up.");
+    }
+
+    Path backupRoot = resolveProviderBackupRoot(provider);
+    Path backupDir = backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+    Files.createDirectories(backupDir);
+    for (Path source : existingFiles) {
+      Files.copy(
+          source,
+          backupDir.resolve(source.getFileName()),
+          StandardCopyOption.REPLACE_EXISTING,
+          StandardCopyOption.COPY_ATTRIBUTES);
+    }
+
+    return new OneDriveBackupResult(
+        backupDir.toString(),
+        existingFiles.size(),
+        existingFiles.stream().map(path -> path.getFileName().toString()).toList());
+  }
+
+  public OneDriveRestoreResult restoreFromOneDriveBackup(String backupName) throws IOException {
+    String normalizedBackupName = normalizeBackupName(backupName);
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
+    Path backupDir = backupRoot.resolve(normalizedBackupName).toAbsolutePath().normalize();
+    if (!backupDir.startsWith(backupRoot.toAbsolutePath().normalize())
+        || !Files.exists(backupDir)
+        || !Files.isDirectory(backupDir)) {
+      throw new IllegalArgumentException("Selected OneDrive backup was not found.");
+    }
+
+    List<Path> backupFiles = new ArrayList<>();
+    for (ConfigFileSpec spec : TARGET_FILES) {
+      Path source = backupDir.resolve(spec.fileName());
+      if (Files.exists(source) && Files.isRegularFile(source)) {
+        backupFiles.add(source);
+      }
+    }
+    if (backupFiles.isEmpty()) {
+      throw new IllegalStateException("Selected OneDrive backup has no supported config files.");
+    }
+
+    Path safetyBackupDir =
+        backupRoot.resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+    List<String> safetyFiles = backupExistingConfigFiles(safetyBackupDir);
+
+    Files.createDirectories(configDir);
+    for (Path source : backupFiles) {
+      Files.copy(
+          source,
+          configDir.resolve(source.getFileName()),
+          StandardCopyOption.REPLACE_EXISTING,
+          StandardCopyOption.COPY_ATTRIBUTES);
+    }
+
+    return new OneDriveRestoreResult(
+        backupDir.toString(),
+        backupFiles.size(),
+        backupFiles.stream().map(path -> path.getFileName().toString()).toList(),
+        safetyFiles.isEmpty() ? null : safetyBackupDir.toString(),
+        safetyFiles);
   }
 
   public IgnoreListState readIgnoreList() throws IOException {
@@ -367,10 +489,81 @@ public class ConfigEditorService {
         "config");
   }
 
+  private Path resolveProviderBackupRoot(BackupProvider provider) {
+    return backupProviderResolver.resolveBackupRoot(provider, "ROSE Online Config");
+  }
+
+  private List<OneDriveBackupEntry> readBackups(Path backupRoot) {
+    if (!Files.exists(backupRoot) || !Files.isDirectory(backupRoot)) {
+      return List.of();
+    }
+    try (var entries = Files.list(backupRoot)) {
+      return entries
+          .filter(Files::isDirectory)
+          .filter(path -> !path.getFileName().toString().startsWith("pre-restore-"))
+          .map(this::readBackupEntry)
+          .filter(Optional::isPresent)
+          .map(Optional::get)
+          .sorted((first, second) -> second.name().compareTo(first.name()))
+          .toList();
+    } catch (IOException ex) {
+      return List.of();
+    }
+  }
+
+  private Optional<OneDriveBackupEntry> readBackupEntry(Path backupDir) {
+    List<String> files =
+        TARGET_FILES.stream()
+            .map(ConfigFileSpec::fileName)
+            .filter(fileName -> Files.isRegularFile(backupDir.resolve(fileName)))
+            .toList();
+    if (files.isEmpty()) {
+      return Optional.empty();
+    }
+    return Optional.of(
+        new OneDriveBackupEntry(backupDir.getFileName().toString(), backupDir.toString(), files));
+  }
+
+  private List<String> backupExistingConfigFiles(Path safetyBackupDir) throws IOException {
+    if (!Files.exists(configDir) || !Files.isDirectory(configDir)) {
+      return List.of();
+    }
+
+    List<String> copiedFiles = new ArrayList<>();
+    for (ConfigFileSpec spec : TARGET_FILES) {
+      Path source = configDir.resolve(spec.fileName());
+      if (!Files.exists(source) || !Files.isRegularFile(source)) {
+        continue;
+      }
+      Files.createDirectories(safetyBackupDir);
+      Files.copy(
+          source,
+          safetyBackupDir.resolve(source.getFileName()),
+          StandardCopyOption.REPLACE_EXISTING,
+          StandardCopyOption.COPY_ATTRIBUTES);
+      copiedFiles.add(source.getFileName().toString());
+    }
+    return copiedFiles;
+  }
+
+  private String normalizeBackupName(String backupName) {
+    if (backupName == null || backupName.isBlank()) {
+      throw new IllegalArgumentException("backupName is required.");
+    }
+    String normalized = backupName.trim();
+    if (normalized.contains("/") || normalized.contains("\\") || normalized.equals("..")) {
+      throw new IllegalArgumentException("backupName is invalid.");
+    }
+    return normalized;
+  }
+
   private record ConfigFileSpec(String id, String fileName) {}
 
   public record ConfigEditorStatus(
-      String configDir, boolean configDirExists, List<ConfigFileState> files) {}
+      String configDir,
+      boolean configDirExists,
+      List<ConfigFileState> files,
+      OneDriveBackupStatus oneDriveBackup) {}
 
   public record ConfigFileState(
       String id,
@@ -384,6 +577,24 @@ public class ConfigEditorService {
   public record IgnoreListState(List<String> names, ConfigFileState file) {}
 
   public record RoseConfigState(boolean showDroppedItemName, boolean roseFileExists) {}
+
+  public record OneDriveBackupStatus(
+      boolean available,
+      String providerName,
+      String oneDrivePath,
+      String backupRootPath,
+      List<OneDriveBackupEntry> backups) {}
+
+  public record OneDriveBackupResult(String backupPath, int copiedFiles, List<String> files) {}
+
+  public record OneDriveBackupEntry(String name, String path, List<String> files) {}
+
+  public record OneDriveRestoreResult(
+      String restoredFrom,
+      int restoredFiles,
+      List<String> files,
+      String safetyBackupPath,
+      List<String> safetyBackupFiles) {}
 
   private record ParsedIgnoreData(List<String> names, ConfigFileState fileState) {}
 }

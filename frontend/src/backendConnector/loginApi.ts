@@ -9,6 +9,34 @@ export type LoginAccount = {
   icon: string;
 };
 
+export type LoginOneDriveBackupStatus = {
+  available: boolean;
+  providerName: string | null;
+  oneDrivePath: string | null;
+  backupRootPath: string | null;
+  backups: LoginOneDriveBackupEntry[];
+};
+
+export type LoginOneDriveBackupEntry = {
+  name: string;
+  path: string;
+  files: string[];
+};
+
+export type LoginOneDriveBackupResult = {
+  backupPath: string;
+  copiedFiles: number;
+  files: string[];
+};
+
+export type LoginOneDriveRestoreResult = {
+  restoredFrom: string;
+  restoredFiles: number;
+  files: string[];
+  safetyBackupPath: string | null;
+  safetyBackupFiles: string[];
+};
+
 export function listLoginAccounts() {
   return request<LoginAccount[]>("/login");
 }
@@ -51,30 +79,21 @@ export function quickLaunchLoginAccount(id: string) {
   return request<{ message: string }>(`/login/${id}/launch`, { method: "POST" });
 }
 
-export function exportLoginAccounts() {
-  return request<{ version: number; accounts: LoginAccount[] }>("/login/export");
+export function getLoginOneDriveBackupStatus() {
+  return request<LoginOneDriveBackupStatus>("/login/onedrive-backup/status");
 }
 
-export function importLoginAccounts(data: {
-  accounts: Array<{
-    id?: string;
-    name: string;
-    email: string;
-    password: string;
-    displayInQuick?: boolean;
-    icon?: string;
-  }>;
-  replaceExisting?: boolean;
-}) {
-  return request<{ totalAccounts: number; message: string }>("/login/import", {
-    method: "POST",
-    body: JSON.stringify(data)
-  });
+export function backupLoginAccountsToOneDrive() {
+  return request<LoginOneDriveBackupResult>("/login/onedrive-backup", { method: "POST" });
 }
 
-export function saveLoginAccountsExportFile(data: { filePath: string; content: string }) {
-  return request<{ message: string }>("/login/export/save", {
+export function openLoginOneDriveBackupFolder() {
+  return request<{ message: string }>("/login/onedrive-backup/folder/open", { method: "POST" });
+}
+
+export function restoreLoginAccountsFromOneDrive(backupName: string) {
+  return request<LoginOneDriveRestoreResult>("/login/onedrive-backup/restore", {
     method: "POST",
-    body: JSON.stringify(data)
+    body: JSON.stringify({ backupName })
   });
 }

@@ -3,10 +3,10 @@ package com.bstudio.ro_toolbox.controller.loginService;
 import com.bstudio.ro_toolbox.controller.resourceReplacer.model.MessageResponse;
 import com.bstudio.ro_toolbox.service.app.AppNotificationService;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
+import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -32,34 +32,31 @@ public class LoginServiceController {
     return loginManagerService.listQuickAccounts();
   }
 
-  @GetMapping("/export")
-  public LoginManagerService.ExportAccountsResponse exportAccounts() throws IOException {
-    return loginManagerService.exportAccounts();
+  @GetMapping("/onedrive-backup/status")
+  public LoginManagerService.OneDriveBackupStatus oneDriveBackupStatus() {
+    return loginManagerService.readOneDriveBackupStatus();
   }
 
-  @PostMapping("/import")
-  public ImportResponse importAccounts(
-      @RequestBody LoginManagerService.ImportAccountsRequest request) throws IOException {
-    List<LoginManagerService.LoginAccount> imported = loginManagerService.importAccounts(request);
-    return new ImportResponse(imported.size(), "Accounts imported.");
+  @PostMapping("/onedrive-backup")
+  public LoginManagerService.OneDriveBackupResult backupToOneDrive() throws IOException {
+    return loginManagerService.backupToOneDrive();
   }
 
-  @PostMapping("/export/save")
-  public MessageResponse saveExport(@RequestBody SaveExportRequest request) throws IOException {
-    if (request == null || request.filePath() == null || request.filePath().isBlank()) {
-      throw new IllegalArgumentException("Export file path is required.");
-    }
-    if (request.content() == null || request.content().isBlank()) {
-      throw new IllegalArgumentException("Export content is required.");
-    }
+  @PostMapping("/onedrive-backup/folder/open")
+  public MessageResponse openOneDriveBackupFolder() throws IOException {
+    Path backupRoot = loginManagerService.getOneDriveBackupRoot();
+    Files.createDirectories(backupRoot);
+    DesktopFolderOpener.openInDesktop(backupRoot);
+    return MessageResponse.builder().message("Opened OneDrive backup folder.").build();
+  }
 
-    Path exportPath = Path.of(request.filePath().trim()).toAbsolutePath().normalize();
-    Path parent = exportPath.getParent();
-    if (parent != null) {
-      Files.createDirectories(parent);
+  @PostMapping("/onedrive-backup/restore")
+  public LoginManagerService.OneDriveRestoreResult restoreFromOneDrive(
+      @RequestBody RestoreOneDriveBackupRequest request) throws IOException {
+    if (request == null || request.backupName() == null) {
+      throw new IllegalArgumentException("backupName is required.");
     }
-    Files.writeString(exportPath, request.content(), StandardCharsets.UTF_8);
-    return MessageResponse.builder().message("Accounts exported.").build();
+    return loginManagerService.restoreFromOneDriveBackup(request.backupName());
   }
 
   @PostMapping("/{id}/launch")
@@ -148,9 +145,7 @@ public class LoginServiceController {
     throw new IllegalStateException("No valid game installation folder is selected.");
   }
 
-  public record ImportResponse(int totalAccounts, String message) {}
-
-  public record SaveExportRequest(String filePath, String content) {}
+  public record RestoreOneDriveBackupRequest(String backupName) {}
 
   private void launchWindowsForeground(
       Path workingDirectory, String executablePath, String... arguments) throws IOException {

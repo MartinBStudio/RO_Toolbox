@@ -1,6 +1,8 @@
 package com.bstudio.ro_toolbox.controller.app;
 
 import com.bstudio.ro_toolbox.service.app.AppConfigService;
+import com.bstudio.ro_toolbox.service.backup.BackupProviderResolver;
+import com.bstudio.ro_toolbox.service.backup.BackupProviderResolver.BackupProviderSettings;
 import com.bstudio.ro_toolbox.service.loginManager.LoginManagerService;
 import com.bstudio.ro_toolbox.service.resourceReplacer.model.IResourceReplacer;
 import com.bstudio.ro_toolbox.service.resourceReplacer.service.buffs.BuffsManager;
@@ -230,6 +232,35 @@ public class SettingsController {
     return new IgnoreConfigWarningsResponse(request.enabled());
   }
 
+  @GetMapping("/backup-provider")
+  public BackupProviderSettings getBackupProviderSettings() {
+    return new BackupProviderResolver(appConfigService).readSettings();
+  }
+
+  @PostMapping("/backup-provider")
+  public BackupProviderSettings saveBackupProviderSettings(
+      @RequestBody BackupProviderRequest request) throws IOException {
+    if (request == null || request.providerId() == null || request.providerId().isBlank()) {
+      throw new IllegalArgumentException("Backup provider is required.");
+    }
+    BackupProviderResolver resolver = new BackupProviderResolver(appConfigService);
+    String providerId = request.providerId().trim();
+    if (request.localPath() != null && !request.localPath().isBlank()) {
+      Path localPath = Path.of(request.localPath().trim()).toAbsolutePath().normalize();
+      Files.createDirectories(localPath);
+      appConfigService.saveBackupLocalPath(localPath);
+    }
+    boolean selectable =
+        BackupProviderResolver.AUTO_PROVIDER_ID.equals(providerId)
+            || resolver.listProviderOptions().stream()
+                .anyMatch(provider -> provider.id().equals(providerId) && provider.available());
+    if (!selectable) {
+      throw new IllegalArgumentException("Selected backup provider is not available.");
+    }
+    appConfigService.saveBackupProviderId(providerId);
+    return new BackupProviderResolver(appConfigService).readSettings();
+  }
+
   @GetMapping("/release-notes")
   public ReleaseNotesResponse getReleaseNotes() throws IOException {
     return new ReleaseNotesResponse(readReleaseNotesContent());
@@ -301,6 +332,8 @@ public class SettingsController {
   public record IgnoreConfigWarningsRequest(boolean enabled) {}
 
   public record IgnoreConfigWarningsResponse(boolean enabled) {}
+
+  public record BackupProviderRequest(String providerId, String localPath) {}
 
   private void launchWindowsForeground(
       Path workingDirectory, String executablePath, String... arguments) throws IOException {

@@ -1230,6 +1230,16 @@ button {
   .usefulStuffExternalIcon {
     display: none;
   }
+
+  .backupProviderPanel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .backupProviderPanelControls {
+    justify-content: flex-start;
+    min-width: 0;
+  }
 }
 
 button:disabled {
@@ -1310,6 +1320,59 @@ button:disabled {
 .loginManagerActions .iconBtn:hover:enabled {
   border-color: #6d91cb;
   background: linear-gradient(180deg, rgba(33, 48, 73, 0.98) 0%, rgba(25, 37, 57, 0.98) 100%);
+}
+
+.backupProviderPanel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  padding: 0.42rem 0.5rem;
+  border: 1px solid var(--panel-blue-border);
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(18, 28, 42, 0.94) 0%, rgba(14, 22, 33, 0.94) 100%);
+  box-shadow: var(--panel-blue-highlight);
+}
+
+.backupProviderPanelMeta {
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.backupProviderPanelLogo {
+  width: 1.35rem;
+  height: 1.35rem;
+  color: #8db7ef;
+  flex: 0 0 auto;
+}
+
+.backupProviderPanelTitle {
+  margin: 0;
+  color: #d8e7ff;
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.backupProviderPanelSubtitle {
+  margin: 0.02rem 0 0;
+  color: #7f9fc2;
+  font-size: 0.72rem;
+}
+
+.backupProviderPanelControls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  min-width: 15rem;
+}
+
+.backupProviderPanelControls select {
+  min-height: 2rem;
+  min-width: 8.5rem;
+  max-width: 13rem;
 }
 
 .configEditor .headerActions > .buttonSubtle {
@@ -3003,6 +3066,11 @@ a {
   gap: 0.45rem;
 }
 
+.backupProviderActions select {
+  min-height: 2.1rem;
+  min-width: 12rem;
+}
+
 .settingsToggleRow {
   display: flex;
   align-items: center;
@@ -4153,5 +4221,15 @@ a {
 @media (max-width: 900px) {
   .configEditorBody {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .backupProviderPanel {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .backupProviderPanelControls {
+    justify-content: flex-start;
+    min-width: 0;
   }
 }

@@ -1,5 +1,19 @@
 import { request } from "./apiClient.ts";
 
+export type BackupProviderOption = {
+  id: string;
+  name: string;
+  available: boolean;
+  path: string | null;
+  selected: boolean;
+};
+
+export type BackupProviderSettings = {
+  selectedProviderId: string;
+  localPath: string | null;
+  providers: BackupProviderOption[];
+};
+
 export function saveGameFolder(path: string, forceSave = false) {
   return request<{ containsExpectedItemFolder: boolean }>("/settings/game-folder", {
     method: "POST",
@@ -64,5 +78,16 @@ export function saveIgnoreConfigWarningsSetting(enabled: boolean) {
   return request<{ enabled: boolean }>("/settings/ignore-config-warnings", {
     method: "POST",
     body: JSON.stringify({ enabled })
+  });
+}
+
+export function getBackupProviderSettings() {
+  return request<BackupProviderSettings>("/settings/backup-provider");
+}
+
+export function saveBackupProviderSettings(providerId: string, localPath?: string | null) {
+  return request<BackupProviderSettings>("/settings/backup-provider", {
+    method: "POST",
+    body: JSON.stringify({ providerId, localPath })
   });
 }

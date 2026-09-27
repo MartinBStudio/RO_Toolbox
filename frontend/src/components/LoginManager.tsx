@@ -1,25 +1,25 @@
-import { useEffect, useRef, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import { useEffect, useState } from "react";
+import type { FormEvent } from "react";
 import {
-  ArrowDownTrayIcon,
-  ArrowUpTrayIcon,
   PencilIcon,
   PlusIcon,
   TrashIcon
 } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
-import { save as saveDialog } from "@tauri-apps/plugin-dialog";
 import {
+  backupLoginAccountsToOneDrive,
   createLoginAccount,
   deleteLoginAccount,
-  exportLoginAccounts,
-  importLoginAccounts,
+  getLoginOneDriveBackupStatus,
   listLoginAccounts,
-  saveLoginAccountsExportFile,
+  openLoginOneDriveBackupFolder,
+  restoreLoginAccountsFromOneDrive,
   updateLoginAccount,
+  type LoginOneDriveBackupStatus,
   type LoginAccount
 } from "../backendConnector/loginApi.ts";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
+import { BackupProviderPanel } from "./BackupProviderPanel.tsx";
 
 const ACCOUNT_ICON_OPTIONS = [
   "👤",
@@ -52,11 +52,32 @@ export function LoginManager({
   const [deleteTarget, setDeleteTarget] = useState<LoginAccount | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const importInputRef = useRef<HTMLInputElement | null>(null);
+  const [oneDriveBackup, setOneDriveBackup] = useState<LoginOneDriveBackupStatus | null>(null);
+  const [selectedBackupName, setSelectedBackupName] = useState("");
 
   useEffect(() => {
     void loadAccounts();
+    void loadOneDriveBackupStatus();
   }, []);
+
+  useEffect(() => {
+    const reloadBackupStatus = () => {
+      void loadOneDriveBackupStatus();
+    };
+    window.addEventListener("roToolbox:backup-provider-changed", reloadBackupStatus);
+    return () => window.removeEventListener("roToolbox:backup-provider-changed", reloadBackupStatus);
+  }, []);
+
+  useEffect(() => {
+    const backups = oneDriveBackup?.backups ?? [];
+    if (backups.length === 0) {
+      setSelectedBackupName("");
+      return;
+    }
+    if (!backups.some((backup) => backup.name === selectedBackupName)) {
+      setSelectedBackupName(backups[0].name);
+    }
+  }, [oneDriveBackup?.backups, selectedBackupName]);
 
   async function loadAccounts() {
     try {
@@ -64,6 +85,15 @@ export function LoginManager({
       setAccounts(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load accounts.");
+    }
+  }
+
+  async function loadOneDriveBackupStatus() {
+    try {
+      const status = await getLoginOneDriveBackupStatus();
+      setOneDriveBackup(status);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load OneDrive backup status.");
     }
   }
 
@@ -153,46 +183,40 @@ export function LoginManager({
     setFormOpen(true);
   }
 
-  function normalizeExportFileName() {
-    const now = new Date();
-    const pad = (value: number) => String(value).padStart(2, "0");
-    const timestamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    return `ro-toolbox-accounts-${timestamp}.json`;
-  }
-
-  async function onExportAccounts() {
+  async function onBackupToOneDrive() {
     setBusy(true);
     setError(null);
     try {
-      const payload = await exportLoginAccounts();
-      const savePath = await saveDialog({
-        title: "Export login accounts",
-        defaultPath: normalizeExportFileName(),
-        filters: [{ name: "JSON", extensions: ["json"] }]
-      });
-      if (!savePath) {
-        return;
-      }
-      await saveLoginAccountsExportFile({
-        filePath: savePath,
-        content: JSON.stringify(payload, null, 2)
-      });
-      onMessage?.("Accounts exported.");
+      await backupLoginAccountsToOneDrive();
+      await loadOneDriveBackupStatus();
+      onMessage?.("Login accounts backed up to OneDrive.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to export accounts.");
+      setError(err instanceof Error ? err.message : "Failed to back up accounts to OneDrive.");
     } finally {
       setBusy(false);
     }
   }
 
-  async function onImportAccounts(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) {
+  async function onOpenOneDriveBackupFolder() {
+    setBusy(true);
+    setError(null);
+    try {
+      await openLoginOneDriveBackupFolder();
+      onMessage?.("Opened OneDrive backup folder.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to open OneDrive backup folder.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function onRestoreFromOneDrive() {
+    if (!selectedBackupName) {
+      onMessage?.("Choose a OneDrive backup to restore.");
       return;
     }
 
-    const confirmed = window.confirm("Import accounts and replace current saved accounts?");
+    const confirmed = window.confirm(`Restore login accounts from "${selectedBackupName}"? Current accounts will be backed up first.`);
     if (!confirmed) {
       return;
     }
@@ -200,56 +224,17 @@ export function LoginManager({
     setBusy(true);
     setError(null);
     try {
-      const content = await file.text();
-      const parsed = JSON.parse(content) as { accounts?: unknown };
-      if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.accounts)) {
-        throw new Error("Invalid backup file format.");
-      }
-      const accountsPayload = parsed.accounts.map((entry) => {
-        if (!entry || typeof entry !== "object") {
-          throw new Error("Invalid account entry in backup file.");
-        }
-        const account = entry as {
-          id?: unknown;
-          name?: unknown;
-          email?: unknown;
-          password?: unknown;
-          displayInQuick?: unknown;
-          icon?: unknown;
-        };
-        if (typeof account.name !== "string" || !account.name.trim()) {
-          throw new Error("Each imported account must have a name.");
-        }
-        if (typeof account.email !== "string" || !account.email.trim()) {
-          throw new Error("Each imported account must have an email.");
-        }
-        if (typeof account.password !== "string" || !account.password.trim()) {
-          throw new Error("Each imported account must have a password.");
-        }
-        return {
-          id: typeof account.id === "string" && account.id.trim() ? account.id.trim() : undefined,
-          name: account.name.trim(),
-          email: account.email.trim(),
-          password: account.password,
-          displayInQuick: typeof account.displayInQuick === "boolean" ? account.displayInQuick : true,
-          icon: typeof account.icon === "string" && account.icon.trim() ? account.icon.trim() : "👤"
-        };
-      });
-
-      await importLoginAccounts({
-        accounts: accountsPayload,
-        replaceExisting: true
-      });
+      await restoreLoginAccountsFromOneDrive(selectedBackupName);
       await loadAccounts();
+      await loadOneDriveBackupStatus();
       await onAccountsChanged?.();
-      onMessage?.("Accounts imported.");
+      onMessage?.("Login accounts restored from OneDrive.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to import accounts.");
+      setError(err instanceof Error ? err.message : "Failed to restore accounts from OneDrive.");
     } finally {
       setBusy(false);
     }
   }
-
   return (
     <section className="loginManager">
       <div className="card serviceContentPanel">
@@ -258,26 +243,6 @@ export function LoginManager({
           <p className="activeProfileMeta">Store multiple ROSE accounts locally.</p>
         </div>
         <div className="headerActions loginManagerActions">
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle"
-              onClick={onExportAccounts}
-              disabled={busy}
-              aria-label="Export accounts"
-              title="Export accounts"
-            >
-              <ArrowUpTrayIcon className="heroIcon" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              className="iconBtn iconBtnSubtle"
-              onClick={() => importInputRef.current?.click()}
-              disabled={busy}
-              aria-label="Import accounts"
-              title="Import accounts"
-            >
-              <ArrowDownTrayIcon className="heroIcon" aria-hidden="true" />
-            </button>
             <button
               type="button"
               className="iconBtn iconBtnSubtle loginAddButton"
@@ -291,12 +256,19 @@ export function LoginManager({
         </div>
 
         {error ? <p className="formError">{error}</p> : null}
-        <input
-          ref={importInputRef}
-          type="file"
-          accept="application/json,.json"
-          onChange={onImportAccounts}
-          style={{ display: "none" }}
+
+        <BackupProviderPanel
+          available={Boolean(oneDriveBackup?.available)}
+          providerName={oneDriveBackup?.providerName ?? null}
+          backupRootPath={oneDriveBackup?.backupRootPath ?? null}
+          backups={oneDriveBackup?.backups ?? []}
+          selectedBackupName={selectedBackupName}
+          busy={busy}
+          label="login"
+          onBackup={onBackupToOneDrive}
+          onOpenFolder={onOpenOneDriveBackupFolder}
+          onRestore={onRestoreFromOneDrive}
+          onSelectedBackupChange={setSelectedBackupName}
         />
 
         <div className="loginList">

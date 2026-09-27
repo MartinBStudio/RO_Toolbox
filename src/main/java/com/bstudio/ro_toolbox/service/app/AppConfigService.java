@@ -19,6 +19,8 @@ public class AppConfigService {
   private static final String CONFIG_COMMENT = "RO Toolbox config";
   private static final String USEFUL_STUFF_COLLAPSED_KEY = "usefulStuffCollapsed";
   private static final String IGNORE_CONFIG_WARNINGS_KEY = "ignoreConfigWarnings";
+  private static final String BACKUP_PROVIDER_ID_KEY = "backupProviderId";
+  private static final String BACKUP_LOCAL_PATH_KEY = "backupLocalPath";
 
   private final Path configDir;
   private final Path configFile;
@@ -144,5 +146,33 @@ public class AppConfigService {
 
   public void saveIgnoreConfigWarnings(boolean enabled) throws IOException {
     setProperty(IGNORE_CONFIG_WARNINGS_KEY, String.valueOf(enabled));
+  }
+
+  public String getBackupProviderId() {
+    String providerId = getPropertyQuietly(BACKUP_PROVIDER_ID_KEY);
+    return providerId == null || providerId.isBlank() ? "auto" : providerId.trim();
+  }
+
+  public void saveBackupProviderId(String providerId) throws IOException {
+    if (providerId == null || providerId.isBlank()) {
+      throw new IllegalArgumentException("Backup provider is required.");
+    }
+    setProperty(BACKUP_PROVIDER_ID_KEY, providerId.trim());
+  }
+
+  public Path getBackupLocalPath() {
+    String path = getPropertyQuietly(BACKUP_LOCAL_PATH_KEY);
+    if (path == null || path.isBlank()) {
+      return null;
+    }
+    return Path.of(path.trim()).toAbsolutePath().normalize();
+  }
+
+  public void saveBackupLocalPath(Path path) throws IOException {
+    if (path == null) {
+      removeProperty(BACKUP_LOCAL_PATH_KEY);
+      return;
+    }
+    setProperty(BACKUP_LOCAL_PATH_KEY, path.toAbsolutePath().normalize().toString());
   }
 }

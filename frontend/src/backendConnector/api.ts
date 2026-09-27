@@ -12,8 +12,11 @@ export {
   getQuickLaunchOnlyModeSetting,
   saveQuickLaunchOnlyModeSetting,
   getIgnoreConfigWarningsSetting,
-  saveIgnoreConfigWarningsSetting
+  saveIgnoreConfigWarningsSetting,
+  getBackupProviderSettings,
+  saveBackupProviderSettings
 } from "./settingsApi.ts";
+export type { BackupProviderSettings } from "./settingsApi.ts";
 export {
   downloadProfiles,
   installProfile,
@@ -78,6 +81,9 @@ export {
   getConfigEditorStatus,
   saveConfigEditorFile,
   openConfigEditorFolder,
+  backupConfigEditorToOneDrive,
+  openConfigEditorOneDriveBackupFolder,
+  restoreConfigEditorFromOneDrive,
   getIgnoreList,
   addIgnoreListEntry,
   deleteIgnoreListEntry,
@@ -91,8 +97,9 @@ export {
   updateLoginAccount,
   deleteLoginAccount,
   quickLaunchLoginAccount,
-  exportLoginAccounts,
-  importLoginAccounts,
-  saveLoginAccountsExportFile
+  getLoginOneDriveBackupStatus,
+  backupLoginAccountsToOneDrive,
+  openLoginOneDriveBackupFolder,
+  restoreLoginAccountsFromOneDrive
 } from "./loginApi.ts";
 export type { LoginAccount } from "./loginApi.ts";

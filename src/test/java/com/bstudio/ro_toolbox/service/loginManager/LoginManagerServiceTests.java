@@ -73,21 +73,7 @@ class LoginManagerServiceTests {
       assertEquals("Beta", deleted.name());
       assertEquals(1, service.listAccounts().size());
 
-      LoginManagerService.ExportAccountsResponse exported = service.exportAccounts();
-      assertEquals(1, exported.version());
-      assertEquals(1, exported.accounts().size());
-      String exportedPassword = exported.accounts().get(0).password();
-      assertTrue(exportedPassword.startsWith("enc:"));
-      assertNotEquals("new-pass", exportedPassword);
-
-      service.importAccounts(
-          new LoginManagerService.ImportAccountsRequest(
-              java.util.List.of(
-                  new LoginManagerService.ImportLoginAccount(
-                      null, "Gamma", "gamma@example.com", "pass3", Boolean.TRUE, "⚔️")),
-              Boolean.TRUE));
-      assertEquals(1, service.listAccounts().size());
-      assertEquals("Gamma", service.listAccounts().get(0).name());
+      assertNotNull(service.readOneDriveBackupStatus());
     } finally {
       Files.deleteIfExists(service.getAccountsFile());
     }

@@ -2,6 +2,7 @@ package com.bstudio.ro_toolbox.controller.configEditor;
 
 import com.bstudio.ro_toolbox.controller.resourceReplacer.BaseResourceReplacerController;
 import com.bstudio.ro_toolbox.service.configEditor.ConfigEditorService;
+import com.bstudio.ro_toolbox.util.DesktopFolderOpener;
 import com.bstudio.ro_toolbox.util.WindowsProcessLauncher;
 import java.awt.Desktop;
 import java.io.IOException;
@@ -76,6 +77,28 @@ public class ConfigEditorController extends BaseResourceReplacerController {
     return new MessageResponse("Opened config folder.");
   }
 
+  @PostMapping("/onedrive-backup")
+  public ConfigEditorService.OneDriveBackupResult backupToOneDrive() throws IOException {
+    return configEditorService.backupToOneDrive();
+  }
+
+  @PostMapping("/onedrive-backup/folder/open")
+  public MessageResponse openOneDriveBackupFolder() throws IOException {
+    Path backupRoot = configEditorService.getOneDriveBackupRoot();
+    Files.createDirectories(backupRoot);
+    DesktopFolderOpener.openInDesktop(backupRoot);
+    return new MessageResponse("Opened OneDrive backup folder.");
+  }
+
+  @PostMapping("/onedrive-backup/restore")
+  public ConfigEditorService.OneDriveRestoreResult restoreFromOneDrive(
+      @RequestBody RestoreOneDriveBackupRequest request) throws IOException {
+    if (request == null || request.backupName() == null) {
+      throw new IllegalArgumentException("backupName is required.");
+    }
+    return configEditorService.restoreFromOneDriveBackup(request.backupName());
+  }
+
   private void openInDesktop(Path path) {
     try {
       String os = System.getProperty("os.name", "").toLowerCase();
@@ -115,6 +138,8 @@ public class ConfigEditorController extends BaseResourceReplacerController {
   public record IgnoreEntryRequest(String name) {}
 
   public record SetShowDroppedItemNameRequest(Boolean enabled) {}
+
+  public record RestoreOneDriveBackupRequest(String backupName) {}
 
   public record MessageResponse(String message) {}
 }

@@ -93,6 +93,35 @@ export type ConfigEditorStatus = {
   configDir: string;
   configDirExists: boolean;
   files: ConfigEditorFileState[];
+  oneDriveBackup: OneDriveBackupStatus;
+};
+
+export type OneDriveBackupStatus = {
+  available: boolean;
+  providerName: string | null;
+  oneDrivePath: string | null;
+  backupRootPath: string | null;
+  backups: OneDriveBackupEntry[];
+};
+
+export type OneDriveBackupResult = {
+  backupPath: string;
+  copiedFiles: number;
+  files: string[];
+};
+
+export type OneDriveBackupEntry = {
+  name: string;
+  path: string;
+  files: string[];
+};
+
+export type OneDriveRestoreResult = {
+  restoredFrom: string;
+  restoredFiles: number;
+  files: string[];
+  safetyBackupPath: string | null;
+  safetyBackupFiles: string[];
 };
 
 export type IgnoreListState = {
