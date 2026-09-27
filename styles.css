@@ -413,6 +413,11 @@ input[type="search"] {
   object-position: center 30%;
 }
 
+.package-card.is-buff-icons .package-media img {
+  object-fit: contain;
+  padding: 0.75rem;
+}
+
 .preview-count {
   position: absolute;
   right: 0.5rem;
