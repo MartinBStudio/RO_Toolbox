@@ -1,8 +1,16 @@
 import type { ResourcesUpdateCheckResult } from "../types.ts";
 import { request } from "./apiClient.ts";
+import { downloadResourceWithProgress } from "./resourceDownloadApi.ts";
+import type { ResourceDownloadProgress } from "./resourceDownloadApi.ts";
 
-export function downloadCombatTextProfiles() {
-  return request<{ message: string }>("/combattext/download", { method: "POST" });
+export function downloadCombatTextProfiles(
+  onProgress: (progress: ResourceDownloadProgress) => void
+) {
+  return downloadResourceWithProgress(
+    "/combattext/download/progress",
+    onProgress,
+    "Combat text packages downloaded."
+  );
 }
 
 export function installCombatTextProfile(profileId: string) {

@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import lombok.RequiredArgsConstructor;
@@ -81,7 +82,9 @@ public class ResourcesUpdater implements ICommonResourceMethods {
         localVersion, "unknown", localExists, false, false, "Unable to check remote manifest.");
   }
 
-  public void runUpdate(String defaultRepoUrl, Path destinationDir) throws IOException {
+  public void runUpdate(
+      String defaultRepoUrl, Path destinationDir, Consumer<DownloadProgress> progressListener)
+      throws IOException {
     Objects.requireNonNull(defaultRepoUrl, "defaultRepoUrl is required.");
     Objects.requireNonNull(destinationDir, "destinationDir is required.");
 
@@ -97,7 +100,7 @@ public class ResourcesUpdater implements ICommonResourceMethods {
 
       Path tempZip = Files.createTempFile("repo-", ".zip");
       try {
-        if (!downloadArchive(zipUrl, tempZip)) {
+        if (!downloadArchive(zipUrl, tempZip, progressListener)) {
           throw new IOException("Not found: " + zipUrl);
         }
         replaceWithArchiveContents(tempZip, destinationDir);
@@ -139,7 +142,8 @@ public class ResourcesUpdater implements ICommonResourceMethods {
     return sanitized;
   }
 
-  private boolean downloadArchive(String url, Path outputFile) throws IOException {
+  private boolean downloadArchive(
+      String url, Path outputFile, Consumer<DownloadProgress> progressListener) throws IOException {
     HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
     connection.setRequestProperty("User-Agent", USER_AGENT);
     connection.setInstanceFollowRedirects(true);
@@ -149,12 +153,29 @@ public class ResourcesUpdater implements ICommonResourceMethods {
         return false;
       }
 
-      try (InputStream inputStream = connection.getInputStream()) {
-        Files.copy(inputStream, outputFile, StandardCopyOption.REPLACE_EXISTING);
+      long totalBytes = connection.getContentLengthLong();
+      reportProgress(progressListener, 0L, totalBytes);
+      try (InputStream inputStream = connection.getInputStream();
+          var outputStream = Files.newOutputStream(outputFile)) {
+        byte[] buffer = new byte[64 * 1024];
+        long downloadedBytes = 0L;
+        int read;
+        while ((read = inputStream.read(buffer)) != -1) {
+          outputStream.write(buffer, 0, read);
+          downloadedBytes += read;
+          reportProgress(progressListener, downloadedBytes, totalBytes);
+        }
       }
       return true;
     } finally {
       connection.disconnect();
+    }
+  }
+
+  private void reportProgress(
+      Consumer<DownloadProgress> progressListener, long downloadedBytes, long totalBytes) {
+    if (progressListener != null) {
+      progressListener.accept(new DownloadProgress(downloadedBytes, totalBytes));
     }
   }
 
@@ -256,4 +277,6 @@ public class ResourcesUpdater implements ICommonResourceMethods {
       boolean updateAvailable,
       boolean success,
       String message) {}
+
+  public record DownloadProgress(long downloadedBytes, long totalBytes) {}
 }

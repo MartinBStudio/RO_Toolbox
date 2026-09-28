@@ -1,8 +1,16 @@
 import type { ResourcesUpdateCheckResult } from "../types.ts";
 import { request } from "./apiClient.ts";
+import { downloadResourceWithProgress } from "./resourceDownloadApi.ts";
+import type { ResourceDownloadProgress } from "./resourceDownloadApi.ts";
 
-export function downloadBuffsProfiles() {
-  return request<{ message: string }> ("/buffs/download", { method: "POST" });
+export function downloadBuffsProfiles(
+  onProgress: (progress: ResourceDownloadProgress) => void
+) {
+  return downloadResourceWithProgress(
+    "/buffs/download/progress",
+    onProgress,
+    "Buff packages downloaded."
+  );
 }
 
 export function installBuffsProfile(profileId: string) {

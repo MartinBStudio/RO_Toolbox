@@ -1,8 +1,16 @@
 import type { ResourcesUpdateCheckResult } from "../types.ts";
 import { request } from "./apiClient.ts";
+import { downloadResourceWithProgress } from "./resourceDownloadApi.ts";
+import type { ResourceDownloadProgress } from "./resourceDownloadApi.ts";
 
-export function downloadUserInterfaceProfiles() {
-  return request<{ message: string }>("/userinterface/download", { method: "POST" });
+export function downloadUserInterfaceProfiles(
+  onProgress: (progress: ResourceDownloadProgress) => void
+) {
+  return downloadResourceWithProgress(
+    "/userinterface/download/progress",
+    onProgress,
+    "User interface packages downloaded."
+  );
 }
 
 export function installUserInterfaceProfile(profileId: string) {

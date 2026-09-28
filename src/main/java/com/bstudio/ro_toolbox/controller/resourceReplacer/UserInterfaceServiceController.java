@@ -14,13 +14,15 @@ import java.nio.file.Path;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
 @RequestMapping("/api/userinterface")
 @RequiredArgsConstructor
 @DependsOn("appConfigService")
-public class UserInterfaceServiceController {
+public class UserInterfaceServiceController extends BaseResourceReplacerController {
 
   private final UserInterfaceManager userInterfaceManager;
   private final AppConfigService appConfigService;
@@ -41,10 +43,12 @@ public class UserInterfaceServiceController {
         .build();
   }
 
-  @PostMapping("/download")
-  public MessageResponse downloadProfiles() throws IOException {
-    userInterfaceManager.runUpdate();
-    return MessageResponse.builder().message("Profiles downloaded.").build();
+  @PostMapping(value = "/download/progress", produces = MediaType.APPLICATION_NDJSON_VALUE)
+  public StreamingResponseBody downloadProfiles() {
+    return downloadWithProgress(
+        userInterfaceManager::runUpdate,
+        "Downloading user interface packages...",
+        "User interface packages downloaded.");
   }
 
   @PostMapping("/install")
@@ -93,9 +97,5 @@ public class UserInterfaceServiceController {
     Files.createDirectories(item);
     DesktopFolderOpener.openInDesktop(item);
     return MessageResponse.builder().message("Opened item folder.").build();
-  }
-
-  private String absoluteOrNull(Path path) {
-    return path == null ? null : path.toAbsolutePath().normalize().toString();
   }
 }

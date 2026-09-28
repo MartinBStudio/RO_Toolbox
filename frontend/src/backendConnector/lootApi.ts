@@ -1,5 +1,7 @@
 import type { ResourcesUpdateCheckResult } from "../types.ts";
 import { request } from "./apiClient.ts";
+import { downloadResourceWithProgress } from "./resourceDownloadApi.ts";
+import type { ResourceDownloadProgress } from "./resourceDownloadApi.ts";
 
 export type LootModelScaleVector = {
   x: number;
@@ -54,8 +56,10 @@ export type LootModelPreview = {
   error: string | null;
 };
 
-export function downloadProfiles() {
-  return request<{ message: string }>("/loot/download", { method: "POST" });
+export async function downloadProfiles(
+  onProgress: (progress: ResourceDownloadProgress) => void
+) {
+  return downloadResourceWithProgress("/loot/download/progress", onProgress, "Profiles downloaded.");
 }
 
 export function installProfile(profileId: string) {

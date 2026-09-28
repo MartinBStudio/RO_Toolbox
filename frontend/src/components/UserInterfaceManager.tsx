@@ -36,7 +36,7 @@ import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 type UserInterfaceManagerProps = {
   status: AppStatus | null;
   loading: boolean;
-  onBusyChange: (busy: boolean, message?: string) => void;
+  onBusyChange: (busy: boolean, message?: string, progress?: number | null) => void;
   onStatusRefresh: () => Promise<void>;
   onMessage: (message: string) => void;
 };
@@ -152,9 +152,33 @@ export function UserInterfaceManager({
 
   async function onResourcesUpdateAction() {
     if (resourcesUpdateAvailable) {
-      await runAction(downloadUserInterfaceProfiles, "User interface packages downloaded.", "Downloading user interface packages...");
-      setResourcesUpdateAvailable(false);
-      setResourcesUpdateVersion(undefined);
+      onBusyChange(true, "Downloading user interface packages...", 0);
+      try {
+        await downloadUserInterfaceProfiles((progress) => {
+          if (progress.type === "complete") {
+            onBusyChange(true, progress.message || "Download complete.", 100);
+            return;
+          }
+          if (progress.type === "started") {
+            onBusyChange(true, progress.message || "Downloading user interface packages...", 0);
+            return;
+          }
+          if (progress.type === "progress") {
+            const percentage = progress.totalBytes > 0
+              ? (progress.downloadedBytes / progress.totalBytes) * 100
+              : null;
+            onBusyChange(true, "Downloading user interface packages...", percentage ?? 0);
+          }
+        });
+        await onStatusRefresh();
+        onMessage("User interface packages downloaded.");
+        setResourcesUpdateAvailable(false);
+        setResourcesUpdateVersion(undefined);
+      } catch (err) {
+        onMessage(toErrorMessage(err, "Request failed."));
+      } finally {
+        onBusyChange(false);
+      }
     } else {
       setResourcesUpdateChecking(true);
       try {

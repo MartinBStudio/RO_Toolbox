@@ -36,7 +36,7 @@ import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 type BuffsManagerProps = {
   status: AppStatus | null;
   loading: boolean;
-  onBusyChange: (busy: boolean, message?: string) => void;
+  onBusyChange: (busy: boolean, message?: string, progress?: number | null) => void;
   onStatusRefresh: () => Promise<void>;
   onMessage: (message: string) => void;
 };
@@ -153,9 +153,33 @@ export function BuffsManager({
 
   async function onResourcesUpdateAction() {
     if (resourcesUpdateAvailable) {
-      await runAction(downloadBuffsProfiles, "Buff packages downloaded.", "Downloading buff packages...");
-      setResourcesUpdateAvailable(false);
-      setResourcesUpdateVersion(undefined);
+      onBusyChange(true, "Downloading buff packages...", 0);
+      try {
+        await downloadBuffsProfiles((progress) => {
+          if (progress.type === "complete") {
+            onBusyChange(true, progress.message || "Download complete.", 100);
+            return;
+          }
+          if (progress.type === "started") {
+            onBusyChange(true, progress.message || "Downloading buff packages...", 0);
+            return;
+          }
+          if (progress.type === "progress") {
+            const percentage = progress.totalBytes > 0
+              ? (progress.downloadedBytes / progress.totalBytes) * 100
+              : null;
+            onBusyChange(true, "Downloading buff packages...", percentage ?? 0);
+          }
+        });
+        await onStatusRefresh();
+        onMessage("Buff packages downloaded.");
+        setResourcesUpdateAvailable(false);
+        setResourcesUpdateVersion(undefined);
+      } catch (err) {
+        onMessage(toErrorMessage(err, "Request failed."));
+      } finally {
+        onBusyChange(false);
+      }
     } else {
       setResourcesUpdateChecking(true);
       try {

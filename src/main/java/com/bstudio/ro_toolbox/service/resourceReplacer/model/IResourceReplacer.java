@@ -4,6 +4,7 @@ import com.bstudio.ro_toolbox.service.resourceReplacer.component.ResourcesUpdate
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface IResourceReplacer {
   Path getResourcesDir();
@@ -22,7 +23,7 @@ public interface IResourceReplacer {
 
   void installPackage(String profileId, List<String> disabledManagedSubfolders) throws IOException;
 
-  void runUpdate() throws IOException;
+  void runUpdate(Consumer<ResourcesUpdater.DownloadProgress> progressListener) throws IOException;
 
   ResourcesUpdater.ResourcesUpdateCheckResult checkForUpdate();
 }

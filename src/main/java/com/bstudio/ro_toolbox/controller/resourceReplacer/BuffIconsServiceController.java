@@ -13,7 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
 @RequestMapping("/api/bufficons")
@@ -37,10 +39,12 @@ public class BuffIconsServiceController extends BaseResourceReplacerController {
         .build();
   }
 
-  @PostMapping("/download")
-  public MessageResponse downloadProfiles() throws IOException {
-    iconsManager.runUpdate();
-    return MessageResponse.builder().message("Packages downloaded.").build();
+  @PostMapping(value = "/download/progress", produces = MediaType.APPLICATION_NDJSON_VALUE)
+  public StreamingResponseBody downloadProfiles() {
+    return downloadWithProgress(
+        iconsManager::runUpdate,
+        "Downloading buff icon packages...",
+        "Buff icon packages downloaded.");
   }
 
   @PostMapping("/install")

@@ -23,6 +23,7 @@ import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
 @RequestMapping("/api/loot")
@@ -49,10 +50,10 @@ public class LootServiceController extends BaseResourceReplacerController {
         .build();
   }
 
-  @PostMapping("/download")
-  public MessageResponse downloadProfiles() throws IOException {
-    lootManager.runUpdate();
-    return MessageResponse.builder().message("Profiles downloaded.").build();
+  @PostMapping(value = "/download/progress", produces = MediaType.APPLICATION_NDJSON_VALUE)
+  public StreamingResponseBody downloadProfiles() {
+    return downloadWithProgress(
+        lootManager::runUpdate, "Downloading loot models...", "Profiles downloaded.");
   }
 
   @PostMapping("/install")

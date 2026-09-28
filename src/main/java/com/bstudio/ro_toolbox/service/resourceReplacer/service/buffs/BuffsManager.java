@@ -7,6 +7,7 @@ import com.bstudio.ro_toolbox.util.AppDataPaths;
 import java.io.*;
 import java.nio.file.*;
 import java.util.List;
+import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,8 +33,9 @@ public class BuffsManager extends BaseIResourceReplacerResource {
   }
 
   @Override
-  public void runUpdate() throws IOException {
-    resourcesUpdater.runUpdate(DEFAULT_REPO, RESOURCES_DIR);
+  public void runUpdate(Consumer<ResourcesUpdater.DownloadProgress> progressListener)
+      throws IOException {
+    resourcesUpdater.runUpdate(DEFAULT_REPO, RESOURCES_DIR, progressListener);
   }
 
   @Override

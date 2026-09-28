@@ -13,7 +13,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 @RestController
 @RequestMapping("/api/combattext")
@@ -39,10 +41,12 @@ public class CombatTextServiceController extends BaseResourceReplacerController 
         .build();
   }
 
-  @PostMapping("/download")
-  public MessageResponse downloadProfiles() throws IOException {
-    combatTextManagerService.runUpdate();
-    return MessageResponse.builder().message("Profiles downloaded.").build();
+  @PostMapping(value = "/download/progress", produces = MediaType.APPLICATION_NDJSON_VALUE)
+  public StreamingResponseBody downloadProfiles() {
+    return downloadWithProgress(
+        combatTextManagerService::runUpdate,
+        "Downloading combat text packages...",
+        "Combat text packages downloaded.");
   }
 
   @PostMapping("/install")

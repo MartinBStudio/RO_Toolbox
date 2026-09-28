@@ -85,24 +85,8 @@ export function AppHeader({
     return "RO_Toolbox.jar";
   }
 
-  function formatDownloadLabel(prefix: string, downloaded: number, total: number) {
-    if (total > 0) {
-      return prefix;
-    }
-    if (downloaded > 0) {
-      return `${prefix} ${formatBytes(downloaded)}`;
-    }
+  function formatDownloadLabel(prefix: string, _downloaded: number, _total: number) {
     return prefix;
-  }
-
-  function formatBytes(bytes: number) {
-    if (bytes >= 1024 * 1024) {
-      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-    }
-    if (bytes >= 1024) {
-      return `${Math.round(bytes / 1024)} KB`;
-    }
-    return `${bytes} B`;
   }
 
   async function checkForUpdates(showUpToDateMessage = false) {
