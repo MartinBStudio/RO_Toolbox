@@ -24,8 +24,11 @@ export function openConfigEditorFolder() {
   return request<{ message: string }>("/config-editor/folders/open", { method: "POST" });
 }
 
-export function backupConfigEditorToOneDrive() {
-  return request<OneDriveBackupResult>("/config-editor/onedrive-backup", { method: "POST" });
+export function backupConfigEditorToOneDrive(backupName?: string) {
+  return request<OneDriveBackupResult>("/config-editor/onedrive-backup", {
+    method: "POST",
+    body: backupName ? JSON.stringify({ backupName }) : undefined
+  });
 }
 
 export function openConfigEditorOneDriveBackupFolder() {

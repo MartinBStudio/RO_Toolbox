@@ -28,6 +28,9 @@ import { ConfirmationModal } from "./elements/ConfirmationModal.tsx";
 import {
     drainNotifications,
     getReleaseNotes,
+    getAppConfigBackupStatus,
+    getConfigEditorStatus,
+    getLoginOneDriveBackupStatus,
     getSelectedServiceSetting,
     getUsefulStuffCollapsedSetting,
     listQuickLoginAccounts,
@@ -50,6 +53,11 @@ type TaskbarQuickAccount = {
     id: string;
     name: string;
     icon: string;
+};
+
+type BackupWarning = {
+    label: string;
+    title: string;
 };
 
 function isServiceId(value: string): value is (typeof SERVICES)[number]["id"] {
@@ -87,6 +95,7 @@ function App() {
     const [minimumStartupDisplayReached, setMinimumStartupDisplayReached] = useState(false);
     const [troseRefreshLoading, setTroseRefreshLoading] = useState(false);
     const [closeConfirmOpen, setCloseConfirmOpen] = useState(false);
+    const [backupWarning, setBackupWarning] = useState<BackupWarning | null>(null);
     const allowWindowCloseRef = useRef(false);
     const appInForegroundRef = useRef(false);
     const usefulStuffPreferenceDirtyRef = useRef(false);
@@ -426,6 +435,42 @@ function App() {
         return () => window.clearInterval(timer);
     }, [backendReady, consumeTaskbarLaunchMessages]);
 
+    useEffect(() => {
+        if (!backendReady) {
+            setBackupWarning(null);
+            return;
+        }
+
+        const refreshBackupWarning = () => {
+            void loadBackupWarning();
+        };
+
+        refreshBackupWarning();
+        window.addEventListener("roToolbox:backups-changed", refreshBackupWarning);
+        window.addEventListener("roToolbox:backup-provider-changed", refreshBackupWarning);
+        return () => {
+            window.removeEventListener("roToolbox:backups-changed", refreshBackupWarning);
+            window.removeEventListener("roToolbox:backup-provider-changed", refreshBackupWarning);
+        };
+    }, [backendReady]);
+
+    async function loadBackupWarning() {
+        try {
+            const [loginBackupStatus, configEditorStatus, appConfigBackupStatus] = await Promise.all([
+                getLoginOneDriveBackupStatus(),
+                getConfigEditorStatus(),
+                getAppConfigBackupStatus()
+            ]);
+            setBackupWarning(resolveBackupWarning([
+                ...loginBackupStatus.backups.map((backup) => backup.name),
+                ...configEditorStatus.oneDriveBackup.backups.map((backup) => backup.name),
+                ...appConfigBackupStatus.backups.map((backup) => backup.name)
+            ]));
+        } catch {
+            setBackupWarning(null);
+        }
+    }
+
     return (
         <main className={`layout${loadingOverlayVisible ? " layoutLoading" : ""}${quickLaunchOnlyActive ? " layoutQuickLaunchOnly" : ""}`}>
             <div className="appBackground" aria-hidden="true" />
@@ -475,7 +520,14 @@ function App() {
                                                         <span className="serviceListIcon" aria-hidden="true">
                                                             <ServiceIcon />
                                                         </span>
-                                                        <span>{service.title}</span>
+                                                        <span className="serviceListLabel">
+                                                            <span>{service.title}</span>
+                                                            {service.id === "backups" && backupWarning ? (
+                                                                <span className="serviceListWarningBadge" title={backupWarning.title}>
+                                                                    {backupWarning.label}
+                                                                </span>
+                                                            ) : null}
+                                                        </span>
                                                     </button>
                                                 );
                                             })}
@@ -611,6 +663,7 @@ function App() {
                             loading={loading}
                             onBusyChange={onBusyChange}
                             onStatusRefresh={refreshStatus}
+                            onAccountsChanged={refreshQuickAccounts}
                             onMessage={setMessage}
                         />
                     )}
@@ -628,6 +681,47 @@ function App() {
             </BackendReadyGate>
         </main>
     );
+}
+
+function resolveBackupWarning(backupNames: string[]): BackupWarning | null {
+    const uniqueBackupNames = Array.from(new Set(backupNames));
+    if (uniqueBackupNames.length === 0) {
+        return {
+            label: "Missing",
+            title: "No backups found."
+        };
+    }
+
+    const newestBackupTime = Math.max(...uniqueBackupNames.map(parseBackupTime).filter((time) => time !== null));
+    if (!Number.isFinite(newestBackupTime)) {
+        return null;
+    }
+
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000;
+    if (Date.now() - newestBackupTime > thirtyDaysMs) {
+        return {
+            label: "Old",
+            title: "Newest backup is older than 30 days."
+        };
+    }
+
+    return null;
+}
+
+function parseBackupTime(backupName: string) {
+    const match = backupName.match(/^(\d{4})-(\d{2})-(\d{2})_(\d{2})-(\d{2})-(\d{2})$/);
+    if (!match) {
+        return null;
+    }
+    const [, year, month, day, hour, minute, second] = match;
+    return new Date(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hour),
+        Number(minute),
+        Number(second)
+    ).getTime();
 }
 
 export default App;

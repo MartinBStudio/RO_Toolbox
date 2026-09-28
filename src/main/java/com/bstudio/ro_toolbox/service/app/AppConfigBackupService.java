@@ -5,10 +5,11 @@ import com.bstudio.ro_toolbox.service.backup.BackupProviderResolver.BackupProvid
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
@@ -16,6 +17,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AppConfigBackupService {
   private static final String CONFIG_FILE_NAME = "config.properties";
+  private static final String BACKUP_FOLDER_NAME = "RO Toolbox Config";
   private static final DateTimeFormatter BACKUP_TIMESTAMP_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
 
@@ -51,7 +53,21 @@ public class AppConfigBackupService {
     return resolveProviderBackupRoot(provider);
   }
 
+  public Path getBackupSetFolder(String backupName) {
+    String normalizedBackupName = normalizeBackupName(backupName);
+    Path backupRoot = getBackupRoot();
+    Path backupDir = backupRoot.resolve(normalizedBackupName).toAbsolutePath().normalize();
+    if (!backupDir.startsWith(backupRoot.toAbsolutePath().normalize())) {
+      throw new IllegalArgumentException("backupName is invalid.");
+    }
+    return backupDir;
+  }
+
   public BackupResult backup() throws IOException {
+    return backup(null);
+  }
+
+  public BackupResult backup(String backupName) throws IOException {
     BackupProvider provider =
         backupProviderResolver
             .resolveDefaultProvider()
@@ -62,7 +78,7 @@ public class AppConfigBackupService {
       return new BackupResult(backupRoot.toString(), 0, List.of());
     }
 
-    Path backupDir = backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+    Path backupDir = resolveBackupDir(backupRoot, backupName).resolve(BACKUP_FOLDER_NAME);
     Files.createDirectories(backupDir);
     Files.copy(
         configFile,
@@ -103,6 +119,20 @@ public class AppConfigBackupService {
     return new BackupCleanupResult(deleted, null);
   }
 
+  public BackupSetDeleteResult deleteBackupSet(String backupName) throws IOException {
+    Path backupDir = getBackupSetFolder(backupName);
+    if (!Files.exists(backupDir) || !Files.isDirectory(backupDir)) {
+      throw new IllegalArgumentException("Selected backup was not found.");
+    }
+    String deletedPath = backupDir.toString();
+    deleteRecursively(backupDir);
+    if (Files.exists(backupDir)) {
+      throw new IOException(
+          "Backup folder could not be deleted. Close the folder or any files inside it, then try again.");
+    }
+    return new BackupSetDeleteResult(backupName, deletedPath);
+  }
+
   public RestoreResult restore(String backupName) throws IOException {
     String normalizedBackupName = normalizeBackupName(backupName);
     BackupProvider provider =
@@ -110,7 +140,8 @@ public class AppConfigBackupService {
             .resolveDefaultProvider()
             .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
     Path backupRoot = resolveProviderBackupRoot(provider);
-    Path backupDir = backupRoot.resolve(normalizedBackupName).toAbsolutePath().normalize();
+    Path backupDir =
+        backupRoot.resolve(normalizedBackupName).resolve(BACKUP_FOLDER_NAME).toAbsolutePath().normalize();
     if (!backupDir.startsWith(backupRoot.toAbsolutePath().normalize())
         || !Files.exists(backupDir)
         || !Files.isDirectory(backupDir)) {
@@ -123,7 +154,9 @@ public class AppConfigBackupService {
     }
 
     Path safetyBackupDir =
-        backupRoot.resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+        backupRoot
+            .resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER))
+            .resolve(BACKUP_FOLDER_NAME);
     List<String> safetyFiles = backupExistingConfigFile(safetyBackupDir);
 
     Files.createDirectories(appConfigService.getConfigDir());
@@ -155,7 +188,7 @@ public class AppConfigBackupService {
   }
 
   private Path resolveProviderBackupRoot(BackupProvider provider) {
-    return backupProviderResolver.resolveBackupRoot(provider, "RO Toolbox Config");
+    return backupProviderResolver.resolveBackupRoot(provider);
   }
 
   private List<BackupEntry> readBackups(Path backupRoot) {
@@ -177,13 +210,14 @@ public class AppConfigBackupService {
   }
 
   private Optional<BackupEntry> readBackupEntry(Path backupDir) {
-    Path file = backupDir.resolve(CONFIG_FILE_NAME);
+    Path categoryDir = backupDir.resolve(BACKUP_FOLDER_NAME);
+    Path file = categoryDir.resolve(CONFIG_FILE_NAME);
     if (!Files.isRegularFile(file)) {
       return Optional.empty();
     }
     return Optional.of(
         new BackupEntry(
-            backupDir.getFileName().toString(), backupDir.toString(), List.of(CONFIG_FILE_NAME)));
+            backupDir.getFileName().toString(), categoryDir.toString(), List.of(CONFIG_FILE_NAME)));
   }
 
   private List<String> backupExistingConfigFile(Path safetyBackupDir) throws IOException {
@@ -205,16 +239,37 @@ public class AppConfigBackupService {
     if (!Files.exists(path)) {
       return;
     }
-    try (var stream = Files.walk(path)) {
-      for (Path entry : stream.sorted(Comparator.reverseOrder()).toList()) {
-        try {
-          Files.deleteIfExists(entry);
-        } catch (IOException ex) {
-          if (Files.exists(entry)) {
-            throw ex;
+    Files.walkFileTree(
+        path,
+        new SimpleFileVisitor<>() {
+          @Override
+          public java.nio.file.FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+              throws IOException {
+            makeDeletable(file);
+            Files.deleteIfExists(file);
+            return java.nio.file.FileVisitResult.CONTINUE;
           }
-        }
+
+          @Override
+          public java.nio.file.FileVisitResult postVisitDirectory(Path dir, IOException exc)
+              throws IOException {
+            if (exc != null) {
+              throw exc;
+            }
+            makeDeletable(dir);
+            Files.deleteIfExists(dir);
+            return java.nio.file.FileVisitResult.CONTINUE;
+          }
+        });
+  }
+
+  private void makeDeletable(Path path) throws IOException {
+    try {
+      if (Files.getFileStore(path).supportsFileAttributeView("dos")) {
+        Files.setAttribute(path, "dos:readonly", false);
       }
+    } catch (UnsupportedOperationException ignored) {
+      // Non-Windows file stores do not expose DOS attributes.
     }
   }
 
@@ -229,6 +284,14 @@ public class AppConfigBackupService {
     return normalized;
   }
 
+  private Path resolveBackupDir(Path backupRoot, String backupName) {
+    if (backupName == null || backupName.isBlank()) {
+      return backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+    }
+    String normalizedBackupName = normalizeBackupName(backupName);
+    return backupRoot.resolve(normalizedBackupName).toAbsolutePath().normalize();
+  }
+
   public record BackupStatus(
       boolean available,
       String providerName,
@@ -241,6 +304,8 @@ public class AppConfigBackupService {
   public record BackupResult(String backupPath, int copiedFiles, List<String> files) {}
 
   public record BackupCleanupResult(int deletedBackups, String keptBackupName) {}
+
+  public record BackupSetDeleteResult(String backupName, String deletedPath) {}
 
   public record RestoreResult(
       String restoredFrom,

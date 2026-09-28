@@ -37,6 +37,7 @@ import org.springframework.stereotype.Service;
 public class LoginManagerService {
   private static final String ENCRYPTION_PREFIX = "enc:";
   private static final String ACCOUNTS_FILE_NAME = "accounts.properties";
+  private static final String BACKUP_FOLDER_NAME = "Login Manager";
   private static final DateTimeFormatter BACKUP_TIMESTAMP_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
   private static final String ENCRYPTION_SECRET =
@@ -180,6 +181,10 @@ public class LoginManagerService {
   }
 
   public OneDriveBackupResult backupToOneDrive() throws IOException {
+    return backupToOneDrive(null);
+  }
+
+  public OneDriveBackupResult backupToOneDrive(String backupName) throws IOException {
     BackupProvider provider =
         backupProviderResolver
             .resolveDefaultProvider()
@@ -189,7 +194,7 @@ public class LoginManagerService {
       return new OneDriveBackupResult(backupRoot.toString(), 0, List.of());
     }
 
-    Path backupDir = backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+    Path backupDir = resolveBackupDir(backupRoot, backupName).resolve(BACKUP_FOLDER_NAME);
     Files.createDirectories(backupDir);
     Files.copy(
         accountsFile,
@@ -237,7 +242,8 @@ public class LoginManagerService {
             .resolveDefaultProvider()
             .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
     Path backupRoot = resolveProviderBackupRoot(provider);
-    Path backupDir = backupRoot.resolve(normalizedBackupName).toAbsolutePath().normalize();
+    Path backupDir =
+        backupRoot.resolve(normalizedBackupName).resolve(BACKUP_FOLDER_NAME).toAbsolutePath().normalize();
     if (!backupDir.startsWith(backupRoot.toAbsolutePath().normalize())
         || !Files.exists(backupDir)
         || !Files.isDirectory(backupDir)) {
@@ -250,7 +256,9 @@ public class LoginManagerService {
     }
 
     Path safetyBackupDir =
-        backupRoot.resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+        backupRoot
+            .resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER))
+            .resolve(BACKUP_FOLDER_NAME);
     List<String> safetyFiles = backupExistingAccountsFile(safetyBackupDir);
 
     Files.createDirectories(configDir);
@@ -433,7 +441,7 @@ public class LoginManagerService {
   }
 
   private Path resolveProviderBackupRoot(BackupProvider provider) {
-    return backupProviderResolver.resolveBackupRoot(provider, "Login Manager");
+    return backupProviderResolver.resolveBackupRoot(provider);
   }
 
   private List<OneDriveBackupEntry> readBackups(Path backupRoot) {
@@ -455,13 +463,14 @@ public class LoginManagerService {
   }
 
   private Optional<OneDriveBackupEntry> readBackupEntry(Path backupDir) {
-    Path file = backupDir.resolve(ACCOUNTS_FILE_NAME);
+    Path categoryDir = backupDir.resolve(BACKUP_FOLDER_NAME);
+    Path file = categoryDir.resolve(ACCOUNTS_FILE_NAME);
     if (!Files.isRegularFile(file)) {
       return Optional.empty();
     }
     return Optional.of(
         new OneDriveBackupEntry(
-            backupDir.getFileName().toString(), backupDir.toString(), List.of(ACCOUNTS_FILE_NAME)));
+            backupDir.getFileName().toString(), categoryDir.toString(), List.of(ACCOUNTS_FILE_NAME)));
   }
 
   private List<String> backupExistingAccountsFile(Path safetyBackupDir) throws IOException {
@@ -504,6 +513,14 @@ public class LoginManagerService {
       throw new IllegalArgumentException("backupName is invalid.");
     }
     return normalized;
+  }
+
+  private Path resolveBackupDir(Path backupRoot, String backupName) {
+    if (backupName == null || backupName.isBlank()) {
+      return backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+    }
+    String normalizedBackupName = normalizeBackupName(backupName);
+    return backupRoot.resolve(normalizedBackupName).toAbsolutePath().normalize();
   }
 
   public record LoginAccount(

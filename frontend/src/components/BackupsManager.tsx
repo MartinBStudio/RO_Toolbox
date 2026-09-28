@@ -3,29 +3,22 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import {
   ArrowDownTrayIcon,
   CloudArrowUpIcon,
-  FolderOpenIcon
+  FolderOpenIcon,
+  TrashIcon
 } from "@heroicons/react/24/outline";
 import {
   backupAppConfig,
   backupConfigEditorToOneDrive,
   backupLoginAccountsToOneDrive,
-  cleanupAppConfigBackups,
-  cleanupConfigEditorBackups,
-  cleanupLoginAccountBackups,
-  deleteAllAppConfigBackups,
-  deleteAllConfigEditorBackups,
-  deleteAllLoginAccountBackups,
+  clearBackupFolder,
+  deleteAppConfigBackupSet,
   getAppConfigBackupStatus,
   getConfigEditorStatus,
   getBackupProviderSettings,
   getLoginOneDriveBackupStatus,
-  openAppConfigBackupFolder,
-  openConfigEditorOneDriveBackupFolder,
-  openLoginOneDriveBackupFolder,
-  restoreAppConfigBackup,
-  restoreConfigEditorFromOneDrive,
-  restoreLoginAccountsFromOneDrive,
-  saveBackupProviderSettings,
+  openAppConfigBackupSetFolder,
+  restoreBackupSet,
+  saveBackupFolder,
   type BackupProviderSettings
 } from "../backendConnector/api.ts";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
@@ -47,8 +40,19 @@ type BackupRow = {
   id: BackupKind;
   title: string;
   label: string;
+  folderName: string;
   status: LoginOneDriveBackupStatus | OneDriveBackupStatus | AppConfigBackupStatus | null;
 };
+
+type BackupSet = {
+  name: string;
+  subfolders: BackupRow[];
+};
+
+type BackupStatusWithEntries =
+  | LoginOneDriveBackupStatus
+  | OneDriveBackupStatus
+  | AppConfigBackupStatus;
 
 export function BackupsManager({
   loading,
@@ -61,12 +65,7 @@ export function BackupsManager({
   const [configStatus, setConfigStatus] = useState<OneDriveBackupStatus | null>(null);
   const [appConfigStatus, setAppConfigStatus] = useState<AppConfigBackupStatus | null>(null);
   const [backupProviderSettings, setBackupProviderSettings] = useState<BackupProviderSettings | null>(null);
-  const [deleteAllConfirmOpen, setDeleteAllConfirmOpen] = useState(false);
-  const [selectedBackups, setSelectedBackups] = useState<Record<BackupKind, string>>({
-    login: "",
-    "rose-config": "",
-    "app-config": ""
-  });
+  const [deleteBackupTarget, setDeleteBackupTarget] = useState<BackupSet | null>(null);
 
   useEffect(() => {
     void loadStatuses(false);
@@ -82,29 +81,14 @@ export function BackupsManager({
     return () => window.removeEventListener("roToolbox:backup-provider-changed", reloadBackupStatus);
   }, []);
 
-  useEffect(() => {
-    syncSelectedBackup("login", loginStatus);
-  }, [loginStatus]);
-
-  useEffect(() => {
-    syncSelectedBackup("rose-config", configStatus);
-  }, [configStatus]);
-
-  useEffect(() => {
-    syncSelectedBackup("app-config", appConfigStatus);
-  }, [appConfigStatus]);
-
   const rows: BackupRow[] = [
-    { id: "login", title: "Accounts", label: "login", status: loginStatus },
-    { id: "rose-config", title: "ROSE config", label: "ROSE config", status: configStatus },
-    { id: "app-config", title: "RO Toolbox config", label: "app config", status: appConfigStatus }
+    { id: "login", title: "Accounts", label: "login", folderName: "Login Manager", status: loginStatus },
+    { id: "rose-config", title: "ROSE config", label: "ROSE config", folderName: "ROSE Online Config", status: configStatus },
+    { id: "app-config", title: "RO Toolbox config", label: "app config", folderName: "RO Toolbox Config", status: appConfigStatus }
   ];
-  const selectedBackupProvider = backupProviderSettings?.providers.find(
-    (provider) => provider.id === backupProviderSettings.selectedProviderId
-  );
-  const backupProviderDisplay =
-    selectedBackupProvider?.path ??
-    (selectedBackupProvider?.id === "auto" ? "Auto uses the first detected cloud folder." : "Not set");
+  const backupSets = buildBackupSets(rows);
+  const backupFolderPath = backupProviderSettings?.localPath ?? null;
+  const backupFolderSelected = Boolean(backupFolderPath);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -117,19 +101,6 @@ export function BackupsManager({
       return err.message;
     }
     return fallback;
-  }
-
-  function syncSelectedBackup(kind: BackupKind, status: LoginOneDriveBackupStatus | OneDriveBackupStatus | AppConfigBackupStatus | null) {
-    const backups = status?.backups ?? [];
-    setSelectedBackups((current) => {
-      if (backups.length === 0) {
-        return current[kind] ? { ...current, [kind]: "" } : current;
-      }
-      if (backups.some((backup) => backup.name === current[kind])) {
-        return current;
-      }
-      return { ...current, [kind]: backups[0].name };
-    });
   }
 
   async function loadStatuses(showBusy: boolean) {
@@ -166,22 +137,7 @@ export function BackupsManager({
     try {
       setBackupProviderSettings(await getBackupProviderSettings());
     } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to load backup providers."));
-    }
-  }
-
-  async function onBackupProviderChange(providerId: string) {
-    onBusyChange(true, "Saving backup provider...");
-    try {
-      const nextSettings = await saveBackupProviderSettings(providerId, backupProviderSettings?.localPath ?? null);
-      setBackupProviderSettings(nextSettings);
-      window.dispatchEvent(new Event("roToolbox:backup-provider-changed"));
-      await loadStatuses(false);
-      onMessage("Backup provider saved.");
-    } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to save backup provider."));
-    } finally {
-      onBusyChange(false);
+      onMessage(toErrorMessage(err, "Failed to load backup folder."));
     }
   }
 
@@ -196,11 +152,11 @@ export function BackupsManager({
       }
       onBusyChange(true, "Saving backup folder...");
       try {
-        const nextSettings = await saveBackupProviderSettings("local", selected);
+        const nextSettings = await saveBackupFolder(selected);
         setBackupProviderSettings(nextSettings);
         window.dispatchEvent(new Event("roToolbox:backup-provider-changed"));
         await loadStatuses(false);
-        onMessage("Backup folder saved.");
+        onMessage("Backup folder saved. Backups will be stored in RO Toolbox backups.");
       } finally {
         onBusyChange(false);
       }
@@ -209,17 +165,38 @@ export function BackupsManager({
     }
   }
 
+  async function onClearBackupFolder() {
+    onBusyChange(true, "Clearing backup folder...");
+    try {
+      const nextSettings = await clearBackupFolder();
+      setBackupProviderSettings(nextSettings);
+      window.dispatchEvent(new Event("roToolbox:backup-provider-changed"));
+      await loadStatuses(false);
+      onMessage("Backup folder cleared.");
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to clear backup folder."));
+    } finally {
+      onBusyChange(false);
+    }
+  }
+
   async function onBackupAll() {
+    if (!backupFolderSelected) {
+      onMessage("Choose a backup folder first.");
+      return;
+    }
+    const backupName = createBackupName();
     const backupTasks: Array<{ label: string; run: () => Promise<unknown> }> = [
-      { label: "accounts", run: backupLoginAccountsToOneDrive },
-      { label: "ROSE config", run: backupConfigEditorToOneDrive },
-      { label: "RO Toolbox config", run: backupAppConfig }
+      { label: "accounts", run: () => backupLoginAccountsToOneDrive(backupName) },
+      { label: "ROSE config", run: () => backupConfigEditorToOneDrive(backupName) },
+      { label: "RO Toolbox config", run: () => backupAppConfig(backupName) }
     ];
 
     onBusyChange(true, "Creating backups...");
     try {
       const results = await Promise.allSettled(backupTasks.map((task) => task.run()));
       await loadStatuses(false);
+      notifyBackupsChanged();
 
       const failedLabels = results
         .map((result, index) => (result.status === "rejected" ? backupTasks[index].label : null))
@@ -259,95 +236,14 @@ export function BackupsManager({
     }
   }
 
-  async function onDeleteAllButLatest() {
-    const confirmed = window.confirm("Delete older backups and keep only the latest backup for each section?");
-    if (!confirmed) {
+  async function onOpenBackupSetFolder(backupName: string) {
+    if (!backupFolderSelected) {
+      onMessage("Choose a backup folder first.");
       return;
     }
-
-    const beforeCount = rows.reduce((total, row) => total + Math.max((row.status?.backups.length ?? 0) - 1, 0), 0);
-    onBusyChange(true, "Deleting old backups...");
-    try {
-      const results = await Promise.allSettled([
-        cleanupLoginAccountBackups(),
-        cleanupConfigEditorBackups(),
-        cleanupAppConfigBackups()
-      ]);
-      await loadStatuses(false);
-      const reportedDeletedCount = results.reduce((total, result) => {
-        if (result.status !== "fulfilled") {
-          return total;
-        }
-        return total + result.value.deletedBackups;
-      }, 0);
-      const afterStatuses = await loadBackupStatuses();
-      applyBackupStatuses(afterStatuses);
-      const afterCount = [
-        afterStatuses.loginBackupStatus,
-        afterStatuses.configEditorStatus.oneDriveBackup,
-        afterStatuses.appConfigBackupStatus
-      ].reduce((total, status) => total + Math.max(status.backups.length - 1, 0), 0);
-      const deletedCount = Math.max(reportedDeletedCount, beforeCount - afterCount);
-      const failedCount = results.filter((result) => result.status === "rejected").length;
-      if (failedCount > 0 && deletedCount === 0) {
-        onMessage(`Deleted 0 old backups. ${failedCount} cleanup task${failedCount === 1 ? "" : "s"} failed.`);
-      } else {
-        onMessage(`Deleted ${deletedCount} old backup${deletedCount === 1 ? "" : "s"}.`);
-      }
-    } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to delete old backups."));
-    } finally {
-      onBusyChange(false);
-    }
-  }
-
-  async function onDeleteAllConfirmed() {
-    setDeleteAllConfirmOpen(false);
-    const beforeCount = rows.reduce((total, row) => total + (row.status?.backups.length ?? 0), 0);
-    onBusyChange(true, "Deleting all backups...");
-    try {
-      const results = await Promise.allSettled([
-        deleteAllLoginAccountBackups(),
-        deleteAllConfigEditorBackups(),
-        deleteAllAppConfigBackups()
-      ]);
-      const reportedDeletedCount = results.reduce((total, result) => {
-        if (result.status !== "fulfilled") {
-          return total;
-        }
-        return total + result.value.deletedBackups;
-      }, 0);
-      const afterStatuses = await loadBackupStatuses();
-      applyBackupStatuses(afterStatuses);
-      const afterCount = [
-        afterStatuses.loginBackupStatus,
-        afterStatuses.configEditorStatus.oneDriveBackup,
-        afterStatuses.appConfigBackupStatus
-      ].reduce((total, status) => total + status.backups.length, 0);
-      const deletedCount = Math.max(reportedDeletedCount, beforeCount - afterCount);
-      const failedCount = results.filter((result) => result.status === "rejected").length;
-      if (failedCount > 0 && deletedCount === 0) {
-        onMessage(`Deleted 0 backups. ${failedCount} delete task${failedCount === 1 ? "" : "s"} failed.`);
-      } else {
-        onMessage(`Deleted ${deletedCount} backup${deletedCount === 1 ? "" : "s"}.`);
-      }
-    } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to delete backups."));
-    } finally {
-      onBusyChange(false);
-    }
-  }
-
-  async function onOpenFolder(kind: BackupKind) {
     onBusyChange(true, "Opening backup folder...");
     try {
-      if (kind === "login") {
-        await openLoginOneDriveBackupFolder();
-      } else if (kind === "rose-config") {
-        await openConfigEditorOneDriveBackupFolder();
-      } else {
-        await openAppConfigBackupFolder();
-      }
+      await openAppConfigBackupSetFolder(backupName);
       onMessage("Opened backup folder.");
     } catch (err) {
       onMessage(toErrorMessage(err, "Failed to open backup folder."));
@@ -356,71 +252,109 @@ export function BackupsManager({
     }
   }
 
-  async function onRestore(kind: BackupKind) {
-    const selectedBackupName = selectedBackups[kind];
-    if (!selectedBackupName) {
-      onMessage("Choose a backup to restore.");
+  async function onRestoreBackupSet(backupSet: BackupSet) {
+    if (!backupFolderSelected) {
+      onMessage("Choose a backup folder first.");
       return;
     }
-
     const confirmed = window.confirm(
-      restoreConfirmationMessage(kind, selectedBackupName)
+      `Restore backup "${backupSet.name}"? Current files will be backed up first.`
     );
     if (!confirmed) {
       return;
     }
 
-    onBusyChange(true, restoreLoadingMessage(kind));
+    onBusyChange(true, "Restoring backup...");
     try {
-      if (kind === "login") {
-        await restoreLoginAccountsFromOneDrive(selectedBackupName);
-        await onAccountsChanged();
-        onMessage("Login accounts restored.");
-      } else if (kind === "rose-config") {
-        const result = await restoreConfigEditorFromOneDrive(selectedBackupName);
-        onMessage(`Restored ${result.restoredFiles} ROSE config file${result.restoredFiles === 1 ? "" : "s"}.`);
-      } else {
-        await restoreAppConfigBackup(selectedBackupName);
-        await onStatusRefresh();
-        await loadProviderSettings();
-        onMessage("RO Toolbox config restored.");
-      }
+      const result = await restoreBackupSet(backupSet.name);
+      await onAccountsChanged();
+      await onStatusRefresh();
+      await loadProviderSettings();
       await loadStatuses(false);
+      window.dispatchEvent(new Event("roToolbox:accounts-changed"));
+      notifyBackupsChanged();
+      onMessage(`Backup restored: ${result.restoredSections.join(", ")}.`);
     } catch (err) {
-      onMessage(toErrorMessage(err, restoreErrorMessage(kind)));
+      onMessage(toErrorMessage(err, "Failed to restore backup."));
     } finally {
       onBusyChange(false);
     }
   }
 
-  function restoreConfirmationMessage(kind: BackupKind, backupName: string) {
-    if (kind === "login") {
-      return `Restore login accounts from "${backupName}"? Current accounts will be backed up first.`;
+  async function onDeleteBackupConfirmed() {
+    if (!deleteBackupTarget) {
+      return;
     }
-    if (kind === "rose-config") {
-      return `Restore ROSE config files from "${backupName}"? Current files will be backed up first.`;
+    const backupName = deleteBackupTarget.name;
+    if (!backupFolderSelected) {
+      setDeleteBackupTarget(null);
+      onMessage("Choose a backup folder first.");
+      return;
     }
-    return `Restore RO Toolbox config from "${backupName}"? Current app settings will be backed up first.`;
+    setDeleteBackupTarget(null);
+    onBusyChange(true, "Deleting backup...");
+    try {
+      const result = await deleteAppConfigBackupSet(backupName);
+      removeBackupSetFromState(result.backupName);
+      const statuses = await loadBackupStatuses();
+      applyBackupStatuses(statuses);
+      notifyBackupsChanged();
+      const remainingBackups = buildBackupSets([
+        { ...rows[0], status: statuses.loginBackupStatus },
+        { ...rows[1], status: statuses.configEditorStatus.oneDriveBackup },
+        { ...rows[2], status: statuses.appConfigBackupStatus }
+      ]);
+      if (remainingBackups.some((backup) => backup.name === backupName)) {
+        onMessage("Backup delete did not finish. Try again or check if the folder is open in another app.");
+        return;
+      }
+      onMessage("Backup deleted.");
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to delete backup."));
+    } finally {
+      onBusyChange(false);
+    }
   }
 
-  function restoreLoadingMessage(kind: BackupKind) {
-    if (kind === "login") {
-      return "Restoring accounts...";
-    }
-    if (kind === "rose-config") {
-      return "Restoring ROSE config...";
-    }
-    return "Restoring RO Toolbox config...";
+  function removeBackupSetFromState(backupName: string) {
+    setLoginStatus((current) => removeBackupFromStatus(current, backupName));
+    setConfigStatus((current) => removeBackupFromStatus(current, backupName));
+    setAppConfigStatus((current) => removeBackupFromStatus(current, backupName));
   }
 
-  function restoreErrorMessage(kind: BackupKind) {
-    if (kind === "login") {
-      return "Failed to restore accounts.";
+  function removeBackupFromStatus<T extends BackupStatusWithEntries | null>(status: T, backupName: string): T {
+    if (!status) {
+      return status;
     }
-    if (kind === "rose-config") {
-      return "Failed to restore ROSE config files.";
+    return {
+      ...status,
+      backups: status.backups.filter((backup) => backup.name !== backupName)
+    };
+  }
+
+  function createBackupName() {
+    const now = new Date();
+    const pad = (value: number) => value.toString().padStart(2, "0");
+    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}-${pad(now.getSeconds())}`;
+  }
+
+  function notifyBackupsChanged() {
+    window.dispatchEvent(new Event("roToolbox:backups-changed"));
+  }
+
+  function buildBackupSets(backupRows: BackupRow[]) {
+    const sets = new Map<string, BackupSet>();
+    for (const row of backupRows) {
+      for (const backup of row.status?.backups ?? []) {
+        const existing = sets.get(backup.name);
+        if (existing) {
+          existing.subfolders.push(row);
+        } else {
+          sets.set(backup.name, { name: backup.name, subfolders: [row] });
+        }
+      }
     }
-    return "Failed to restore RO Toolbox config.";
+    return Array.from(sets.values()).sort((first, second) => second.name.localeCompare(first.name));
   }
 
   return (
@@ -430,138 +364,126 @@ export function BackupsManager({
         <p className="activeProfileMeta">Manage account, ROSE config, and RO Toolbox config backups.</p>
       </div>
 
-        <div className="backupProviderPicker">
-          <div className="backupProviderPickerMain">
-            <p className="settingsSectionLabel">Provider</p>
-            <select
-              value={backupProviderSettings?.selectedProviderId ?? "auto"}
-              disabled={loading || !backupProviderSettings}
-              onChange={(event) => {
-                void onBackupProviderChange(event.target.value);
-              }}
-              aria-label="Backup provider"
-            >
-              {backupProviderSettings?.providers.map((provider) => (
-                <option
-                  key={provider.id}
-                  value={provider.id}
-                  disabled={provider.id !== "auto" && !provider.available}
-                >
-                  {provider.name}
-                  {provider.id !== "auto" && !provider.available ? " (not detected)" : ""}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div
-            className={`backupProviderPath${selectedBackupProvider?.path ? "" : " backupProviderPathEmpty"}`}
-            title={backupProviderDisplay}
-          >
-            {backupProviderDisplay}
-          </div>
-          <button
-            type="button"
-            className="iconBtn iconBtnSubtle backupProviderBrowseButton"
-            disabled={loading}
-            onClick={onBrowseBackupFolder}
-            title="Choose custom backup folder"
-            aria-label="Choose custom backup folder"
-          >
+      {!backupFolderSelected ? (
+        <div className="backupSetupPanel">
+          <div className="setupModalIcon">☁</div>
+          <p className="backupSetupTitle">Select your backup folder</p>
+          <p className="backupSetupText">
+            Choose where RO Toolbox should store backups. A folder named <code>RO Toolbox backups</code> will be used inside the selected location.
+          </p>
+          <button className="buttonStrong backupsMakeButton" disabled={loading} onClick={onBrowseBackupFolder}>
             <FolderOpenIcon className="heroIcon" aria-hidden="true" />
+            Browse...
           </button>
+        </div>
+      ) : (
+        <>
+
+        <div className="backupProviderPicker">
+          <p className="settingsSectionLabel">Backup folder</p>
+          <div className={`settingsFolderDisplay${backupFolderPath ? "" : " settingsFolderEmpty"}`}>
+            {backupFolderPath ?? "Not set"}
+          </div>
+          <div className="settingsFolderActions">
+            <button className="buttonStrong" disabled={loading} onClick={onBrowseBackupFolder}>
+              📂 Browse…
+            </button>
+            {backupFolderSelected ? (
+              <button className="buttonSubtle" disabled={loading} onClick={onClearBackupFolder}>
+                🗑 Clear
+              </button>
+            ) : null}
+          </div>
         </div>
 
         <div className="backupGroup">
           <div className="backupGroupHeader">
             <div>
-              <p className="backupGroupTitle">Backup</p>
+              <p className="backupGroupTitle">Backups</p>
               <p className="backupGroupMeta">Includes accounts, ROSE config, and RO Toolbox config.</p>
             </div>
             <span className="backupGroupCount">
-              {rows.reduce((total, row) => total + (row.status?.backups.length ?? 0), 0)} stored
+              {backupSets.length} stored
             </span>
           </div>
 
           <div className="backupChildList">
-            {rows.map((row) => {
-              const status = row.status;
-              const available = Boolean(status?.available);
-              const backups = status?.backups ?? [];
+            {backupSets.length === 0 ? (
+              <div className="backupChildItem">
+                <div className="backupChildInfo">
+                  <p className="backupChildTitle">No backups yet</p>
+                  <p className="backupChildMeta">Create a backup to store accounts, ROSE config, and RO Toolbox config.</p>
+                </div>
+              </div>
+            ) : (
+              backupSets.map((backupSet) => {
+                const openFolderRow = backupSet.subfolders.find((row) => row.status?.available);
               return (
-                <div key={row.id} className="backupChildItem">
+                <div key={backupSet.name} className="backupChildItem">
                   <div className="backupChildInfo">
-                    <p className="backupChildTitle">{row.title}</p>
-                    <p className="backupChildMeta">
-                      {backups.length === 0 ? `No ${row.label} backups` : `${backups.length} backup${backups.length === 1 ? "" : "s"}`}
-                    </p>
+                    <p className="backupChildTitle">{backupSet.name}</p>
+                    <div className="backupIncludedList" aria-label="Included backups">
+                      {backupSet.subfolders.map((row) => (
+                        <span key={row.id} className="backupIncludedBadge">
+                          {row.title}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                  <select
-                    value={selectedBackups[row.id]}
-                    onChange={(event) => setSelectedBackups((current) => ({ ...current, [row.id]: event.target.value }))}
-                    disabled={loading || !available || backups.length === 0}
-                    aria-label={`${row.title} backup`}
-                  >
-                    {backups.length === 0 ? (
-                      <option value="">No backups yet</option>
-                    ) : (
-                      backups.map((backup) => (
-                        <option key={backup.name} value={backup.name}>
-                          {backup.name}
-                        </option>
-                      ))
-                    )}
-                  </select>
                   <div className="backupChildActions">
                     <button
                       type="button"
                       className="iconBtn iconBtnSubtle"
-                      disabled={loading || !available}
-                      onClick={() => onOpenFolder(row.id)}
-                      title={status?.backupRootPath ? `Open backup folder: ${status.backupRootPath}` : "Open backup folder"}
-                      aria-label={`Open ${row.label} backup folder`}
+                      disabled={loading || !backupFolderSelected || !openFolderRow}
+                      onClick={() => onOpenBackupSetFolder(backupSet.name)}
+                      title="Open backup folder"
+                      aria-label={`Open ${backupSet.name} backup folder`}
                     >
                       <FolderOpenIcon className="heroIcon" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
                       className="iconBtn iconBtnSubtle"
-                      disabled={loading || !available || !selectedBackups[row.id]}
-                      onClick={() => onRestore(row.id)}
-                      title={`Restore selected ${row.label} backup`}
-                      aria-label={`Restore selected ${row.label} backup`}
+                      disabled={loading || !backupFolderSelected || backupSet.subfolders.length === 0}
+                      onClick={() => onRestoreBackupSet(backupSet)}
+                      title={`Restore backup ${backupSet.name}`}
+                      aria-label={`Restore backup ${backupSet.name}`}
                     >
                       <ArrowDownTrayIcon className="heroIcon" aria-hidden="true" />
+                    </button>
+                    <button
+                      type="button"
+                      className="iconBtn iconBtnDanger"
+                      disabled={loading || !backupFolderSelected}
+                      onClick={() => setDeleteBackupTarget(backupSet)}
+                      title={`Delete backup ${backupSet.name}`}
+                      aria-label={`Delete backup ${backupSet.name}`}
+                    >
+                      <TrashIcon className="heroIcon" aria-hidden="true" />
                     </button>
                   </div>
                 </div>
               );
-            })}
+            }))}
           </div>
         </div>
 
         <div className="backupsManagerFooter">
-          <button type="button" className="buttonStrong backupsMakeButton" disabled={loading} onClick={onBackupAll}>
+          <button type="button" className="buttonStrong backupsMakeButton" disabled={loading || !backupFolderSelected} onClick={onBackupAll}>
             <CloudArrowUpIcon className="heroIcon" aria-hidden="true" />
             Make backup
           </button>
-          <button type="button" className="buttonSubtle" disabled={loading} onClick={onDeleteAllButLatest}>
-            Delete old backups
-          </button>
-          <button type="button" className="buttonDanger" disabled={loading} onClick={() => setDeleteAllConfirmOpen(true)}>
-            Delete all backups
-          </button>
-          <button type="button" className="buttonSubtle" disabled={loading} onClick={() => loadStatuses(true)}>
-            Refresh
-          </button>
         </div>
+        </>
+      )}
         <ConfirmationModal
-          open={deleteAllConfirmOpen}
-          title="Delete all backups"
-          message="Delete every backup for accounts, ROSE config, and RO Toolbox config? This cannot be undone."
-          confirmLabel="Delete all"
+          open={deleteBackupTarget !== null}
+          title="Delete backup"
+          message={`Delete backup "${deleteBackupTarget?.name ?? "selected backup"}"? This cannot be undone.`}
+          confirmLabel="Delete"
           cancelLabel="Cancel"
-          onConfirm={onDeleteAllConfirmed}
-          onClose={() => setDeleteAllConfirmOpen(false)}
+          onConfirm={onDeleteBackupConfirmed}
+          onClose={() => setDeleteBackupTarget(null)}
         />
     </section>
   );

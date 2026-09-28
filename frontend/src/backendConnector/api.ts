@@ -2,9 +2,12 @@ export { getStatus, drainNotifications } from "./appApi.ts";
 export {
   backupAppConfig,
   cleanupAppConfigBackups,
+  deleteAppConfigBackupSet,
   deleteAllAppConfigBackups,
   getAppConfigBackupStatus,
   openAppConfigBackupFolder,
+  openAppConfigBackupSetFolder,
+  restoreBackupSet,
   restoreAppConfigBackup
 } from "./appConfigBackupApi.ts";
 export type { AppConfigBackupStatus } from "./appConfigBackupApi.ts";
@@ -22,7 +25,9 @@ export {
   saveQuickLaunchOnlyModeSetting,
   getIgnoreConfigWarningsSetting,
   saveIgnoreConfigWarningsSetting,
+  clearBackupFolder,
   getBackupProviderSettings,
+  saveBackupFolder,
   saveBackupProviderSettings
 } from "./settingsApi.ts";
 export type { BackupProviderSettings } from "./settingsApi.ts";

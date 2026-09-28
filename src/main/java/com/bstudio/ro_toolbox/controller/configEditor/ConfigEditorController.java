@@ -78,8 +78,9 @@ public class ConfigEditorController extends BaseResourceReplacerController {
   }
 
   @PostMapping("/onedrive-backup")
-  public ConfigEditorService.OneDriveBackupResult backupToOneDrive() throws IOException {
-    return configEditorService.backupToOneDrive();
+  public ConfigEditorService.OneDriveBackupResult backupToOneDrive(
+      @RequestBody(required = false) CreateOneDriveBackupRequest request) throws IOException {
+    return configEditorService.backupToOneDrive(request == null ? null : request.backupName());
   }
 
   @PostMapping("/onedrive-backup/folder/open")
@@ -155,6 +156,8 @@ public class ConfigEditorController extends BaseResourceReplacerController {
   public record SetShowDroppedItemNameRequest(Boolean enabled) {}
 
   public record RestoreOneDriveBackupRequest(String backupName) {}
+
+  public record CreateOneDriveBackupRequest(String backupName) {}
 
   public record MessageResponse(String message) {}
 }

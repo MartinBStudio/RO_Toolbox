@@ -38,8 +38,9 @@ public class LoginServiceController {
   }
 
   @PostMapping("/onedrive-backup")
-  public LoginManagerService.OneDriveBackupResult backupToOneDrive() throws IOException {
-    return loginManagerService.backupToOneDrive();
+  public LoginManagerService.OneDriveBackupResult backupToOneDrive(
+      @RequestBody(required = false) CreateOneDriveBackupRequest request) throws IOException {
+    return loginManagerService.backupToOneDrive(request == null ? null : request.backupName());
   }
 
   @PostMapping("/onedrive-backup/folder/open")
@@ -161,6 +162,8 @@ public class LoginServiceController {
   }
 
   public record RestoreOneDriveBackupRequest(String backupName) {}
+
+  public record CreateOneDriveBackupRequest(String backupName) {}
 
   private void launchWindowsForeground(
       Path workingDirectory, String executablePath, String... arguments) throws IOException {

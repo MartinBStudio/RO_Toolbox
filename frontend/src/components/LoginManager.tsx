@@ -49,6 +49,16 @@ export function LoginManager({
     void loadAccounts();
   }, []);
 
+  useEffect(() => {
+    const handleAccountsChanged = () => {
+      void loadAccounts();
+    };
+    window.addEventListener("roToolbox:accounts-changed", handleAccountsChanged);
+    return () => {
+      window.removeEventListener("roToolbox:accounts-changed", handleAccountsChanged);
+    };
+  }, []);
+
   async function loadAccounts() {
     try {
       const data = await listLoginAccounts();

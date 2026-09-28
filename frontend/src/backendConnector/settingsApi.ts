@@ -91,3 +91,14 @@ export function saveBackupProviderSettings(providerId: string, localPath?: strin
     body: JSON.stringify({ providerId, localPath })
   });
 }
+
+export function saveBackupFolder(path: string) {
+  return request<BackupProviderSettings>("/settings/backup-provider", {
+    method: "POST",
+    body: JSON.stringify({ providerId: "local", localPath: path })
+  });
+}
+
+export function clearBackupFolder() {
+  return request<BackupProviderSettings>("/settings/backup-provider/clear", { method: "POST" });
+}

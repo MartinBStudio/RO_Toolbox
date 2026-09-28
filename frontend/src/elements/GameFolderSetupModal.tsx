@@ -2,7 +2,8 @@ import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { useEffect, useState } from "react";
 import {
   getAppConfigBackupStatus,
-  restoreAppConfigBackup,
+  restoreBackupSet,
+  saveBackupFolder,
   saveGameFolder,
   type AppConfigBackupStatus
 } from "../backendConnector/api.ts";
@@ -10,6 +11,7 @@ import {
 type GameFolderSetupModalProps = {
   onBusyChange: (busy: boolean, message?: string) => void;
   onStatusRefresh: () => Promise<void>;
+  onAccountsChanged: () => Promise<void>;
   onMessage: (message: string) => void;
   loading: boolean;
 };
@@ -17,6 +19,7 @@ type GameFolderSetupModalProps = {
 export function GameFolderSetupModal({
   onBusyChange,
   onStatusRefresh,
+  onAccountsChanged,
   onMessage,
   loading
 }: GameFolderSetupModalProps) {
@@ -87,19 +90,40 @@ export function GameFolderSetupModal({
     }
   }
 
+  async function onBrowseBackupFolder() {
+    try {
+      const selected = await openDialog({ directory: true, multiple: false });
+      if (!selected || Array.isArray(selected)) return;
+      onBusyChange(true, "Loading backups...");
+      try {
+        await saveBackupFolder(selected);
+        window.dispatchEvent(new Event("roToolbox:backup-provider-changed"));
+        await loadBackupStatus();
+        onMessage("Backup folder loaded.");
+      } finally {
+        onBusyChange(false);
+      }
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Backup folder selection failed."));
+    }
+  }
+
   async function onRestoreBackup() {
     if (!selectedBackupName) {
       onMessage("Choose a backup to restore.");
       return;
     }
 
-    onBusyChange(true, "Restoring RO Toolbox config...");
+    onBusyChange(true, "Restoring backup...");
     try {
-      await restoreAppConfigBackup(selectedBackupName);
+      const result = await restoreBackupSet(selectedBackupName);
+      await onAccountsChanged();
       await onStatusRefresh();
-      onMessage("RO Toolbox config restored.");
+      window.dispatchEvent(new Event("roToolbox:accounts-changed"));
+      window.dispatchEvent(new Event("roToolbox:backups-changed"));
+      onMessage(`Backup restored: ${result.restoredSections.join(", ")}.`);
     } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to restore RO Toolbox config."));
+      onMessage(toErrorMessage(err, "Failed to restore backup."));
     } finally {
       onBusyChange(false);
     }
@@ -122,12 +146,13 @@ export function GameFolderSetupModal({
             📂 Browse…
           </button>
         </div>
-        {hasBackups ? (
-          <div className="setupBackupRestore">
-            <p className="settingsSectionLabel">Restore from backup</p>
-            <p className="setupBackupRestoreText">
-              Found {backups.length} RO Toolbox config backup{backups.length === 1 ? "" : "s"} in {backupStatus?.providerName ?? "backup storage"}.
-            </p>
+        <div className="setupBackupRestore">
+          <p className="settingsSectionLabel">Restore from backup</p>
+          {hasBackups ? (
+            <>
+              <p className="setupBackupRestoreText">
+                Found {backups.length} backup{backups.length === 1 ? "" : "s"} in {backupStatus?.backupRootPath ?? "backup storage"}.
+              </p>
             <div className="setupBackupRestoreControls">
               <select
                 value={selectedBackupName}
@@ -145,8 +170,18 @@ export function GameFolderSetupModal({
                 Restore
               </button>
             </div>
-          </div>
-        ) : null}
+            </>
+          ) : (
+            <>
+              <p className="setupBackupRestoreText">
+                Select the folder that contains your <code>RO Toolbox backups</code> folder to restore saved settings.
+              </p>
+              <button className="buttonSubtle" disabled={loading} onClick={onBrowseBackupFolder}>
+                Load backups
+              </button>
+            </>
+          )}
+        </div>
       </section>
     </div>
   );

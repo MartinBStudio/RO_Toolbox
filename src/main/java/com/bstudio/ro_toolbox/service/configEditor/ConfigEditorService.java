@@ -31,6 +31,7 @@ import org.tomlj.TomlTable;
 public class ConfigEditorService {
   private static final String IGNORE_ID = "ignore";
   private static final String ROSE_ID = "rose";
+  private static final String BACKUP_FOLDER_NAME = "ROSE Online Config";
   private static final String SHOW_DROPPED_ITEM_NAME_KEY = "show_dropped_item_name";
   private static final DateTimeFormatter BACKUP_TIMESTAMP_FORMATTER =
       DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss");
@@ -115,6 +116,10 @@ public class ConfigEditorService {
   }
 
   public OneDriveBackupResult backupToOneDrive() throws IOException {
+    return backupToOneDrive(null);
+  }
+
+  public OneDriveBackupResult backupToOneDrive(String backupName) throws IOException {
     BackupProvider provider =
         backupProviderResolver
             .resolveDefaultProvider()
@@ -135,7 +140,7 @@ public class ConfigEditorService {
       return new OneDriveBackupResult(backupRoot.toString(), 0, List.of());
     }
 
-    Path backupDir = backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+    Path backupDir = resolveBackupDir(backupRoot, backupName).resolve(BACKUP_FOLDER_NAME);
     Files.createDirectories(backupDir);
     for (Path source : existingFiles) {
       Files.copy(
@@ -188,7 +193,8 @@ public class ConfigEditorService {
             .resolveDefaultProvider()
             .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
     Path backupRoot = resolveProviderBackupRoot(provider);
-    Path backupDir = backupRoot.resolve(normalizedBackupName).toAbsolutePath().normalize();
+    Path backupDir =
+        backupRoot.resolve(normalizedBackupName).resolve(BACKUP_FOLDER_NAME).toAbsolutePath().normalize();
     if (!backupDir.startsWith(backupRoot.toAbsolutePath().normalize())
         || !Files.exists(backupDir)
         || !Files.isDirectory(backupDir)) {
@@ -207,7 +213,9 @@ public class ConfigEditorService {
     }
 
     Path safetyBackupDir =
-        backupRoot.resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+        backupRoot
+            .resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER))
+            .resolve(BACKUP_FOLDER_NAME);
     List<String> safetyFiles = backupExistingConfigFiles(safetyBackupDir);
 
     Files.createDirectories(configDir);
@@ -534,7 +542,7 @@ public class ConfigEditorService {
   }
 
   private Path resolveProviderBackupRoot(BackupProvider provider) {
-    return backupProviderResolver.resolveBackupRoot(provider, "ROSE Online Config");
+    return backupProviderResolver.resolveBackupRoot(provider);
   }
 
   private List<OneDriveBackupEntry> readBackups(Path backupRoot) {
@@ -556,16 +564,17 @@ public class ConfigEditorService {
   }
 
   private Optional<OneDriveBackupEntry> readBackupEntry(Path backupDir) {
+    Path categoryDir = backupDir.resolve(BACKUP_FOLDER_NAME);
     List<String> files =
         TARGET_FILES.stream()
             .map(ConfigFileSpec::fileName)
-            .filter(fileName -> Files.isRegularFile(backupDir.resolve(fileName)))
+            .filter(fileName -> Files.isRegularFile(categoryDir.resolve(fileName)))
             .toList();
     if (files.isEmpty()) {
       return Optional.empty();
     }
     return Optional.of(
-        new OneDriveBackupEntry(backupDir.getFileName().toString(), backupDir.toString(), files));
+        new OneDriveBackupEntry(backupDir.getFileName().toString(), categoryDir.toString(), files));
   }
 
   private List<String> backupExistingConfigFiles(Path safetyBackupDir) throws IOException {
@@ -616,6 +625,14 @@ public class ConfigEditorService {
       throw new IllegalArgumentException("backupName is invalid.");
     }
     return normalized;
+  }
+
+  private Path resolveBackupDir(Path backupRoot, String backupName) {
+    if (backupName == null || backupName.isBlank()) {
+      return backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
+    }
+    String normalizedBackupName = normalizeBackupName(backupName);
+    return backupRoot.resolve(normalizedBackupName).toAbsolutePath().normalize();
   }
 
   private record ConfigFileSpec(String id, String fileName) {}

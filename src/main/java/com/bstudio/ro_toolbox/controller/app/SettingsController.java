@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/settings")
 @RequiredArgsConstructor
 public class SettingsController {
+  private static final String BACKUP_FOLDER_NAME = "RO Toolbox backups";
 
   private final LootManager lootManager;
   private final CombatTextManager combatTextManagerService;
@@ -240,24 +241,20 @@ public class SettingsController {
   @PostMapping("/backup-provider")
   public BackupProviderSettings saveBackupProviderSettings(
       @RequestBody BackupProviderRequest request) throws IOException {
-    if (request == null || request.providerId() == null || request.providerId().isBlank()) {
-      throw new IllegalArgumentException("Backup provider is required.");
+    if (request == null || request.localPath() == null || request.localPath().isBlank()) {
+      throw new IllegalArgumentException("Backup folder path is required.");
     }
-    BackupProviderResolver resolver = new BackupProviderResolver(appConfigService);
-    String providerId = request.providerId().trim();
-    if (request.localPath() != null && !request.localPath().isBlank()) {
-      Path localPath = Path.of(request.localPath().trim()).toAbsolutePath().normalize();
-      Files.createDirectories(localPath);
-      appConfigService.saveBackupLocalPath(localPath);
-    }
-    boolean selectable =
-        BackupProviderResolver.AUTO_PROVIDER_ID.equals(providerId)
-            || resolver.listProviderOptions().stream()
-                .anyMatch(provider -> provider.id().equals(providerId) && provider.available());
-    if (!selectable) {
-      throw new IllegalArgumentException("Selected backup provider is not available.");
-    }
-    appConfigService.saveBackupProviderId(providerId);
+    Path localPath = normalizeBackupStorageFolder(Path.of(request.localPath().trim()));
+    Files.createDirectories(localPath);
+    appConfigService.saveBackupLocalPath(localPath);
+    appConfigService.saveBackupProviderId(BackupProviderResolver.LOCAL_PROVIDER_ID);
+    return new BackupProviderResolver(appConfigService).readSettings();
+  }
+
+  @PostMapping("/backup-provider/clear")
+  public BackupProviderSettings clearBackupProviderSettings() throws IOException {
+    appConfigService.saveBackupLocalPath(null);
+    appConfigService.saveBackupProviderId(BackupProviderResolver.LOCAL_PROVIDER_ID);
     return new BackupProviderResolver(appConfigService).readSettings();
   }
 
@@ -268,6 +265,16 @@ public class SettingsController {
 
   private String absoluteOrNull(Path path) {
     return path == null ? null : path.toAbsolutePath().normalize().toString();
+  }
+
+  private Path normalizeBackupStorageFolder(Path selectedPath) {
+    Path normalized = selectedPath.toAbsolutePath().normalize();
+    if (normalized.getFileName() != null
+        && BACKUP_FOLDER_NAME.equalsIgnoreCase(normalized.getFileName().toString())
+        && normalized.getParent() != null) {
+      return normalized.getParent();
+    }
+    return normalized;
   }
 
   private List<IResourceReplacer> managedServices() {

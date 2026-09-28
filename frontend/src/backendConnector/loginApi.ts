@@ -88,8 +88,11 @@ export function getLoginOneDriveBackupStatus() {
   return request<LoginOneDriveBackupStatus>("/login/onedrive-backup/status");
 }
 
-export function backupLoginAccountsToOneDrive() {
-  return request<LoginOneDriveBackupResult>("/login/onedrive-backup", { method: "POST" });
+export function backupLoginAccountsToOneDrive(backupName?: string) {
+  return request<LoginOneDriveBackupResult>("/login/onedrive-backup", {
+    method: "POST",
+    body: backupName ? JSON.stringify({ backupName }) : undefined
+  });
 }
 
 export function openLoginOneDriveBackupFolder() {
