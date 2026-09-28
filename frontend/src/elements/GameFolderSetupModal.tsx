@@ -1,8 +1,14 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { saveGameFolder } from "../backendConnector/api.ts";
+import { useEffect, useState } from "react";
+import {
+  getAppConfigBackupStatus,
+  restoreAppConfigBackup,
+  saveGameFolder,
+  type AppConfigBackupStatus
+} from "../backendConnector/api.ts";
 
 type GameFolderSetupModalProps = {
-  onBusyChange: (busy: boolean) => void;
+  onBusyChange: (busy: boolean, message?: string) => void;
   onStatusRefresh: () => Promise<void>;
   onMessage: (message: string) => void;
   loading: boolean;
@@ -14,11 +20,37 @@ export function GameFolderSetupModal({
   onMessage,
   loading
 }: GameFolderSetupModalProps) {
+  const [backupStatus, setBackupStatus] = useState<AppConfigBackupStatus | null>(null);
+  const [selectedBackupName, setSelectedBackupName] = useState("");
+
+  useEffect(() => {
+    void loadBackupStatus();
+  }, []);
+
+  useEffect(() => {
+    const backups = backupStatus?.backups ?? [];
+    if (backups.length === 0) {
+      setSelectedBackupName("");
+      return;
+    }
+    if (!backups.some((backup) => backup.name === selectedBackupName)) {
+      setSelectedBackupName(backups[0].name);
+    }
+  }, [backupStatus?.backups, selectedBackupName]);
+
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) return err.message;
     if (typeof err === "string" && err.trim()) return err;
     if (err && typeof err === "object" && "message" in err && typeof err.message === "string") return err.message;
     return fallback;
+  }
+
+  async function loadBackupStatus() {
+    try {
+      setBackupStatus(await getAppConfigBackupStatus());
+    } catch {
+      setBackupStatus(null);
+    }
   }
 
   async function saveFolder(path: string) {
@@ -55,6 +87,27 @@ export function GameFolderSetupModal({
     }
   }
 
+  async function onRestoreBackup() {
+    if (!selectedBackupName) {
+      onMessage("Choose a backup to restore.");
+      return;
+    }
+
+    onBusyChange(true, "Restoring RO Toolbox config...");
+    try {
+      await restoreAppConfigBackup(selectedBackupName);
+      await onStatusRefresh();
+      onMessage("RO Toolbox config restored.");
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to restore RO Toolbox config."));
+    } finally {
+      onBusyChange(false);
+    }
+  }
+
+  const backups = backupStatus?.backups ?? [];
+  const hasBackups = backups.length > 0;
+
   return (
     <div className="modalBackdrop">
       <section className="card modalCard setupModal" onClick={(e) => e.stopPropagation()}>
@@ -69,6 +122,31 @@ export function GameFolderSetupModal({
             📂 Browse…
           </button>
         </div>
+        {hasBackups ? (
+          <div className="setupBackupRestore">
+            <p className="settingsSectionLabel">Restore from backup</p>
+            <p className="setupBackupRestoreText">
+              Found {backups.length} RO Toolbox config backup{backups.length === 1 ? "" : "s"} in {backupStatus?.providerName ?? "backup storage"}.
+            </p>
+            <div className="setupBackupRestoreControls">
+              <select
+                value={selectedBackupName}
+                disabled={loading}
+                onChange={(event) => setSelectedBackupName(event.target.value)}
+                aria-label="RO Toolbox config backup"
+              >
+                {backups.map((backup) => (
+                  <option key={backup.name} value={backup.name}>
+                    {backup.name}
+                  </option>
+                ))}
+              </select>
+              <button className="buttonSubtle" disabled={loading || !selectedBackupName} onClick={onRestoreBackup}>
+                Restore
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
     </div>
   );

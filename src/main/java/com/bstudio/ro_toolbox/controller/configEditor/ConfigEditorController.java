@@ -99,6 +99,21 @@ public class ConfigEditorController extends BaseResourceReplacerController {
     return configEditorService.restoreFromOneDriveBackup(request.backupName());
   }
 
+  @PostMapping("/onedrive-backup/restore/latest")
+  public ConfigEditorService.OneDriveRestoreResult restoreLatestFromOneDrive() throws IOException {
+    return configEditorService.restoreLatestBackup();
+  }
+
+  @PostMapping("/onedrive-backup/cleanup")
+  public ConfigEditorService.BackupCleanupResult cleanupOneDriveBackups() throws IOException {
+    return configEditorService.deleteAllButLatestBackup();
+  }
+
+  @PostMapping("/onedrive-backup/cleanup/all")
+  public ConfigEditorService.BackupCleanupResult cleanupAllOneDriveBackups() throws IOException {
+    return configEditorService.deleteAllBackups();
+  }
+
   private void openInDesktop(Path path) {
     try {
       String os = System.getProperty("os.name", "").toLowerCase();

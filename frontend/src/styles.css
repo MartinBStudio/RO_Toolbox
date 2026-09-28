@@ -1231,15 +1231,6 @@ button {
     display: none;
   }
 
-  .backupProviderPanel {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .backupProviderPanelControls {
-    justify-content: flex-start;
-    min-width: 0;
-  }
 }
 
 button:disabled {
@@ -1320,59 +1311,6 @@ button:disabled {
 .loginManagerActions .iconBtn:hover:enabled {
   border-color: #6d91cb;
   background: linear-gradient(180deg, rgba(33, 48, 73, 0.98) 0%, rgba(25, 37, 57, 0.98) 100%);
-}
-
-.backupProviderPanel {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.55rem;
-  padding: 0.42rem 0.5rem;
-  border: 1px solid var(--panel-blue-border);
-  border-radius: 6px;
-  background: linear-gradient(180deg, rgba(18, 28, 42, 0.94) 0%, rgba(14, 22, 33, 0.94) 100%);
-  box-shadow: var(--panel-blue-highlight);
-}
-
-.backupProviderPanelMeta {
-  display: flex;
-  align-items: center;
-  gap: 0.42rem;
-  min-width: 0;
-}
-
-.backupProviderPanelLogo {
-  width: 1.35rem;
-  height: 1.35rem;
-  color: #8db7ef;
-  flex: 0 0 auto;
-}
-
-.backupProviderPanelTitle {
-  margin: 0;
-  color: #d8e7ff;
-  font-size: 0.88rem;
-  font-weight: 700;
-}
-
-.backupProviderPanelSubtitle {
-  margin: 0.02rem 0 0;
-  color: #7f9fc2;
-  font-size: 0.72rem;
-}
-
-.backupProviderPanelControls {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.28rem;
-  min-width: 15rem;
-}
-
-.backupProviderPanelControls select {
-  min-height: 2rem;
-  min-width: 8.5rem;
-  max-width: 13rem;
 }
 
 .configEditor .headerActions > .buttonSubtle {
@@ -2316,6 +2254,34 @@ a {
   color: #a8c4e0;
 }
 
+.setupBackupRestore {
+  width: 100%;
+  margin-top: 0.45rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(99, 123, 158, 0.28);
+  display: grid;
+  gap: 0.42rem;
+  text-align: left;
+}
+
+.setupBackupRestoreText {
+  color: #8fa6c0;
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.setupBackupRestoreControls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.4rem;
+  align-items: center;
+}
+
+.setupBackupRestoreControls select {
+  min-width: 0;
+  min-height: 2rem;
+}
+
 .releaseNotesModalCard {
   width: min(980px, calc(100vw - 1.2rem));
   max-height: min(92vh, 840px);
@@ -2964,6 +2930,208 @@ a {
   box-sizing: border-box;
   border-color: var(--panel-blue-border);
 }
+
+.backupsManager {
+  display: grid;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.backupsManagerHeader {
+  display: grid;
+  gap: 0.22rem;
+  padding-right: 23rem;
+}
+
+.backupProviderPicker {
+  position: absolute;
+  top: 0.7rem;
+  right: 0.7rem;
+  z-index: 2;
+  width: min(22rem, calc(100% - 1.4rem));
+  display: grid;
+  grid-template-columns: minmax(8rem, 10rem) minmax(0, 1fr) 2rem;
+  align-items: end;
+  gap: 0.32rem;
+  padding: 0.38rem 0.45rem;
+  border: 1px solid var(--panel-blue-border);
+  border-radius: 8px;
+  background: linear-gradient(180deg, rgba(18, 28, 42, 0.94) 0%, rgba(14, 22, 33, 0.94) 100%);
+  box-shadow: var(--panel-blue-highlight);
+}
+
+.backupProviderPickerMain {
+  display: grid;
+  gap: 0.18rem;
+  min-width: 0;
+}
+
+.backupProviderPicker select {
+  min-height: 1.75rem;
+  min-width: 0;
+  font-size: 0.76rem;
+  padding-top: 0.18rem;
+  padding-bottom: 0.18rem;
+}
+
+.backupProviderPath {
+  min-width: 0;
+  min-height: 1.75rem;
+  display: flex;
+  align-items: center;
+  padding: 0.28rem 0.42rem;
+  border: 1px solid #243040;
+  border-radius: 6px;
+  background: #0d1420;
+  color: #a8c4e0;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.68rem;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.backupProviderPathEmpty {
+  color: #3d5270;
+  font-family: inherit;
+  font-style: italic;
+}
+
+.backupProviderBrowseButton {
+  width: 2rem;
+  min-width: 2rem;
+  height: 1.75rem;
+  min-height: 1.75rem;
+  padding: 0.24rem;
+  align-self: end;
+  border: 1px solid #48638a;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(26, 39, 59, 0.96) 0%, rgba(20, 30, 45, 0.96) 100%);
+  color: #d8e7ff;
+}
+
+.backupProviderBrowseButton:hover:enabled {
+  border-color: #6d91cb;
+  background: linear-gradient(180deg, rgba(33, 48, 73, 0.98) 0%, rgba(25, 37, 57, 0.98) 100%);
+}
+
+.backupGroup {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--panel-blue-border);
+  border-radius: 8px;
+  background: var(--panel-blue-surface-soft);
+  box-shadow: var(--panel-blue-highlight);
+}
+
+.backupGroupHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 0.8rem;
+  background: linear-gradient(180deg, rgba(23, 29, 42, 0.98) 0%, rgba(18, 26, 40, 0.98) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.backupGroupTitle {
+  color: #edf4ff;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.backupGroupMeta,
+.backupChildMeta {
+  color: #7f93ad;
+  font-size: 0.74rem;
+}
+
+.backupGroupCount {
+  flex: 0 0 auto;
+  padding: 0.15rem 0.42rem;
+  border: 1px solid #314766;
+  border-radius: 999px;
+  color: #9fb9dc;
+  background: rgba(13, 20, 32, 0.7);
+  font-size: 0.72rem;
+}
+
+.backupChildList {
+  display: grid;
+}
+
+.backupChildItem {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) minmax(11rem, 15rem) auto;
+  gap: 0.55rem;
+  align-items: center;
+  padding: 0.62rem 0.72rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.backupChildItem:last-child {
+  border-bottom: 0;
+}
+
+.backupChildTitle {
+  color: #dce9fb;
+  font-weight: 700;
+  font-size: 0.84rem;
+}
+
+.backupChildInfo {
+  min-width: 0;
+}
+
+.backupChildItem select {
+  min-width: 0;
+  min-height: 2rem;
+}
+
+.backupChildActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.28rem;
+  white-space: nowrap;
+}
+
+.backupChildActions .iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  min-width: 2rem;
+  height: 2rem;
+  min-height: 2rem;
+  padding: 0.3rem;
+  border: 1px solid #48638a;
+  border-radius: 6px;
+  background: linear-gradient(180deg, rgba(26, 39, 59, 0.96) 0%, rgba(20, 30, 45, 0.96) 100%);
+  color: #d8e7ff;
+}
+
+.backupChildActions .iconBtn:hover:enabled {
+  border-color: #6d91cb;
+  background: linear-gradient(180deg, rgba(33, 48, 73, 0.98) 0%, rgba(25, 37, 57, 0.98) 100%);
+}
+
+.backupsManagerFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.backupsMakeButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.backupsMakeButton .heroIcon {
+  width: 1rem;
+  height: 1rem;
+}
 .modalHeader {
   display: flex;
   align-items: center;
@@ -3064,11 +3232,6 @@ a {
 .settingsFolderActions {
   display: flex;
   gap: 0.45rem;
-}
-
-.backupProviderActions select {
-  min-height: 2.1rem;
-  min-width: 12rem;
 }
 
 .settingsToggleRow {
@@ -4223,13 +4386,23 @@ a {
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .backupProviderPanel {
-    align-items: stretch;
-    flex-direction: column;
+  .backupsManagerHeader {
+    padding-right: 0;
   }
 
-  .backupProviderPanelControls {
+  .backupProviderPicker {
+    position: static;
+    width: auto;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .backupChildItem {
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+  }
+
+  .backupChildActions {
     justify-content: flex-start;
-    min-width: 0;
   }
 }

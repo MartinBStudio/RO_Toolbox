@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useRef, useState} from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
-import { KeyIcon, SwatchIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
+import { CloudIcon, KeyIcon, SwatchIcon, WrenchScrewdriverIcon } from "@heroicons/react/24/outline";
 import {AppHeader} from "./elements/AppHeader.tsx";
 import {AppFooter} from "./elements/AppFooter.tsx";
 import {LoadingOverlay} from "./elements/LoadingOverlay.tsx";
@@ -18,6 +18,7 @@ import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
 import {HowToUseModal} from "./elements/HowToUseModal.tsx";
 import {ReleaseNotesModal} from "./elements/ReleaseNotesModal.tsx";
+import {BackupsManager} from "./components/BackupsManager.tsx";
 import {TroseRunningBanner} from "./elements/TroseRunningBanner.tsx";
 import {QuickLaunchModePanel} from "./components/QuickLaunchModePanel.tsx";
 import {UsefulStuffPanel} from "./elements/UsefulStuffPanel.tsx";
@@ -40,7 +41,8 @@ import {
 const SERVICES = [
     {id: "texture-replacer", title: "Texture replacer", icon: SwatchIcon},
     {id: "login-manager", title: "Login manager", icon: KeyIcon},
-    {id: "config-editor", title: "Config editor", icon: WrenchScrewdriverIcon}
+    {id: "config-editor", title: "Config editor", icon: WrenchScrewdriverIcon},
+    {id: "backups", title: "Backups", icon: CloudIcon}
 ] as const;
 const SELECTED_SERVICE_STORAGE_KEY = "roToolbox.selectedService";
 const DEFAULT_SERVICE_ID = SERVICES[0].id;
@@ -543,7 +545,6 @@ function App() {
                                         <LoginManager
                                             key={`login-manager-${factoryResetNonce}`}
                                             onAccountsChanged={refreshQuickAccounts}
-                                            onMessage={setMessage}
                                         />
                                     )}
                                     {selectedService === "config-editor" && (
@@ -560,6 +561,17 @@ function App() {
                                             <ConfigEditorManager
                                                 loading={loading}
                                                 onBusyChange={onBusyChange}
+                                                onMessage={setMessage}
+                                            />
+                                        </div>
+                                    )}
+                                    {selectedService === "backups" && (
+                                        <div className="card serviceContentPanel panelStatusHost">
+                                            <BackupsManager
+                                                loading={loading}
+                                                onBusyChange={onBusyChange}
+                                                onAccountsChanged={refreshQuickAccounts}
+                                                onStatusRefresh={refreshStatus}
                                                 onMessage={setMessage}
                                             />
                                         </div>

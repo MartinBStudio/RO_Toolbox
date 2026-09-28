@@ -37,6 +37,11 @@ export type LoginOneDriveRestoreResult = {
   safetyBackupFiles: string[];
 };
 
+export type LoginBackupCleanupResult = {
+  deletedBackups: number;
+  keptBackupName: string | null;
+};
+
 export function listLoginAccounts() {
   return request<LoginAccount[]>("/login");
 }
@@ -96,4 +101,16 @@ export function restoreLoginAccountsFromOneDrive(backupName: string) {
     method: "POST",
     body: JSON.stringify({ backupName })
   });
+}
+
+export function restoreLatestLoginAccountsBackup() {
+  return request<LoginOneDriveRestoreResult>("/login/onedrive-backup/restore/latest", { method: "POST" });
+}
+
+export function cleanupLoginAccountBackups() {
+  return request<LoginBackupCleanupResult>("/login/onedrive-backup/cleanup", { method: "POST" });
+}
+
+export function deleteAllLoginAccountBackups() {
+  return request<LoginBackupCleanupResult>("/login/onedrive-backup/cleanup/all", { method: "POST" });
 }

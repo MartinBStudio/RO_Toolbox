@@ -1,5 +1,14 @@
 export { getStatus, drainNotifications } from "./appApi.ts";
 export {
+  backupAppConfig,
+  cleanupAppConfigBackups,
+  deleteAllAppConfigBackups,
+  getAppConfigBackupStatus,
+  openAppConfigBackupFolder,
+  restoreAppConfigBackup
+} from "./appConfigBackupApi.ts";
+export type { AppConfigBackupStatus } from "./appConfigBackupApi.ts";
+export {
   saveGameFolder,
   clearGameFolder,
   factoryReset,
@@ -84,6 +93,8 @@ export {
   backupConfigEditorToOneDrive,
   openConfigEditorOneDriveBackupFolder,
   restoreConfigEditorFromOneDrive,
+  cleanupConfigEditorBackups,
+  deleteAllConfigEditorBackups,
   getIgnoreList,
   addIgnoreListEntry,
   deleteIgnoreListEntry,
@@ -100,6 +111,8 @@ export {
   getLoginOneDriveBackupStatus,
   backupLoginAccountsToOneDrive,
   openLoginOneDriveBackupFolder,
-  restoreLoginAccountsFromOneDrive
+  restoreLoginAccountsFromOneDrive,
+  cleanupLoginAccountBackups,
+  deleteAllLoginAccountBackups
 } from "./loginApi.ts";
 export type { LoginAccount } from "./loginApi.ts";

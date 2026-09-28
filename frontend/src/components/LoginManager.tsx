@@ -7,19 +7,13 @@ import {
 } from "@heroicons/react/24/outline";
 import { StarIcon } from "@heroicons/react/24/solid";
 import {
-  backupLoginAccountsToOneDrive,
   createLoginAccount,
   deleteLoginAccount,
-  getLoginOneDriveBackupStatus,
   listLoginAccounts,
-  openLoginOneDriveBackupFolder,
-  restoreLoginAccountsFromOneDrive,
   updateLoginAccount,
-  type LoginOneDriveBackupStatus,
   type LoginAccount
 } from "../backendConnector/loginApi.ts";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
-import { BackupProviderPanel } from "./BackupProviderPanel.tsx";
 
 const ACCOUNT_ICON_OPTIONS = [
   "👤",
@@ -39,11 +33,9 @@ const EMPTY_FORM = {
 };
 
 export function LoginManager({
-  onAccountsChanged,
-  onMessage
+  onAccountsChanged
 }: {
   onAccountsChanged?: () => void | Promise<void>;
-  onMessage?: (message: string) => void;
 }) {
   const [accounts, setAccounts] = useState<LoginAccount[]>([]);
   const [form, setForm] = useState(EMPTY_FORM);
@@ -52,32 +44,10 @@ export function LoginManager({
   const [deleteTarget, setDeleteTarget] = useState<LoginAccount | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [oneDriveBackup, setOneDriveBackup] = useState<LoginOneDriveBackupStatus | null>(null);
-  const [selectedBackupName, setSelectedBackupName] = useState("");
 
   useEffect(() => {
     void loadAccounts();
-    void loadOneDriveBackupStatus();
   }, []);
-
-  useEffect(() => {
-    const reloadBackupStatus = () => {
-      void loadOneDriveBackupStatus();
-    };
-    window.addEventListener("roToolbox:backup-provider-changed", reloadBackupStatus);
-    return () => window.removeEventListener("roToolbox:backup-provider-changed", reloadBackupStatus);
-  }, []);
-
-  useEffect(() => {
-    const backups = oneDriveBackup?.backups ?? [];
-    if (backups.length === 0) {
-      setSelectedBackupName("");
-      return;
-    }
-    if (!backups.some((backup) => backup.name === selectedBackupName)) {
-      setSelectedBackupName(backups[0].name);
-    }
-  }, [oneDriveBackup?.backups, selectedBackupName]);
 
   async function loadAccounts() {
     try {
@@ -85,15 +55,6 @@ export function LoginManager({
       setAccounts(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load accounts.");
-    }
-  }
-
-  async function loadOneDriveBackupStatus() {
-    try {
-      const status = await getLoginOneDriveBackupStatus();
-      setOneDriveBackup(status);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load OneDrive backup status.");
     }
   }
 
@@ -183,58 +144,6 @@ export function LoginManager({
     setFormOpen(true);
   }
 
-  async function onBackupToOneDrive() {
-    setBusy(true);
-    setError(null);
-    try {
-      await backupLoginAccountsToOneDrive();
-      await loadOneDriveBackupStatus();
-      onMessage?.("Login accounts backed up to OneDrive.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to back up accounts to OneDrive.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onOpenOneDriveBackupFolder() {
-    setBusy(true);
-    setError(null);
-    try {
-      await openLoginOneDriveBackupFolder();
-      onMessage?.("Opened OneDrive backup folder.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to open OneDrive backup folder.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function onRestoreFromOneDrive() {
-    if (!selectedBackupName) {
-      onMessage?.("Choose a OneDrive backup to restore.");
-      return;
-    }
-
-    const confirmed = window.confirm(`Restore login accounts from "${selectedBackupName}"? Current accounts will be backed up first.`);
-    if (!confirmed) {
-      return;
-    }
-
-    setBusy(true);
-    setError(null);
-    try {
-      await restoreLoginAccountsFromOneDrive(selectedBackupName);
-      await loadAccounts();
-      await loadOneDriveBackupStatus();
-      await onAccountsChanged?.();
-      onMessage?.("Login accounts restored from OneDrive.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to restore accounts from OneDrive.");
-    } finally {
-      setBusy(false);
-    }
-  }
   return (
     <section className="loginManager">
       <div className="card serviceContentPanel">
@@ -256,20 +165,6 @@ export function LoginManager({
         </div>
 
         {error ? <p className="formError">{error}</p> : null}
-
-        <BackupProviderPanel
-          available={Boolean(oneDriveBackup?.available)}
-          providerName={oneDriveBackup?.providerName ?? null}
-          backupRootPath={oneDriveBackup?.backupRootPath ?? null}
-          backups={oneDriveBackup?.backups ?? []}
-          selectedBackupName={selectedBackupName}
-          busy={busy}
-          label="login"
-          onBackup={onBackupToOneDrive}
-          onOpenFolder={onOpenOneDriveBackupFolder}
-          onRestore={onRestoreFromOneDrive}
-          onSelectedBackupChange={setSelectedBackupName}
-        />
 
         <div className="loginList">
           {accounts.length === 0 ? (

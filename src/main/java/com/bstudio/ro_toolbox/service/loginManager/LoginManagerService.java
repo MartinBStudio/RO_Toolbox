@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.Comparator;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -183,11 +184,11 @@ public class LoginManagerService {
         backupProviderResolver
             .resolveDefaultProvider()
             .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
     if (!Files.exists(accountsFile) || !Files.isRegularFile(accountsFile)) {
-      throw new IllegalStateException("No saved login accounts were found to back up.");
+      return new OneDriveBackupResult(backupRoot.toString(), 0, List.of());
     }
 
-    Path backupRoot = resolveProviderBackupRoot(provider);
     Path backupDir = backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
     Files.createDirectories(backupDir);
     Files.copy(
@@ -197,6 +198,36 @@ public class LoginManagerService {
         StandardCopyOption.COPY_ATTRIBUTES);
 
     return new OneDriveBackupResult(backupDir.toString(), 1, List.of(ACCOUNTS_FILE_NAME));
+  }
+
+  public BackupCleanupResult deleteAllButLatestBackup() throws IOException {
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
+    List<OneDriveBackupEntry> backups = readBackups(backupRoot);
+    int deleted = 0;
+    for (int index = 1; index < backups.size(); index++) {
+      deleteRecursively(Path.of(backups.get(index).path()));
+      deleted++;
+    }
+    return new BackupCleanupResult(deleted, backups.isEmpty() ? null : backups.getFirst().name());
+  }
+
+  public BackupCleanupResult deleteAllBackups() throws IOException {
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
+    List<OneDriveBackupEntry> backups = readBackups(backupRoot);
+    int deleted = 0;
+    for (OneDriveBackupEntry backup : backups) {
+      deleteRecursively(Path.of(backup.path()));
+      deleted++;
+    }
+    return new BackupCleanupResult(deleted, null);
   }
 
   public OneDriveRestoreResult restoreFromOneDriveBackup(String backupName) throws IOException {
@@ -235,6 +266,19 @@ public class LoginManagerService {
         List.of(ACCOUNTS_FILE_NAME),
         safetyFiles.isEmpty() ? null : safetyBackupDir.toString(),
         safetyFiles);
+  }
+
+  public OneDriveRestoreResult restoreLatestBackup() throws IOException {
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
+    List<OneDriveBackupEntry> backups = readBackups(backupRoot);
+    if (backups.isEmpty()) {
+      throw new IllegalStateException("No login account backups were found.");
+    }
+    return restoreFromOneDriveBackup(backups.getFirst().name());
   }
 
   private List<LoginAccount> readAccounts() throws IOException {
@@ -434,6 +478,23 @@ public class LoginManagerService {
     return List.of(ACCOUNTS_FILE_NAME);
   }
 
+  private void deleteRecursively(Path path) throws IOException {
+    if (!Files.exists(path)) {
+      return;
+    }
+    try (var stream = Files.walk(path)) {
+      for (Path entry : stream.sorted(Comparator.reverseOrder()).toList()) {
+        try {
+          Files.deleteIfExists(entry);
+        } catch (IOException ex) {
+          if (Files.exists(entry)) {
+            throw ex;
+          }
+        }
+      }
+    }
+  }
+
   private String normalizeBackupName(String backupName) {
     if (backupName == null || backupName.isBlank()) {
       throw new IllegalArgumentException("backupName is required.");
@@ -473,6 +534,8 @@ public class LoginManagerService {
   public record OneDriveBackupEntry(String name, String path, List<String> files) {}
 
   public record OneDriveBackupResult(String backupPath, int copiedFiles, List<String> files) {}
+
+  public record BackupCleanupResult(int deletedBackups, String keptBackupName) {}
 
   public record OneDriveRestoreResult(
       String restoredFrom,

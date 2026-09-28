@@ -12,6 +12,7 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -118,8 +119,9 @@ public class ConfigEditorService {
         backupProviderResolver
             .resolveDefaultProvider()
             .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
     if (!Files.exists(configDir) || !Files.isDirectory(configDir)) {
-      throw new IllegalStateException("ROSE config folder was not found.");
+      return new OneDriveBackupResult(backupRoot.toString(), 0, List.of());
     }
 
     List<Path> existingFiles = new ArrayList<>();
@@ -130,10 +132,9 @@ public class ConfigEditorService {
       }
     }
     if (existingFiles.isEmpty()) {
-      throw new IllegalStateException("No ROSE config files were found to back up.");
+      return new OneDriveBackupResult(backupRoot.toString(), 0, List.of());
     }
 
-    Path backupRoot = resolveProviderBackupRoot(provider);
     Path backupDir = backupRoot.resolve(LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER));
     Files.createDirectories(backupDir);
     for (Path source : existingFiles) {
@@ -148,6 +149,36 @@ public class ConfigEditorService {
         backupDir.toString(),
         existingFiles.size(),
         existingFiles.stream().map(path -> path.getFileName().toString()).toList());
+  }
+
+  public BackupCleanupResult deleteAllButLatestBackup() throws IOException {
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
+    List<OneDriveBackupEntry> backups = readBackups(backupRoot);
+    int deleted = 0;
+    for (int index = 1; index < backups.size(); index++) {
+      deleteRecursively(Path.of(backups.get(index).path()));
+      deleted++;
+    }
+    return new BackupCleanupResult(deleted, backups.isEmpty() ? null : backups.getFirst().name());
+  }
+
+  public BackupCleanupResult deleteAllBackups() throws IOException {
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
+    List<OneDriveBackupEntry> backups = readBackups(backupRoot);
+    int deleted = 0;
+    for (OneDriveBackupEntry backup : backups) {
+      deleteRecursively(Path.of(backup.path()));
+      deleted++;
+    }
+    return new BackupCleanupResult(deleted, null);
   }
 
   public OneDriveRestoreResult restoreFromOneDriveBackup(String backupName) throws IOException {
@@ -194,6 +225,19 @@ public class ConfigEditorService {
         backupFiles.stream().map(path -> path.getFileName().toString()).toList(),
         safetyFiles.isEmpty() ? null : safetyBackupDir.toString(),
         safetyFiles);
+  }
+
+  public OneDriveRestoreResult restoreLatestBackup() throws IOException {
+    BackupProvider provider =
+        backupProviderResolver
+            .resolveDefaultProvider()
+            .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
+    Path backupRoot = resolveProviderBackupRoot(provider);
+    List<OneDriveBackupEntry> backups = readBackups(backupRoot);
+    if (backups.isEmpty()) {
+      throw new IllegalStateException("No ROSE config backups were found.");
+    }
+    return restoreFromOneDriveBackup(backups.getFirst().name());
   }
 
   public IgnoreListState readIgnoreList() throws IOException {
@@ -546,6 +590,23 @@ public class ConfigEditorService {
     return copiedFiles;
   }
 
+  private void deleteRecursively(Path path) throws IOException {
+    if (!Files.exists(path)) {
+      return;
+    }
+    try (var stream = Files.walk(path)) {
+      for (Path entry : stream.sorted(Comparator.reverseOrder()).toList()) {
+        try {
+          Files.deleteIfExists(entry);
+        } catch (IOException ex) {
+          if (Files.exists(entry)) {
+            throw ex;
+          }
+        }
+      }
+    }
+  }
+
   private String normalizeBackupName(String backupName) {
     if (backupName == null || backupName.isBlank()) {
       throw new IllegalArgumentException("backupName is required.");
@@ -586,6 +647,8 @@ public class ConfigEditorService {
       List<OneDriveBackupEntry> backups) {}
 
   public record OneDriveBackupResult(String backupPath, int copiedFiles, List<String> files) {}
+
+  public record BackupCleanupResult(int deletedBackups, String keptBackupName) {}
 
   public record OneDriveBackupEntry(String name, String path, List<String> files) {}
 

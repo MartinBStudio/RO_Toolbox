@@ -1,6 +1,7 @@
 import type {
   ConfigEditorFileState,
   ConfigEditorStatus,
+  BackupCleanupResult,
   IgnoreListState,
   OneDriveBackupResult,
   OneDriveRestoreResult,
@@ -36,6 +37,14 @@ export function restoreConfigEditorFromOneDrive(backupName: string) {
     method: "POST",
     body: JSON.stringify({ backupName })
   });
+}
+
+export function cleanupConfigEditorBackups() {
+  return request<BackupCleanupResult>("/config-editor/onedrive-backup/cleanup", { method: "POST" });
+}
+
+export function deleteAllConfigEditorBackups() {
+  return request<BackupCleanupResult>("/config-editor/onedrive-backup/cleanup/all", { method: "POST" });
 }
 
 export function getIgnoreList() {

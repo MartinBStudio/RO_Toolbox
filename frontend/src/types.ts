@@ -110,6 +110,11 @@ export type OneDriveBackupResult = {
   files: string[];
 };
 
+export type BackupCleanupResult = {
+  deletedBackups: number;
+  keptBackupName: string | null;
+};
+
 export type OneDriveBackupEntry = {
   name: string;
   path: string;

@@ -1,13 +1,10 @@
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { AppStatus } from "../types.ts";
 import {
   clearGameFolder,
   factoryReset,
-  getBackupProviderSettings,
-  saveBackupProviderSettings,
-  saveGameFolder,
-  type BackupProviderSettings
+  saveGameFolder
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
 import { ConfirmationModal } from "./ConfirmationModal.tsx";
@@ -33,16 +30,6 @@ export function SettingsModal({
 }: SettingsModalProps) {
   const { debugMode, setDebugMode, ignoreConfigWarnings, setIgnoreConfigWarnings } = useApplicationContext();
   const [factoryResetOpen, setFactoryResetOpen] = useState(false);
-  const [backupProviderSettings, setBackupProviderSettings] = useState<BackupProviderSettings | null>(null);
-
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    getBackupProviderSettings()
-      .then(setBackupProviderSettings)
-      .catch((err) => onMessage(toErrorMessage(err, "Failed to load backup providers.")));
-  }, [open]);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -141,44 +128,11 @@ export function SettingsModal({
     }
   }
 
-  async function onBackupProviderChange(providerId: string) {
-    await runAction(async () => {
-      const nextSettings = await saveBackupProviderSettings(providerId, backupProviderSettings?.localPath ?? null);
-      setBackupProviderSettings(nextSettings);
-      window.dispatchEvent(new Event("roToolbox:backup-provider-changed"));
-    }, "Backup provider saved.");
-  }
-
-  async function onBrowseBackupFolder() {
-    try {
-      const selected = await openDialog({
-        directory: true,
-        multiple: false
-      });
-      if (!selected || Array.isArray(selected)) {
-        return;
-      }
-      await runAction(async () => {
-        const nextSettings = await saveBackupProviderSettings("local", selected);
-        setBackupProviderSettings(nextSettings);
-        window.dispatchEvent(new Event("roToolbox:backup-provider-changed"));
-      }, "Backup folder saved.");
-    } catch (err) {
-      onMessage(toErrorMessage(err, "Backup folder selection failed."));
-    }
-  }
-
   if (!open) {
     return null;
   }
 
   const gameFolderSet = Boolean(status?.selectedGameBase);
-  const selectedBackupProvider = backupProviderSettings?.providers.find(
-    (provider) => provider.id === backupProviderSettings.selectedProviderId
-  );
-  const backupProviderDisplay =
-    selectedBackupProvider?.path ??
-    (selectedBackupProvider?.id === "auto" ? "Auto uses the first detected cloud folder." : "Not set");
 
   return (
     <div className="modalBackdrop" onClick={onClose}>
@@ -202,51 +156,6 @@ export function SettingsModal({
                 🗑 Clear
               </button>
             )}
-          </div>
-        </div>
-
-        <div className="settingsSection settingsSectionSeparated">
-          <p className="settingsSectionLabel">Backup provider</p>
-
-          <select
-              className="settingsFolderSelect"
-              value={backupProviderSettings?.selectedProviderId ?? "auto"}
-              disabled={loading || !backupProviderSettings}
-              onChange={(event) => {
-                void onBackupProviderChange(event.target.value);
-              }}
-              aria-label="Backup provider"
-          >
-            {backupProviderSettings?.providers.map((provider) => (
-                <option
-                    key={provider.id}
-                    value={provider.id}
-                    disabled={provider.id !== "auto" && !provider.available}
-                >
-                  {provider.name}
-                  {provider.id !== "auto" && !provider.available
-                      ? " (not detected)"
-                      : ""}
-                </option>
-            ))}
-          </select>
-
-          <div
-              className={`settingsFolderDisplay${
-                  selectedBackupProvider?.path ? "" : " settingsFolderEmpty"
-              }`}
-          >
-            {backupProviderDisplay}
-          </div>
-
-          <div className="settingsFolderActions">
-            <button
-                className="buttonStrong"
-                disabled={loading}
-                onClick={onBrowseBackupFolder}
-            >
-              📂 Browse…
-            </button>
           </div>
         </div>
 

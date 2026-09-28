@@ -59,6 +59,21 @@ public class LoginServiceController {
     return loginManagerService.restoreFromOneDriveBackup(request.backupName());
   }
 
+  @PostMapping("/onedrive-backup/restore/latest")
+  public LoginManagerService.OneDriveRestoreResult restoreLatestFromOneDrive() throws IOException {
+    return loginManagerService.restoreLatestBackup();
+  }
+
+  @PostMapping("/onedrive-backup/cleanup")
+  public LoginManagerService.BackupCleanupResult cleanupOneDriveBackups() throws IOException {
+    return loginManagerService.deleteAllButLatestBackup();
+  }
+
+  @PostMapping("/onedrive-backup/cleanup/all")
+  public LoginManagerService.BackupCleanupResult cleanupAllOneDriveBackups() throws IOException {
+    return loginManagerService.deleteAllBackups();
+  }
+
   @PostMapping("/{id}/launch")
   public MessageResponse launchAccount(
       @PathVariable String id,

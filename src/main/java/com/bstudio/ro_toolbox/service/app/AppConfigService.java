@@ -84,6 +84,14 @@ public class AppConfigService {
     }
   }
 
+  public Path getConfigDir() {
+    return configDir;
+  }
+
+  public Path getConfigFile() {
+    return configFile;
+  }
+
   private String getPropertyQuietly(String key) {
     try {
       return getProperty(key);

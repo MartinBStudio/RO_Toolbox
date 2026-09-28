@@ -2,17 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { ArrowPathIcon, FolderOpenIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import {
-  backupConfigEditorToOneDrive,
   addIgnoreListEntry,
   deleteIgnoreListEntry,
   getConfigEditorStatus,
   openConfigEditorFolder,
-  openConfigEditorOneDriveBackupFolder,
-  restoreConfigEditorFromOneDrive,
   saveConfigEditorFile
 } from "../backendConnector/api.ts";
 import type { ConfigEditorFileState, ConfigEditorStatus, TomlNode } from "../types.ts";
-import { BackupProviderPanel } from "./BackupProviderPanel.tsx";
 
 function FloppyDiskIcon({ className = "heroIcon" }: { className?: string }) {
   return (
@@ -59,7 +55,6 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
   const [ignoreNames, setIgnoreNames] = useState<string[]>([]);
   const [newIgnoreName, setNewIgnoreName] = useState("");
   const [booleanSearch, setBooleanSearch] = useState("");
-  const [selectedBackupName, setSelectedBackupName] = useState("");
 
   const selectedFile = useMemo(
     () => status?.files.find((file) => file.id === selectedFileId) ?? null,
@@ -90,16 +85,6 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
   }, []);
 
   useEffect(() => {
-    const reloadBackupStatus = () => {
-      loadStatus(false).catch((err) => {
-        onMessage(toErrorMessage(err, "Failed to refresh backup provider."));
-      });
-    };
-    window.addEventListener("roToolbox:backup-provider-changed", reloadBackupStatus);
-    return () => window.removeEventListener("roToolbox:backup-provider-changed", reloadBackupStatus);
-  }, []);
-
-  useEffect(() => {
     if (!selectedFile) {
       setEditorContent("");
       setEditorDirty(false);
@@ -119,17 +104,6 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
       setBooleanSearch("");
     }
   }, [selectedFileId]);
-
-  useEffect(() => {
-    const backups = status?.oneDriveBackup?.backups ?? [];
-    if (backups.length === 0) {
-      setSelectedBackupName("");
-      return;
-    }
-    if (!backups.some((backup) => backup.name === selectedBackupName)) {
-      setSelectedBackupName(backups[0].name);
-    }
-  }, [selectedBackupName, status?.oneDriveBackup?.backups]);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -203,54 +177,6 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
       onMessage("Opened ROSE config folder.");
     } catch (err) {
       onMessage(toErrorMessage(err, "Failed to open config folder."));
-    } finally {
-      onBusyChange(false);
-    }
-  }
-
-  async function onBackupToOneDrive() {
-    onBusyChange(true);
-    try {
-      const result = await backupConfigEditorToOneDrive();
-      await loadStatus(false);
-      onMessage(`Backed up ${result.copiedFiles} config file${result.copiedFiles === 1 ? "" : "s"} to OneDrive.`);
-    } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to back up config files to OneDrive."));
-    } finally {
-      onBusyChange(false);
-    }
-  }
-
-  async function onOpenOneDriveBackupFolder() {
-    onBusyChange(true);
-    try {
-      await openConfigEditorOneDriveBackupFolder();
-      onMessage("Opened OneDrive backup folder.");
-    } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to open OneDrive backup folder."));
-    } finally {
-      onBusyChange(false);
-    }
-  }
-
-  async function onRestoreFromOneDrive() {
-    if (!selectedBackupName) {
-      onMessage("Choose a OneDrive backup to restore.");
-      return;
-    }
-    const confirmed = window.confirm(`Restore ROSE config files from "${selectedBackupName}"? Current files will be backed up first.`);
-    if (!confirmed) {
-      return;
-    }
-
-    onBusyChange(true);
-    try {
-      const result = await restoreConfigEditorFromOneDrive(selectedBackupName);
-      await loadStatus(false);
-      setEditorDirty(false);
-      onMessage(`Restored ${result.restoredFiles} config file${result.restoredFiles === 1 ? "" : "s"} from OneDrive.`);
-    } catch (err) {
-      onMessage(toErrorMessage(err, "Failed to restore config files from OneDrive."));
     } finally {
       onBusyChange(false);
     }
@@ -346,20 +272,6 @@ export function ConfigEditorManager({ loading, onBusyChange, onMessage }: Config
         <p className="sectionTitle">Config editor</p>
         <p className="activeProfileMeta">Edit game Config files.</p>
       </div>
-
-      <BackupProviderPanel
-        available={Boolean(status?.oneDriveBackup?.available)}
-        providerName={status?.oneDriveBackup?.providerName ?? null}
-        backupRootPath={status?.oneDriveBackup?.backupRootPath ?? null}
-        backups={status?.oneDriveBackup?.backups ?? []}
-        selectedBackupName={selectedBackupName}
-        busy={loading}
-        label="config"
-        onBackup={onBackupToOneDrive}
-        onOpenFolder={onOpenOneDriveBackupFolder}
-        onRestore={onRestoreFromOneDrive}
-        onSelectedBackupChange={setSelectedBackupName}
-      />
 
       <div className="configEditorToolbar">
         <div className="configEditorFileTabs">
