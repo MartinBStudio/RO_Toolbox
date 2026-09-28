@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,7 +27,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.UUID;
-import java.util.Comparator;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -243,7 +243,11 @@ public class LoginManagerService {
             .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
     Path backupRoot = resolveProviderBackupRoot(provider);
     Path backupDir =
-        backupRoot.resolve(normalizedBackupName).resolve(BACKUP_FOLDER_NAME).toAbsolutePath().normalize();
+        backupRoot
+            .resolve(normalizedBackupName)
+            .resolve(BACKUP_FOLDER_NAME)
+            .toAbsolutePath()
+            .normalize();
     if (!backupDir.startsWith(backupRoot.toAbsolutePath().normalize())
         || !Files.exists(backupDir)
         || !Files.isDirectory(backupDir)) {
@@ -255,12 +259,6 @@ public class LoginManagerService {
       throw new IllegalStateException("Selected OneDrive backup has no login accounts file.");
     }
 
-    Path safetyBackupDir =
-        backupRoot
-            .resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER))
-            .resolve(BACKUP_FOLDER_NAME);
-    List<String> safetyFiles = backupExistingAccountsFile(safetyBackupDir);
-
     Files.createDirectories(configDir);
     Files.copy(
         backupAccountsFile,
@@ -268,12 +266,7 @@ public class LoginManagerService {
         StandardCopyOption.REPLACE_EXISTING,
         StandardCopyOption.COPY_ATTRIBUTES);
 
-    return new OneDriveRestoreResult(
-        backupDir.toString(),
-        1,
-        List.of(ACCOUNTS_FILE_NAME),
-        safetyFiles.isEmpty() ? null : safetyBackupDir.toString(),
-        safetyFiles);
+    return new OneDriveRestoreResult(backupDir.toString(), 1, List.of(ACCOUNTS_FILE_NAME));
   }
 
   public OneDriveRestoreResult restoreLatestBackup() throws IOException {
@@ -470,21 +463,9 @@ public class LoginManagerService {
     }
     return Optional.of(
         new OneDriveBackupEntry(
-            backupDir.getFileName().toString(), categoryDir.toString(), List.of(ACCOUNTS_FILE_NAME)));
-  }
-
-  private List<String> backupExistingAccountsFile(Path safetyBackupDir) throws IOException {
-    if (!Files.exists(accountsFile) || !Files.isRegularFile(accountsFile)) {
-      return List.of();
-    }
-
-    Files.createDirectories(safetyBackupDir);
-    Files.copy(
-        accountsFile,
-        safetyBackupDir.resolve(ACCOUNTS_FILE_NAME),
-        StandardCopyOption.REPLACE_EXISTING,
-        StandardCopyOption.COPY_ATTRIBUTES);
-    return List.of(ACCOUNTS_FILE_NAME);
+            backupDir.getFileName().toString(),
+            categoryDir.toString(),
+            List.of(ACCOUNTS_FILE_NAME)));
   }
 
   private void deleteRecursively(Path path) throws IOException {
@@ -554,10 +535,5 @@ public class LoginManagerService {
 
   public record BackupCleanupResult(int deletedBackups, String keptBackupName) {}
 
-  public record OneDriveRestoreResult(
-      String restoredFrom,
-      int restoredFiles,
-      List<String> files,
-      String safetyBackupPath,
-      List<String> safetyBackupFiles) {}
+  public record OneDriveRestoreResult(String restoredFrom, int restoredFiles, List<String> files) {}
 }

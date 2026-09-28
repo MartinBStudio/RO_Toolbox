@@ -33,8 +33,6 @@ export type LoginOneDriveRestoreResult = {
   restoredFrom: string;
   restoredFiles: number;
   files: string[];
-  safetyBackupPath: string | null;
-  safetyBackupFiles: string[];
 };
 
 export type LoginBackupCleanupResult = {

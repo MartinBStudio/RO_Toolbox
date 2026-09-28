@@ -13,6 +13,10 @@ This update adds support for displaying download progress.
 
 * **App download progress**: App updates showing download progress.
 
+### Backup
+
+* **Cleaner restore folders**: Restoring a backup no longer creates extra pre-restore folders in the backup location.
+
 ## v1.1.0 - ROSE Data Backup
 
 This update adds support for backing up important ROSE Online user data, including game configuration and saved

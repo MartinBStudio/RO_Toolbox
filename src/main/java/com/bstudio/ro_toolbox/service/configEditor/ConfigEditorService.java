@@ -194,7 +194,11 @@ public class ConfigEditorService {
             .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
     Path backupRoot = resolveProviderBackupRoot(provider);
     Path backupDir =
-        backupRoot.resolve(normalizedBackupName).resolve(BACKUP_FOLDER_NAME).toAbsolutePath().normalize();
+        backupRoot
+            .resolve(normalizedBackupName)
+            .resolve(BACKUP_FOLDER_NAME)
+            .toAbsolutePath()
+            .normalize();
     if (!backupDir.startsWith(backupRoot.toAbsolutePath().normalize())
         || !Files.exists(backupDir)
         || !Files.isDirectory(backupDir)) {
@@ -212,12 +216,6 @@ public class ConfigEditorService {
       throw new IllegalStateException("Selected OneDrive backup has no supported config files.");
     }
 
-    Path safetyBackupDir =
-        backupRoot
-            .resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER))
-            .resolve(BACKUP_FOLDER_NAME);
-    List<String> safetyFiles = backupExistingConfigFiles(safetyBackupDir);
-
     Files.createDirectories(configDir);
     for (Path source : backupFiles) {
       Files.copy(
@@ -230,9 +228,7 @@ public class ConfigEditorService {
     return new OneDriveRestoreResult(
         backupDir.toString(),
         backupFiles.size(),
-        backupFiles.stream().map(path -> path.getFileName().toString()).toList(),
-        safetyFiles.isEmpty() ? null : safetyBackupDir.toString(),
-        safetyFiles);
+        backupFiles.stream().map(path -> path.getFileName().toString()).toList());
   }
 
   public OneDriveRestoreResult restoreLatestBackup() throws IOException {
@@ -577,28 +573,6 @@ public class ConfigEditorService {
         new OneDriveBackupEntry(backupDir.getFileName().toString(), categoryDir.toString(), files));
   }
 
-  private List<String> backupExistingConfigFiles(Path safetyBackupDir) throws IOException {
-    if (!Files.exists(configDir) || !Files.isDirectory(configDir)) {
-      return List.of();
-    }
-
-    List<String> copiedFiles = new ArrayList<>();
-    for (ConfigFileSpec spec : TARGET_FILES) {
-      Path source = configDir.resolve(spec.fileName());
-      if (!Files.exists(source) || !Files.isRegularFile(source)) {
-        continue;
-      }
-      Files.createDirectories(safetyBackupDir);
-      Files.copy(
-          source,
-          safetyBackupDir.resolve(source.getFileName()),
-          StandardCopyOption.REPLACE_EXISTING,
-          StandardCopyOption.COPY_ATTRIBUTES);
-      copiedFiles.add(source.getFileName().toString());
-    }
-    return copiedFiles;
-  }
-
   private void deleteRecursively(Path path) throws IOException {
     if (!Files.exists(path)) {
       return;
@@ -669,12 +643,7 @@ public class ConfigEditorService {
 
   public record OneDriveBackupEntry(String name, String path, List<String> files) {}
 
-  public record OneDriveRestoreResult(
-      String restoredFrom,
-      int restoredFiles,
-      List<String> files,
-      String safetyBackupPath,
-      List<String> safetyBackupFiles) {}
+  public record OneDriveRestoreResult(String restoredFrom, int restoredFiles, List<String> files) {}
 
   private record ParsedIgnoreData(List<String> names, ConfigFileState fileState) {}
 }

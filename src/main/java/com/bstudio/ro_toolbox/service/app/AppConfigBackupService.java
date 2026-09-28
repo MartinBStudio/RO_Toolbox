@@ -141,37 +141,35 @@ public class AppConfigBackupService {
             .orElseThrow(() -> new IllegalStateException("No backup provider was detected."));
     Path backupRoot = resolveProviderBackupRoot(provider);
     Path backupDir =
-        backupRoot.resolve(normalizedBackupName).resolve(BACKUP_FOLDER_NAME).toAbsolutePath().normalize();
+        backupRoot
+            .resolve(normalizedBackupName)
+            .resolve(BACKUP_FOLDER_NAME)
+            .toAbsolutePath()
+            .normalize();
     if (!backupDir.startsWith(backupRoot.toAbsolutePath().normalize())
         || !Files.exists(backupDir)
         || !Files.isDirectory(backupDir)) {
       throw new IllegalArgumentException("Selected app config backup was not found.");
     }
 
-    Path backupConfigFile = backupDir.resolve(CONFIG_FILE_NAME);
-    if (!Files.exists(backupConfigFile) || !Files.isRegularFile(backupConfigFile)) {
-      throw new IllegalStateException("Selected backup has no app config file.");
+    List<Path> backupFiles = listRegularFiles(backupDir);
+    if (backupFiles.isEmpty()) {
+      throw new IllegalStateException("Selected backup has no app config files.");
     }
 
-    Path safetyBackupDir =
-        backupRoot
-            .resolve("pre-restore-" + LocalDateTime.now().format(BACKUP_TIMESTAMP_FORMATTER))
-            .resolve(BACKUP_FOLDER_NAME);
-    List<String> safetyFiles = backupExistingConfigFile(safetyBackupDir);
-
     Files.createDirectories(appConfigService.getConfigDir());
-    Files.copy(
-        backupConfigFile,
-        appConfigService.getConfigFile(),
-        StandardCopyOption.REPLACE_EXISTING,
-        StandardCopyOption.COPY_ATTRIBUTES);
+    for (Path backupFile : backupFiles) {
+      Files.copy(
+          backupFile,
+          appConfigService.getConfigDir().resolve(backupFile.getFileName()),
+          StandardCopyOption.REPLACE_EXISTING,
+          StandardCopyOption.COPY_ATTRIBUTES);
+    }
 
     return new RestoreResult(
         backupDir.toString(),
-        1,
-        List.of(CONFIG_FILE_NAME),
-        safetyFiles.isEmpty() ? null : safetyBackupDir.toString(),
-        safetyFiles);
+        backupFiles.size(),
+        backupFiles.stream().map(path -> path.getFileName().toString()).toList());
   }
 
   public RestoreResult restoreLatestBackup() throws IOException {
@@ -211,28 +209,34 @@ public class AppConfigBackupService {
 
   private Optional<BackupEntry> readBackupEntry(Path backupDir) {
     Path categoryDir = backupDir.resolve(BACKUP_FOLDER_NAME);
-    Path file = categoryDir.resolve(CONFIG_FILE_NAME);
-    if (!Files.isRegularFile(file)) {
+    List<Path> files = listRegularFiles(categoryDir);
+    if (files.isEmpty()) {
       return Optional.empty();
     }
     return Optional.of(
         new BackupEntry(
-            backupDir.getFileName().toString(), categoryDir.toString(), List.of(CONFIG_FILE_NAME)));
+            backupDir.getFileName().toString(),
+            categoryDir.toString(),
+            files.stream().map(path -> path.getFileName().toString()).toList()));
   }
 
-  private List<String> backupExistingConfigFile(Path safetyBackupDir) throws IOException {
-    Path configFile = appConfigService.getConfigFile();
-    if (!Files.exists(configFile) || !Files.isRegularFile(configFile)) {
+  private List<Path> listRegularFiles(Path dir) {
+    if (!Files.isDirectory(dir)) {
       return List.of();
     }
-
-    Files.createDirectories(safetyBackupDir);
-    Files.copy(
-        configFile,
-        safetyBackupDir.resolve(CONFIG_FILE_NAME),
-        StandardCopyOption.REPLACE_EXISTING,
-        StandardCopyOption.COPY_ATTRIBUTES);
-    return List.of(CONFIG_FILE_NAME);
+    try (var entries = Files.list(dir)) {
+      return entries
+          .filter(Files::isRegularFile)
+          .sorted(
+              (first, second) ->
+                  first
+                      .getFileName()
+                      .toString()
+                      .compareToIgnoreCase(second.getFileName().toString()))
+          .toList();
+    } catch (IOException ex) {
+      return List.of();
+    }
   }
 
   private void deleteRecursively(Path path) throws IOException {
@@ -307,10 +311,5 @@ public class AppConfigBackupService {
 
   public record BackupSetDeleteResult(String backupName, String deletedPath) {}
 
-  public record RestoreResult(
-      String restoredFrom,
-      int restoredFiles,
-      List<String> files,
-      String safetyBackupPath,
-      List<String> safetyBackupFiles) {}
+  public record RestoreResult(String restoredFrom, int restoredFiles, List<String> files) {}
 }

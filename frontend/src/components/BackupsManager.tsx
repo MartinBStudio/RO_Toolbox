@@ -258,7 +258,7 @@ export function BackupsManager({
       return;
     }
     const confirmed = window.confirm(
-      `Restore backup "${backupSet.name}"? Current files will be backed up first.`
+      `Restore backup "${backupSet.name}"? Current files will be overwritten.`
     );
     if (!confirmed) {
       return;

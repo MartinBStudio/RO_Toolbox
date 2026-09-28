@@ -41,7 +41,8 @@ public class AppConfigBackupController {
   }
 
   @PostMapping("/folder/open-backup")
-  public MessageResponse openBackupSetFolder(@RequestBody BackupSetRequest request) throws IOException {
+  public MessageResponse openBackupSetFolder(@RequestBody BackupSetRequest request)
+      throws IOException {
     if (request == null || request.backupName() == null) {
       throw new IllegalArgumentException("backupName is required.");
     }
