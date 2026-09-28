@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { invoke } from "@tauri-apps/api/core";
 import { check as checkTauriUpdate } from "@tauri-apps/plugin-updater";
+import type { DownloadEvent } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
@@ -20,7 +21,7 @@ type AppHeaderProps = {
   onOpenSettings: () => void;
   onOpenHowToUse: () => void;
   onLaunchRose: () => void;
-  onBusyChange: (busy: boolean, message?: string) => void;
+  onBusyChange: (busy: boolean, message?: string, progress?: number | null) => void;
   onMessage: (message: string) => void;
   onQuickLaunchAccount?: (account: any) => void;
   quickAccounts?: any[];
@@ -84,6 +85,26 @@ export function AppHeader({
     return "RO_Toolbox.jar";
   }
 
+  function formatDownloadLabel(prefix: string, downloaded: number, total: number) {
+    if (total > 0) {
+      return prefix;
+    }
+    if (downloaded > 0) {
+      return `${prefix} ${formatBytes(downloaded)}`;
+    }
+    return prefix;
+  }
+
+  function formatBytes(bytes: number) {
+    if (bytes >= 1024 * 1024) {
+      return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    }
+    if (bytes >= 1024) {
+      return `${Math.round(bytes / 1024)} KB`;
+    }
+    return `${bytes} B`;
+  }
+
   async function checkForUpdates(showUpToDateMessage = false) {
     setUpdateChecking(true);
     try {
@@ -132,17 +153,34 @@ export function AppHeader({
   }
 
   async function onInstallUpdate() {
-    onBusyChange(true, "Downloading update...");
+    onBusyChange(true, "Downloading update...", 0);
     try {
       const update = await checkTauriUpdate();
       if (!update?.available) {
         onMessage("No update available.");
         return;
       }
+      let total = 0;
+      let downloaded = 0;
+
       // Kill the bundled Java backend before installing so its JRE files
-      // are not locked — otherwise Windows schedules them for reboot replacement.
+      // are not locked. Otherwise Windows can schedule them for reboot replacement.
       await invoke("stop_backend").catch(() => undefined);
-      await update.downloadAndInstall();
+      await update.downloadAndInstall((event: DownloadEvent) => {
+        if (event.event === "Started") {
+          total = event.data.contentLength ?? 0;
+          downloaded = 0;
+          onBusyChange(true, formatDownloadLabel("Downloading update...", downloaded, total), total > 0 ? 0 : null);
+          return;
+        }
+        if (event.event === "Progress") {
+          downloaded += event.data.chunkLength;
+          const progress = total > 0 ? (downloaded / total) * 100 : null;
+          onBusyChange(true, formatDownloadLabel("Downloading update...", downloaded, total), progress);
+          return;
+        }
+        onBusyChange(true, "Installing update...", 100);
+      });
       onMessage("Update installed. Restarting...");
       await new Promise((resolve) => window.setTimeout(resolve, 1200));
       try {
@@ -157,9 +195,8 @@ export function AppHeader({
       onBusyChange(false);
     }
   }
-
   async function onDownloadLatestRelease() {
-    onBusyChange(true, "Downloading latest release...");
+    onBusyChange(true, "Downloading latest release...", 0);
     try {
       const response = await fetchLatestReleaseDownload();
       if (!response.body) {
@@ -181,12 +218,11 @@ export function AppHeader({
         }
 
         downloaded += value.byteLength;
-
-        if (total > 0 || downloaded > 0) {
-          onBusyChange(true, "Downloading latest release...");
-        }
+        const progress = total > 0 ? (downloaded / total) * 100 : null;
+        onBusyChange(true, formatDownloadLabel("Downloading latest release...", downloaded, total), progress);
       }
 
+      onBusyChange(true, "Download complete.", 100);
       const fileName = resolveDownloadFileName(response);
       onMessage(`Downloaded ${fileName} for test. The app was not updated.`);
     } catch (err) {
@@ -195,7 +231,6 @@ export function AppHeader({
       onBusyChange(false);
     }
   }
-
   async function onOpenReleaseUrl(url: string) {
     try {
       await openUrl(url);

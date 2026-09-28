@@ -4138,6 +4138,38 @@ a {
   text-overflow: ellipsis;
 }
 
+.loadingProgress {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.loadingProgressTrack {
+  height: 0.48rem;
+  overflow: hidden;
+  border: 1px solid #263955;
+  border-radius: 999px;
+  background: #0c1420;
+}
+
+.loadingProgressBar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3f8cff 0%, #7db5ff 100%);
+  box-shadow: 0 0 12px rgba(111, 168, 255, 0.34);
+  transition: width 0.16s ease;
+}
+
+.loadingProgressText {
+  color: #a8c4e0;
+  font-family: "Consolas", "Courier New", monospace;
+  font-size: 0.75rem;
+  min-width: 2.4rem;
+  text-align: right;
+}
+
 @keyframes spin {
   from {
     transform: rotate(0deg);

@@ -1,14 +1,14 @@
 import type { UpdateCheckResult } from "../types.ts";
 import { request } from "./apiClient.ts";
-
-const UPDATE_API_BASE = "http://localhost:8080/api/update";
+import { invoke } from "@tauri-apps/api/core";
 
 export function checkBackendUpdate() {
   return request<UpdateCheckResult>("/update/check");
 }
 
 export async function fetchLatestReleaseDownload() {
-  const response = await fetch(`${UPDATE_API_BASE}/latest-release/download`);
+  const apiBase = await invoke<string>("get_backend_url");
+  const response = await fetch(`${apiBase}/update/latest-release/download`);
 
   if (!response.ok) {
     const body = await response.text();

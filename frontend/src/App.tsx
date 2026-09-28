@@ -81,6 +81,7 @@ function App() {
     const [loading, setLoading] = useState(false);
     const [loadingOverlayVisible, setLoadingOverlayVisible] = useState(false);
     const [loadingMessage, setLoadingMessage] = useState<string | undefined>(undefined);
+    const [loadingProgress, setLoadingProgress] = useState<number | null>(null);
     const [message, setMessage] = useState("");
     const [settingsOpen, setSettingsOpen] = useState(false);
     const [howToUseOpen, setHowToUseOpen] = useState(false);
@@ -164,10 +165,11 @@ function App() {
             .catch(() => undefined);
     }, [backendReady]);
 
-    const onBusyChange = useCallback((busy: boolean, msg?: string) => {
+    const onBusyChange = useCallback((busy: boolean, msg?: string, progress?: number | null) => {
         setLoading(busy);
         setLoadingOverlayVisible(busy);
         setLoadingMessage(busy ? msg : undefined);
+        setLoadingProgress(busy ? progress ?? null : null);
     }, []);
 
     async function onQuickLaunch() {
@@ -657,7 +659,7 @@ function App() {
                         content={releaseNotesContent}
                         onClose={() => setReleaseNotesOpen(false)}
                     />
-                    <LoadingOverlay visible={loadingOverlayVisible} label={loadingMessage}/>
+                    <LoadingOverlay visible={loadingOverlayVisible} label={loadingMessage} progress={loadingProgress}/>
                     {needsSetup && (
                         <GameFolderSetupModal
                             loading={loading}
