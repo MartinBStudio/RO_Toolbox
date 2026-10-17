@@ -20,6 +20,7 @@ let displayPackages = buildDisplayPackages(packages);
 const packageGrid = document.getElementById("packageGrid");
 const packageFilters = document.getElementById("packageFilters");
 const packageSearch = document.getElementById("packageSearch");
+const thirdPartyModsCount = document.getElementById("thirdPartyModsCount");
 const previewModal = document.getElementById("previewModal");
 const previewModalTitle = document.getElementById("previewModalTitle");
 const previewModalMeta = document.getElementById("previewModalMeta");
@@ -32,6 +33,13 @@ let activePreviewPackage = null;
 let activePreviewIndex = 0;
 
 const THIRD_PARTY_UI_MODS_URL = "https://r.jina.ai/http://https://roseonlinetoolbox.com/mods";
+const THIRD_PARTY_UI_FALLBACK_PREVIEWS = [
+  { name: "Classic UI", image: "https://roseonlinetoolbox.com/assets/rose-online-toolbox-home-720-BzOJrU71.avif" },
+  { name: "Crystal UI", image: "https://roseonlinetoolbox.com/world/scenes/crystal-defenders-1440.webp" },
+  { name: "Golden UI", image: "https://roseonlinetoolbox.com/world/jobs/visitor-f.webp" },
+  { name: "Combat UI", image: "https://roseonlinetoolbox.com/Icons/equipments/8_30_1212.png" },
+  { name: "Market UI", image: "https://roseonlinetoolbox.com/Icons/materials/2328_gold_bar.png" }
+];
 
 function normalizeThirdPartyUrl(value) {
   const source = String(value || "").trim();
@@ -40,6 +48,33 @@ function normalizeThirdPartyUrl(value) {
   if (source.startsWith("//")) return `https:${source}`;
   if (source.startsWith("/")) return `https://roseonlinetoolbox.com${source}`;
   return source;
+}
+
+function buildFallbackThirdPartyUiPackages() {
+  return THIRD_PARTY_UI_FALLBACK_PREVIEWS.map((item, index) => {
+    const name = String(item.name || `UI Mode ${index + 1}`).trim() || `UI Mode ${index + 1}`;
+    const shortName = titleCasePackageName(name.replace(/\s*[-–]\s*.*$/, ""));
+    return {
+      id: `third-party-ui-fallback-${index}-${shortName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      category: "3rd party UI mods",
+      repo: "roseonlinetoolbox.com",
+      name: shortName,
+      folder: shortName,
+      version: "external",
+      author: "Community",
+      description: "Preview from the public roseonlinetoolbox.com UI mod showcase.",
+      packageUrl: "https://roseonlinetoolbox.com/mods",
+      repoUrl: "https://roseonlinetoolbox.com/mods",
+      previews: [normalizeThirdPartyUrl(item.image)]
+    };
+  });
+}
+
+function injectThirdPartyUiPackages() {
+  const fallbackPackages = buildFallbackThirdPartyUiPackages();
+  displayPackages = buildDisplayPackages([...packages, ...fallbackPackages]);
+  renderPackageFilters();
+  renderPackages();
 }
 
 function buildThirdPartyUiPackage(label, imageUrl, index) {
@@ -88,6 +123,7 @@ async function loadThirdPartyUiPreviews() {
 
     const uniquePreviews = [...new Set(candidates)].slice(0, 8);
     if (uniquePreviews.length === 0) {
+      injectThirdPartyUiPackages();
       return;
     }
 
@@ -101,6 +137,7 @@ async function loadThirdPartyUiPreviews() {
     renderPackages();
   } catch (error) {
     console.warn("Could not load third-party UI previews.", error);
+    injectThirdPartyUiPackages();
   }
 }
 
@@ -227,6 +264,15 @@ function renderPackageFilters() {
       renderPackages();
     });
   });
+
+  updateThirdPartyModCount();
+}
+
+function updateThirdPartyModCount() {
+  const count = displayPackages.filter((pkg) => pkg.category === "3rd party UI mods").length;
+  if (thirdPartyModsCount) {
+    thirdPartyModsCount.textContent = String(count);
+  }
 }
 
 function renderPackages() {
@@ -284,6 +330,8 @@ function renderPackages() {
       openPreview(button.dataset.previewPackage || "");
     });
   });
+
+  updateThirdPartyModCount();
 }
 
 function updatePreviewModal() {
@@ -383,3 +431,4 @@ connectSearch("releaseSearch", "#releaseTimeline article", (item) => {
 });
 
 loadThirdPartyUiPreviews();
+
