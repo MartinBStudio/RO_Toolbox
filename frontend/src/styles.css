@@ -4179,12 +4179,14 @@ a {
   }
 }
 
-.configEditor {
+.configEditor,
+.themeEditor {
   display: grid;
   gap: 0.65rem;
 }
 
-.configEditorHeader {
+.configEditorHeader,
+.themeEditorHeader {
   display: grid;
   gap: 0.22rem;
 }
@@ -4315,7 +4317,8 @@ a {
   word-break: break-all;
 }
 
-.configEditorIgnorePanel {
+.configEditorIgnorePanel,
+.themeSection {
   border: 1px solid var(--panel-blue-border);
   border-radius: 10px;
   background: linear-gradient(180deg, rgba(18, 28, 42, 0.94) 0%, rgba(14, 22, 33, 0.94) 100%);
@@ -4485,3 +4488,40 @@ a {
     justify-content: flex-start;
   }
 }
+
+.themeActions { display: flex; gap: 8px; flex-wrap: wrap; }
+.themeActions button { white-space: nowrap; }
+.themePreviewGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.themePreview { padding: 18px; border-radius: 8px; overflow: hidden; }
+.themePreview-checker { background: repeating-conic-gradient(#394557 0% 25%, #8290a2 0% 50%) 0 / 24px 24px; }
+.themePreview-scene { background: radial-gradient(ellipse at 70% 20%, #ffe7ae 0, transparent 30%), linear-gradient(155deg, #80cce5 30%, #397b59 31%, #94a954 60%, #405c35 61%); }
+.themeSample { border: 1px solid #b6a57c; border-radius: 7px; padding: 14px; color: #fff; text-shadow: 0 1px 3px #000, 1px 0 2px #000; font-size: 12px; }
+.themeSampleDivider { height: 1px; background: #9aafc166; margin-top: 10px; }
+.themeSlots { display: flex; gap: 6px; }
+.themeSlots span { border: 1px solid #b6a57c; border-radius: 4px; padding: 5px; color: #ffe178; }
+.themeError { border: 1px solid #e57e71; background: #6b272744; border-radius: 6px; padding: 12px; }
+@media (max-width: 550px) { .themePreviewGrid { grid-template-columns: 1fr; } }
+
+.themeEditor { min-width: 0; }
+.panelTroseStatus ~ .themeEditor .themeEditorHeader { padding-right: 15rem; }
+.themeEditorBody { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0.65rem; align-items: start; }
+.themeSection { min-width: 0; align-content: start; }
+.themeSectionHeader { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+.themeSectionHeader .settingsSectionLabel, .themeHint { margin: 0; }
+.themeGlobalControls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; align-items: center; margin: 0.65rem 0; }
+.themeTintControl { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.themeTintControl input[type=color] { width: 56px; height: 38px; padding: 2px; cursor: pointer; }
+.themeTransparencyControl { grid-column: 1 / -1; display: grid; gap: 12px; }
+.themeTransparencyControl strong { justify-self: end; margin-top: -28px; color: #ffe178; }
+.themeTransparencyControl input { width: 100%; margin: 0; }
+.themeTransparencyControl small, .themeHint { color: #a7b8cd; font-size: 12px; }
+.themeSection .themeActions { margin: 0.35rem 0; }
+.themeActions.configEditorActions { justify-content: flex-start; }
+.themeSection .themePreviewGrid { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1000px) { .themeEditorBody { grid-template-columns: minmax(0, 1fr); } .themeSection .themePreviewGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 550px) { .themeSection .themePreviewGrid { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 700px) {
+  .panelStatusHost:has(> .themeEditor) > .panelTroseStatus { position: static; justify-self: end; margin-bottom: 0.5rem; }
+  .panelTroseStatus ~ .themeEditor .themeEditorHeader { padding-right: 0; }
+}
+@media (max-width: 550px) { .themeGlobalControls { grid-template-columns: 1fr; } }

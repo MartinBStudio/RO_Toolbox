@@ -13,6 +13,7 @@ import {BuffIconsManager} from "./components/BuffIconsManager";
 import {BuffsManager} from "./components/BuffsManager";
 import {LoginManager} from "./components/LoginManager.tsx";
 import {ConfigEditorManager} from "./components/ConfigEditorManager.tsx";
+import {ThemeEditorManager} from "./components/ThemeEditorManager.tsx";
 import {SettingsModal} from "./elements/SettingsModal.tsx";
 import {GameFolderSetupModal} from "./elements/GameFolderSetupModal.tsx";
 import {StatusMessage} from "./elements/StatusMessage.tsx";
@@ -45,6 +46,7 @@ const SERVICES = [
     {id: "texture-replacer", title: "Texture replacer", icon: SwatchIcon},
     {id: "login-manager", title: "Login manager", icon: KeyIcon},
     {id: "config-editor", title: "Config editor", icon: WrenchScrewdriverIcon},
+    {id: "theme-editor", title: "Theme editor", icon: SwatchIcon},
     {id: "backups", title: "Backups", icon: CloudIcon}
 ] as const;
 const SELECTED_SERVICE_STORAGE_KEY = "roToolbox.selectedService";
@@ -617,6 +619,20 @@ function App() {
                                                 onBusyChange={onBusyChange}
                                                 onMessage={setMessage}
                                             />
+                                        </div>
+                                    )}
+                                    {selectedService === "theme-editor" && (
+                                        <div className="card serviceContentPanel textureReplacerPanel panelStatusHost">
+                                            {Boolean(status?.troseRunning) && (
+                                                <div className="panelTroseStatus">
+                                                    <TroseRunningBanner
+                                                        running={true}
+                                                        loading={troseRefreshLoading || loading}
+                                                        onRefresh={onRefreshTroseStatus}
+                                                    />
+                                                </div>
+                                            )}
+                                            <ThemeEditorManager key={`theme-editor-${factoryResetNonce}-${status?.selectedGameBase}`} onMessage={setMessage}/>
                                         </div>
                                     )}
                                     {selectedService === "backups" && (
