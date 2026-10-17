@@ -16,7 +16,7 @@ function connectSearch(inputId, itemSelector, textReader) {
 }
 
 const packages = Array.isArray(window.RO_TOOLBOX_PACKAGES) ? window.RO_TOOLBOX_PACKAGES : [];
-const displayPackages = buildDisplayPackages(packages);
+let displayPackages = buildDisplayPackages(packages);
 const packageGrid = document.getElementById("packageGrid");
 const packageFilters = document.getElementById("packageFilters");
 const packageSearch = document.getElementById("packageSearch");
@@ -30,6 +30,79 @@ const previewNext = document.getElementById("previewNext");
 let activeCategory = "All";
 let activePreviewPackage = null;
 let activePreviewIndex = 0;
+
+const THIRD_PARTY_UI_MODS_URL = "https://r.jina.ai/http://https://roseonlinetoolbox.com/mods";
+
+function normalizeThirdPartyUrl(value) {
+  const source = String(value || "").trim();
+  if (!source) return "";
+  if (/^https?:\/\//i.test(source)) return source;
+  if (source.startsWith("//")) return `https:${source}`;
+  if (source.startsWith("/")) return `https://roseonlinetoolbox.com${source}`;
+  return source;
+}
+
+function buildThirdPartyUiPackage(label, imageUrl, index) {
+  const safeLabel = String(label || `UI Mod ${index + 1}`).trim() || `UI Mod ${index + 1}`;
+  const shortName = titleCasePackageName(safeLabel.replace(/\s*[-–]\s*.*$/, ""));
+  return {
+    id: `third-party-ui-${index}-${shortName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+    category: "3rd party UI mods",
+    repo: "roseonlinetoolbox.com",
+    name: shortName,
+    folder: shortName,
+    version: "external",
+    author: "Community",
+    description: "Preview pulled from roseonlinetoolbox.com UI mod pages.",
+    packageUrl: "https://roseonlinetoolbox.com/mods",
+    repoUrl: "https://roseonlinetoolbox.com/mods",
+    previews: [normalizeThirdPartyUrl(imageUrl)]
+  };
+}
+
+async function loadThirdPartyUiPreviews() {
+  try {
+    const response = await fetch(THIRD_PARTY_UI_MODS_URL, {
+      headers: {
+        Accept: "text/html,application/xhtml+xml,text/plain"
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`Fetch failed: ${response.status}`);
+    }
+
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const candidates = [...doc.querySelectorAll("img[src]")]
+      .map((img) => img.getAttribute("src"))
+      .map(normalizeThirdPartyUrl)
+      .filter((src) => /\.(png|jpe?g|webp|gif|avif)(\?.*)?$/i.test(src))
+      .filter((src) => !src.includes("favicon") && !src.includes("og/home") && !src.includes("logo"));
+
+    const labels = [...doc.querySelectorAll("a[href]")]
+      .map((link) => ({
+        text: (link.textContent || "").trim(),
+        href: normalizeThirdPartyUrl(link.getAttribute("href"))
+      }))
+      .filter((entry) => entry.text && /ui|mod|theme/i.test(entry.text) && entry.href.includes("mods"));
+
+    const uniquePreviews = [...new Set(candidates)].slice(0, 8);
+    if (uniquePreviews.length === 0) {
+      return;
+    }
+
+    const extras = uniquePreviews.map((imageUrl, index) => {
+      const label = labels[index]?.text || `UI Mod ${index + 1}`;
+      return buildThirdPartyUiPackage(label, imageUrl, index);
+    });
+
+    displayPackages = buildDisplayPackages([...packages, ...extras]);
+    renderPackageFilters();
+    renderPackages();
+  } catch (error) {
+    console.warn("Could not load third-party UI previews.", error);
+  }
+}
 
 function escapeHtml(value) {
   return String(value || "")
@@ -308,3 +381,5 @@ window.addEventListener("keydown", (event) => {
 connectSearch("releaseSearch", "#releaseTimeline article", (item) => {
   return `${item.dataset.text || ""} ${item.textContent || ""}`;
 });
+
+loadThirdPartyUiPreviews();
