@@ -4,9 +4,14 @@ import {ArrowTopRightOnSquareIcon, ChevronLeftIcon, ChevronRightIcon, XMarkIcon}
 import type {AvailableProfile, ProfileInfo} from "../types";
 import {buildProfileMeta, isProfileAlreadyInstalled, resolveProfileName} from "../formatting";
 import {ServiceDetailModal} from "./ServiceDetailModal";
+import {FavoritePackageButton} from "./FavoritePackageButton";
+import {FavoritesFilterToggle} from "./FavoritesFilterToggle";
+import {packageBrowserSummary} from "../utils/packageBrowserSummary";
+import {usePackageFavorites, type ResourceType} from "../hooks/usePackageFavorites";
 
 type Props = {
     open: boolean;
+    resourceType: ResourceType;
     title: string;
     profiles: AvailableProfile[];
     installedProfile?: ProfileInfo | null;
@@ -21,12 +26,17 @@ type Props = {
     onMessage: (message: string) => void;
 };
 
-export function PackageBrowserModal({open, title, profiles, installedProfile, selectedProfile, recommendedId, loading, canInstall, onSelect, onInstall, onDetails, onClose, onMessage}: Props) {
+export function PackageBrowserModal({open, resourceType, title, profiles, installedProfile, selectedProfile, recommendedId, loading, canInstall, onSelect, onInstall, onDetails, onClose, onMessage}: Props) {
+    const {isFavorite, isSortingFavorite, toggleFavorite, favoritesDisabled, hasFavorites, favoritesOnly, setFavoritesOnly} = usePackageFavorites(resourceType, open, onMessage);
     const [search, setSearch] = useState("");
     const [gallery, setGallery] = useState<{images: string[]; index: number; name: string} | null>(null);
-    const visible = profiles.filter(profile => resolveProfileName(profile.name, profile.id).toLowerCase().includes(search.trim().toLowerCase()));
+    const visible = profiles.filter(profile =>
+        (!favoritesOnly || isFavorite(resolveProfileName(profile.name, profile.id)) || isProfileAlreadyInstalled(profile, installedProfile))
+        && resolveProfileName(profile.name, profile.id).toLowerCase().includes(search.trim().toLowerCase())
+    );
     const sorted = [...visible].sort((a, b) =>
-        Number(isProfileAlreadyInstalled(b, installedProfile)) - Number(isProfileAlreadyInstalled(a, installedProfile))
+        Number(isSortingFavorite(resolveProfileName(b.name, b.id))) - Number(isSortingFavorite(resolveProfileName(a.name, a.id)))
+        || Number(isProfileAlreadyInstalled(b, installedProfile)) - Number(isProfileAlreadyInstalled(a, installedProfile))
         || Number(b.id === recommendedId) - Number(a.id === recommendedId)
     );
 
@@ -53,8 +63,11 @@ export function PackageBrowserModal({open, title, profiles, installedProfile, se
     }
 
     return <>
-        <ServiceDetailModal open={open} title={title} onClose={onClose} headerContent={
-            <input type="search" className="profileBrowserSearch" aria-label={`Search ${title.toLowerCase()} packages by name`} placeholder="Search packages by name..." value={search} onChange={event => setSearch(event.target.value)} autoFocus/>
+        <ServiceDetailModal open={open} title={title} description={packageBrowserSummary(profiles, visible, installedProfile, isFavorite, favoritesOnly)} onClose={onClose} headerContent={
+            <div className="packageBrowserFilters">
+                <input type="search" className="profileBrowserSearch" aria-label={`Search ${title.toLowerCase()} packages by name`} placeholder="Search packages by name..." value={search} onChange={event => setSearch(event.target.value)} autoFocus/>
+                {hasFavorites && <FavoritesFilterToggle checked={favoritesOnly} disabled={favoritesDisabled} onChange={setFavoritesOnly}/>}
+            </div>
         }>
             {profiles.length === 0 ? <p className="profileCardEmpty">No packages downloaded yet.</p> : sorted.length === 0 ? <p className="profileCardEmpty" role="status">No packages match your search.</p> :
                 <div className="profileGridBrowser">
@@ -72,7 +85,7 @@ export function PackageBrowserModal({open, title, profiles, installedProfile, se
                             </div>
                             <div className="profileBrowseBody">
                                 <div className="profileBrowseHeader"><div>
-                                    <p className="profileBrowseName">{name}</p>
+                                    <div className="packageNameWithFavorite"><p className="profileBrowseName">{name}</p><FavoritePackageButton name={name} favorite={isFavorite(name)} disabled={favoritesDisabled} onToggle={() => void toggleFavorite(name)}/></div>
                                     {meta && <p className="profileCardMeta">{meta}</p>}
                                 </div>{profile.url && <button type="button" className="iconBtn iconBtnSubtle iconBtnDim" title="Open package page" aria-label={`Open package page for ${name}`} onClick={() => void visit(profile.url!)}><ArrowTopRightOnSquareIcon className="heroIcon"/></button>}</div>
                                 {profile.id === recommendedId && <span className="servicePanelMetaChip">Recommended</span>}

@@ -324,6 +324,7 @@ export function CombatTextManager({
         </div>
 
         <PackageBrowserModal
+          resourceType="combatText"
           open={!collapsed}
           title="Combat text"
           profiles={availableProfiles}

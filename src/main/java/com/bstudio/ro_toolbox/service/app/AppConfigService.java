@@ -88,6 +88,48 @@ public class AppConfigService {
     return configDir;
   }
 
+  public synchronized java.util.List<String> getFavoritePackages(String resourceType)
+      throws IOException {
+    String prefix = favoritePrefix(resourceType);
+    return loadProperties().stringPropertyNames().stream()
+        .filter(key -> key.startsWith(prefix))
+        .map(key -> key.substring(prefix.length()))
+        .sorted()
+        .toList();
+  }
+
+  public synchronized void saveFavoritePackage(String resourceType, String name, boolean favorite)
+      throws IOException {
+    String prefix = favoritePrefix(resourceType);
+    if (name == null || name.isBlank()) {
+      throw new IllegalArgumentException("Package name is required.");
+    }
+    if (favorite) {
+      setProperty(prefix + name, "true");
+    } else {
+      removeProperty(prefix + name);
+    }
+  }
+
+  private String favoritePrefix(String resourceType) {
+    if (resourceType == null
+        || !java.util.Set.of("loot", "combatText", "userInterface", "buffIcons", "buffs")
+            .contains(resourceType)) {
+      throw new IllegalArgumentException("Unknown resource type.");
+    }
+    return "favorite." + resourceType + ".";
+  }
+
+  public boolean getFavoritesOnly(String resourceType) throws IOException {
+    favoritePrefix(resourceType);
+    return Boolean.parseBoolean(getProperty("favoritesOnly." + resourceType));
+  }
+
+  public void saveFavoritesOnly(String resourceType, boolean enabled) throws IOException {
+    favoritePrefix(resourceType);
+    setProperty("favoritesOnly." + resourceType, String.valueOf(enabled));
+  }
+
   public Path getConfigFile() {
     return configFile;
   }
@@ -105,14 +147,14 @@ public class AppConfigService {
     return properties.getProperty(key);
   }
 
-  private void setProperty(String key, String value) throws IOException {
+  private synchronized void setProperty(String key, String value) throws IOException {
     ensureConfigDir();
     Properties properties = loadProperties();
     properties.setProperty(key, value);
     storeProperties(properties);
   }
 
-  private void removeProperty(String key) throws IOException {
+  private synchronized void removeProperty(String key) throws IOException {
     ensureConfigDir();
     Properties properties = loadProperties();
     properties.remove(key);

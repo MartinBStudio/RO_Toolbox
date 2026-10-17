@@ -34,6 +34,38 @@ public class SettingsController {
   private final AppConfigService appConfigService;
   private final LoginManagerService loginManagerService;
 
+  @GetMapping("/favorite-packages")
+  public List<String> getFavoritePackages(@RequestParam String resourceType) throws IOException {
+    return appConfigService.getFavoritePackages(resourceType);
+  }
+
+  @PostMapping("/favorite-packages")
+  public List<String> saveFavoritePackage(@RequestBody FavoritePackageRequest request)
+      throws IOException {
+    appConfigService.saveFavoritePackage(
+        request.resourceType(), request.name(), request.favorite());
+    return appConfigService.getFavoritePackages(request.resourceType());
+  }
+
+  public record FavoritePackageRequest(String resourceType, String name, boolean favorite) {}
+
+  @GetMapping("/favorites-only")
+  public FavoritesOnlyResponse getFavoritesOnly(@RequestParam String resourceType)
+      throws IOException {
+    return new FavoritesOnlyResponse(appConfigService.getFavoritesOnly(resourceType));
+  }
+
+  @PostMapping("/favorites-only")
+  public FavoritesOnlyResponse saveFavoritesOnly(@RequestBody FavoritesOnlyRequest request)
+      throws IOException {
+    appConfigService.saveFavoritesOnly(request.resourceType(), request.enabled());
+    return new FavoritesOnlyResponse(request.enabled());
+  }
+
+  public record FavoritesOnlyRequest(String resourceType, boolean enabled) {}
+
+  public record FavoritesOnlyResponse(boolean enabled) {}
+
   @PostMapping("/game-folder")
   public SaveFolderResponse saveGameFolder(@RequestBody SaveFolderRequest request)
       throws IOException {

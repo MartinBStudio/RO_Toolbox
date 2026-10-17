@@ -323,6 +323,7 @@ export function BuffsManager({
           </div>
 
           <PackageBrowserModal
+            resourceType="buffs"
             open={!collapsed}
             title="Buffs"
             profiles={availableProfiles}

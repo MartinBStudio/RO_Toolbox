@@ -1928,6 +1928,30 @@ button .heroIcon {
   align-items: stretch;
 }
 
+.packageBrowserFilters {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.4rem;
+}
+
+.packageBrowserFilters .profileBrowserSearch { margin-top: 0; flex: 1 1 24rem; width: 0; }
+
+.packageFavoritesFilter {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.4rem;
+  color: #dce4ef;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.packageFavoritesFilter input { width: auto; margin: 0; accent-color: #f4c55b; cursor: pointer; }
+.packageFavoritesFilter:has(input:checked) { color: #f4c55b; }
+
 .profileBrowserSearch {
   width: min(24rem, 100%);
   min-width: 0;
@@ -2246,7 +2270,7 @@ button .heroIcon {
   position: fixed;
   right: 0.7rem;
   bottom: 0.7rem;
-  z-index: 1050;
+  z-index: 2147483647;
   margin: 0;
   width: min(360px, calc(100vw - 1.4rem));
   display: grid;
@@ -3337,6 +3361,7 @@ a {
 
 .serviceDetailModalHeaderBlock {
   display: grid;
+  flex: 1;
   gap: 0.18rem;
   min-width: 0;
 }
@@ -4663,6 +4688,11 @@ a {
 .themeTintControl input[type=color] { width: 56px; height: 38px; padding: 2px; cursor: pointer; }
 .themeTransparencyControl { grid-column: 1 / -1; display: grid; gap: 12px; }
 .themeTransparencyControl strong { justify-self: end; margin-top: -28px; color: #ffe178; }
+.packageNameWithFavorite { display: flex; align-items: center; gap: 0.35rem; }
+.packageNameWithFavorite .profileBrowseName { min-width: 0; }
+.packageFavoriteButton { flex-shrink: 0; }
+.packageFavoriteButton.isFavorite { color: #f4c55b; }
+.packageFavoriteButton.isFavorite svg { fill: currentColor; }
 .themeTransparencyControl input { width: 100%; margin: 0; }
 .themeTransparencyControl small, .themeHint { color: #a7b8cd; font-size: 12px; }
 .themeSection .themeActions { margin: 0.35rem 0; }

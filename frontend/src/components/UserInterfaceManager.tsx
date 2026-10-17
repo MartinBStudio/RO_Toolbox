@@ -30,6 +30,10 @@ import {
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
 import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
 import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
+import { FavoritePackageButton } from "../elements/FavoritePackageButton";
+import { FavoritesFilterToggle } from "../elements/FavoritesFilterToggle";
+import { usePackageFavorites } from "../hooks/usePackageFavorites";
+import { packageBrowserSummary } from "../utils/packageBrowserSummary";
 
 type UserInterfaceManagerProps = {
   status: AppStatus | null;
@@ -48,6 +52,7 @@ export function UserInterfaceManager({
 }: UserInterfaceManagerProps) {
   const { backendReady, debugMode } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
+  const {isFavorite, isSortingFavorite, toggleFavorite, favoritesDisabled, hasFavorites, favoritesOnly, setFavoritesOnly} = usePackageFavorites("userInterface", backendReady && !collapsed, onMessage);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [packageSearch, setPackageSearch] = useState("");
   const [previewGalleryOpen, setPreviewGalleryOpen] = useState(false);
@@ -60,9 +65,11 @@ export function UserInterfaceManager({
 
   const availableProfiles = status?.userInterfaceAvailableProfiles ?? [];
   const matchingProfiles = availableProfiles.filter(profile =>
-    resolveProfileName(profile.name, profile.id).toLowerCase().includes(packageSearch.trim().toLowerCase())
+    (!favoritesOnly || isFavorite(resolveProfileName(profile.name, profile.id)) || isProfileAlreadyInstalled(profile, status?.userInterfaceInstalledProfile))
+    && resolveProfileName(profile.name, profile.id).toLowerCase().includes(packageSearch.trim().toLowerCase())
   ).sort((a, b) =>
-    Number(isProfileAlreadyInstalled(b, status?.userInterfaceInstalledProfile))
+    Number(isSortingFavorite(resolveProfileName(b.name, b.id))) - Number(isSortingFavorite(resolveProfileName(a.name, a.id)))
+    || Number(isProfileAlreadyInstalled(b, status?.userInterfaceInstalledProfile))
     - Number(isProfileAlreadyInstalled(a, status?.userInterfaceInstalledProfile))
   );
   const installedProfileUrl = status?.userInterfaceInstalledProfile?.url ?? null;
@@ -507,7 +514,9 @@ export function UserInterfaceManager({
           <ServiceDetailModal
             open={!collapsed}
             title="User interface"
+            description={packageBrowserSummary(availableProfiles, matchingProfiles, status?.userInterfaceInstalledProfile, isFavorite, favoritesOnly)}
             headerContent={
+              <div className="packageBrowserFilters">
               <input
                 type="search"
                 className="profileBrowserSearch"
@@ -517,6 +526,8 @@ export function UserInterfaceManager({
                 onChange={event => setPackageSearch(event.target.value)}
                 autoFocus
               />
+              {hasFavorites && <FavoritesFilterToggle checked={favoritesOnly} disabled={favoritesDisabled} onChange={setFavoritesOnly}/>}
+              </div>
             }
             onClose={() => setCollapsed(true)}
           >
@@ -572,7 +583,10 @@ export function UserInterfaceManager({
                         <div className="profileBrowseBody">
                           <div className="profileBrowseHeader">
                             <div>
-                              <p className="profileBrowseName">{resolveProfileName(profile.name, profile.id)}</p>
+                              <div className="packageNameWithFavorite">
+                                <p className="profileBrowseName">{resolveProfileName(profile.name, profile.id)}</p>
+                                <FavoritePackageButton name={resolveProfileName(profile.name, profile.id)} favorite={isFavorite(resolveProfileName(profile.name, profile.id))} disabled={favoritesDisabled} onToggle={() => void toggleFavorite(resolveProfileName(profile.name, profile.id))}/>
+                              </div>
                               {profileMeta ? <p className="profileCardMeta">{profileMeta}</p> : null}
                             </div>
                             {profile.url ? (

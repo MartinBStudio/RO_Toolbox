@@ -423,6 +423,7 @@ export function LootManager({
         ) : null}
 
         <PackageBrowserModal
+          resourceType="loot"
           open={!collapsed}
           title="Loot models"
           profiles={availableProfiles}

@@ -2,6 +2,7 @@
 
 ## v1.1.6 - Package Preview Fix
 
+* **Favorite packages**: Star packages in every resource browser to save favorites and show them at the top of the list. Use the favorites-only toggle beside search to show favorites and the installed package.
 * **Package installation**: Fixed installing UI after uninstalling it deleting custom combat text. Cleanup now skips file removal when no package is installed in that resource category.
 * **Package previews**: Fixed fullscreen preview images appearing behind the package browser modal in other services.
 

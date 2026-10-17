@@ -323,6 +323,7 @@ export function BuffIconsManager({
           </div>
 
         <PackageBrowserModal
+          resourceType="buffIcons"
           open={!collapsed}
           title="Buff icons"
           profiles={availableProfiles}

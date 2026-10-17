@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import {
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -75,7 +76,7 @@ export function StatusMessage({ message, onDismiss }: StatusMessageProps) {
 
   const { tone, Icon } = getStatusMeta(message);
 
-  return (
+  return createPortal(
     <section
       className={`statusToast statusToast${tone[0].toUpperCase()}${tone.slice(1)}`}
       role={tone === "error" ? "alert" : "status"}
@@ -96,6 +97,7 @@ export function StatusMessage({ message, onDismiss }: StatusMessageProps) {
         <XMarkIcon />
       </button>
       <span className="statusToastProgress" aria-hidden="true" />
-    </section>
+    </section>,
+    document.body
   );
 }
