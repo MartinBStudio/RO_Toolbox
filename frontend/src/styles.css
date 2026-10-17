@@ -4008,7 +4008,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 99999;
+  /* Keep fullscreen previews above the package browser and other modals. */
+  z-index: 2147483647;
   cursor: zoom-out;
   padding: 1.5rem;
   box-sizing: border-box;

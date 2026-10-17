@@ -1,5 +1,9 @@
 ﻿# RO Toolbox – Release Notes
 
+## v1.1.5 - Package Preview Fix
+
+* **Package previews**: Fixed fullscreen preview images appearing behind the package browser modal in other services.
+
 ## v1.1.4 - Package browser UI Improvements
 
 * **Improved UI**: Adjusted the package browser UI to make it more user-friendly.
