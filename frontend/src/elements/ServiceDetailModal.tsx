@@ -4,11 +4,12 @@ type ServiceDetailModalProps = {
   open: boolean;
   title: string;
   description?: string;
+  headerContent?: ReactNode;
   onClose: () => void;
   children: ReactNode;
 };
 
-export function ServiceDetailModal({ open, title, description, onClose, children }: ServiceDetailModalProps) {
+export function ServiceDetailModal({ open, title, description, headerContent, onClose, children }: ServiceDetailModalProps) {
   if (!open) {
     return null;
   }
@@ -21,6 +22,7 @@ export function ServiceDetailModal({ open, title, description, onClose, children
             <p className="serviceDetailModalEyebrow">Package browser</p>
             <h2 className="serviceDetailModalTitle">{title}</h2>
             {description ? <p className="serviceDetailModalDescription">{description}</p> : null}
+            {headerContent}
           </div>
           <button type="button" className="buttonSubtle serviceDetailModalClose" onClick={onClose} aria-label="Close package browser">✕</button>
         </div>

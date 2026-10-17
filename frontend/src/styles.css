@@ -1609,15 +1609,13 @@ button:disabled {
   line-height: 1;
 }
 
-.lootManager select {
-  min-width: 0;
-  width: 100%;
-  max-width: 100%;
+.lootManager {
+  display: grid;
+  gap: 0.7rem;
 }
 
-.lootManager button,
-.lootManager select {
-  padding: 0.42rem 0.55rem;
+.lootManager .serviceContentPanel {
+  position: relative;
 }
 
 .lootManager .iconBtn {
@@ -1919,6 +1917,140 @@ button .heroIcon {
   background: linear-gradient(180deg, rgba(40, 67, 110, 0.72) 0%, rgba(29, 49, 80, 0.72) 100%);
   border-color: rgba(108, 151, 226, 0.38);
   color: #e7f0ff;
+}
+
+.profileGridBrowser {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 21rem));
+  grid-auto-rows: 1fr;
+  justify-content: center;
+  gap: 0.75rem;
+  align-items: stretch;
+}
+
+.profileBrowserSearch {
+  width: min(24rem, 100%);
+  min-width: 0;
+  box-sizing: border-box;
+  margin-top: 0.4rem;
+}
+
+.profileBrowseCard {
+  display: grid;
+  grid-template-rows: 12rem 1fr;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--panel-blue-border);
+  border-radius: 10px;
+  background: var(--panel-blue-surface-soft);
+  box-shadow: var(--panel-blue-highlight);
+}
+
+.profileBrowseCard.isSelected {
+  border-color: #6289cb;
+  box-shadow: 0 0 0 1px rgba(98, 137, 203, 0.25);
+}
+
+.profileBrowsePreviewWrap {
+  display: flex;
+  position: relative;
+  border-bottom: 1px solid var(--panel-blue-border);
+  background: rgba(5, 9, 15, 0.65);
+}
+
+.profileBrowsePreviewButton,
+.profileBrowsePlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  padding: 0.5rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.profileBrowsePreviewButton img {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 11rem;
+  object-fit: contain;
+}
+
+.profileBrowsePlaceholder {
+  min-height: 7rem;
+  color: #8fa0b8;
+  font-size: 0.8rem;
+}
+
+.profileBrowseCounter {
+  position: absolute;
+  right: 0.45rem;
+  bottom: 0.45rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 5px;
+  background: rgba(5, 9, 15, 0.85);
+  color: #dce4ef;
+  font-size: 0.7rem;
+  pointer-events: none;
+}
+
+.profileBrowseBody {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: 0.65rem;
+}
+
+.profileBrowseHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.profileBrowseHeader > div { min-width: 0; }
+.profileBrowseHeader > button { flex-shrink: 0; }
+
+.profileBrowseName {
+  margin: 0;
+  color: #dce4ef;
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.profileBrowseBody .profileCardMeta {
+  margin: 0.25rem 0 0;
+  overflow-wrap: anywhere;
+}
+
+.profileBrowseDesc {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  margin: 0;
+  color: #9eb4cf;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.profileBrowseActions {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.profileBrowseActionBtn {
+  flex: 1;
+  white-space: nowrap;
+  font-size: 0.78rem;
 }
 
 .profileCard {
@@ -2272,7 +2404,7 @@ a {
 
 .setupModalDesc code {
   background: #0d1420;
-  border: 1px solid #243040;
+  border: 1px solid #2b3d56;
   border-radius: 4px;
   padding: 0.05rem 0.3rem;
   font-size: 0.82rem;
@@ -3016,7 +3148,7 @@ a {
 
 .backupSetupText code {
   background: #0d1420;
-  border: 1px solid #243040;
+  border: 1px solid #2b3d56;
   border-radius: 4px;
   padding: 0.05rem 0.3rem;
   font-size: 0.78rem;
