@@ -160,12 +160,13 @@ public class PackageHandler implements ICommonResourceMethods {
       return;
 
     Resource installedPackage = packageManifestReader.readManifest(manifestFileName, installedDir);
+    // Downloaded package lists do not prove that this category owns any installed files.
+    if (installedPackage == null) {
+      return;
+    }
     List<Path> managedFiles =
         readDefaultFileList(
             resolveInstalledPackageFileList(resourcesDir, installedPackage, manifestFileName));
-    if (managedFiles.isEmpty() && installedPackage == null) {
-      managedFiles = readAllPackageFileLists(resourcesDir);
-    }
 
     // Always clear the installed manifest so the app no longer shows the profile as installed
     packageManifestReader.deleteManifestFiles(installedDir, manifestFileName);
@@ -228,23 +229,6 @@ public class PackageHandler implements ICommonResourceMethods {
       }
     }
     return null;
-  }
-
-  private List<Path> readAllPackageFileLists(Path resourcesDir) throws IOException {
-    if (resourcesDir == null || !Files.isDirectory(resourcesDir)) {
-      return List.of();
-    }
-
-    Set<Path> files = new LinkedHashSet<>();
-    try (var stream = Files.list(resourcesDir)) {
-      for (Path candidate : (Iterable<Path>) stream::iterator) {
-        if (!Files.isDirectory(candidate)) continue;
-        String name = candidate.getFileName().toString();
-        if (name.startsWith(".")) continue;
-        files.addAll(readDefaultFileList(candidate.resolve(".pack").resolve("FILE_LIST.txt")));
-      }
-    }
-    return new ArrayList<>(files);
   }
 
   private Path resolveInstalledManagedFile(Path installedDir, Path relativeFile) {
