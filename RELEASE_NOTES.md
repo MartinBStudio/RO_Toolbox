@@ -1,10 +1,9 @@
 ﻿# RO Toolbox – Release Notes
 
-## v1.1.2 - Theme Editor
+## v1.1.3 - Minor Ui Improvements
 
-* **Theme editor**: Adjust background tint and transparency across the entire UI with live previews.
-* **Restore defaults**: Original settings are remembered between app restarts and can be restored with confirmation.
-* **Panel tinting**: Text, icons, and full-screen backdrop colors keep their original appearance.
+* **Improved UI**: Adjust background tint and transparency across the entire UI.
+
 
 ## v1.1.1 - Backup Flow Polish
 
