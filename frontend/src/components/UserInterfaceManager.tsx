@@ -61,6 +61,9 @@ export function UserInterfaceManager({
   const availableProfiles = status?.userInterfaceAvailableProfiles ?? [];
   const matchingProfiles = availableProfiles.filter(profile =>
     resolveProfileName(profile.name, profile.id).toLowerCase().includes(packageSearch.trim().toLowerCase())
+  ).sort((a, b) =>
+    Number(isProfileAlreadyInstalled(b, status?.userInterfaceInstalledProfile))
+    - Number(isProfileAlreadyInstalled(a, status?.userInterfaceInstalledProfile))
   );
   const installedProfileUrl = status?.userInterfaceInstalledProfile?.url ?? null;
   const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.userInterfaceInstalledProfile);

@@ -2053,6 +2053,23 @@ button .heroIcon {
   font-size: 0.78rem;
 }
 
+.packageGalleryNav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.6rem;
+  height: 2.6rem;
+  padding: 0.5rem;
+  border-radius: 50%;
+  background: rgba(12, 18, 28, 0.9);
+}
+.packageGalleryPrev { left: 1rem; }
+.packageGalleryNext { right: 1rem; }
+
 .profileCard {
   border: 1px solid var(--panel-blue-border);
   border-radius: 10px;

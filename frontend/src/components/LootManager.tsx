@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
-  ArrowTopRightOnSquareIcon,
   MagnifyingGlassIcon,
   Cog6ToothIcon,
   FolderOpenIcon,
@@ -25,18 +24,14 @@ import {
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
 import {
-  buildProfileMeta,
-  buildProfileOptionGroups,
   findInstalledAvailableProfileId,
   formatManifestVersion,
-  isProfileAlreadyInstalled,
   resolveProfileName
 } from "../formatting.ts";
-import type { ProfileOptionGroup } from "../formatting.ts";
-import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ManageInstalledLootModal } from "../elements/ManageInstalledLootModal.tsx";
 import { IncludedFoldersTable } from "../elements/IncludedFoldersTable.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
+import { PackageBrowserModal } from "../elements/PackageBrowserModal";
 import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
 import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 
@@ -58,7 +53,7 @@ export function LootManager({
   const { backendReady, debugMode, ignoreConfigWarnings } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
-  const [expandedPreview, setExpandedPreview] = useState<string | null>(null);
+  const [modelDetailsProfileId, setModelDetailsProfileId] = useState<string | null>(null);
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
@@ -67,20 +62,7 @@ export function LootManager({
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
   const availableProfiles = status?.availableProfiles ?? [];
   const recommendedProfile = availableProfiles.find(isRecommendedLootProfile) ?? null;
-  const profileOptionGroups = useMemo(
-    () => buildLootProfileOptionGroups(availableProfiles),
-    [availableProfiles]
-  );
-  const canInstall = Boolean(selectedProfile);
-  const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
-  const selectedProfilePreviewImages = (selectedProfileData?.previewImages ?? []).filter((image) => image.trim().length > 0);
-  const hasSelectedProfilePreviewImages = selectedProfilePreviewImages.length > 0;
-  const selectedProfileMeta = buildProfileMeta({
-    version: selectedProfileData?.version,
-    author: selectedProfileData?.author,
-    createdAt: selectedProfileData?.createdAt,
-    separator: " · "
-  });
+  const modelDetailsProfile = availableProfiles.find(profile => profile.id === modelDetailsProfileId) ?? null;
   const installedProfileUrl = status?.installedProfile?.url ?? null;
   const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.installedProfile);
   const hasInstalledProfile = Boolean(status?.installedProfile);
@@ -122,9 +104,6 @@ export function LootManager({
     void loadRoseConfigState();
   }, [backendReady, ignoreConfigWarnings, status?.selectedGameBase]);
 
-  useEffect(() => {
-    setExpandedPreview(null);
-  }, [selectedProfile]);
 
   function toErrorMessage(err: unknown, fallback: string) {
     if (err instanceof Error && err.message) {
@@ -252,17 +231,18 @@ export function LootManager({
     }
   }
 
-  async function onInstallProfile() {
-    if (!selectedProfile) return;
+  async function onInstallProfile(profileId: string) {
+    if (!profileId) return;
     if (!status?.selectedGameItemFolder) {
       onMessage("Set the game folder first. It must contain trose.exe.");
       return;
     }
+    setSelectedProfile(profileId);
     const confirmed = window.confirm(
-      `Install package "${selectedProfile}"? This will clear current installed models first.`
+      `Install package "${profileId}"? This will clear current installed models first.`
     );
     if (!confirmed) return;
-    const success = await runAction(() => installProfile(selectedProfile), `Installed package: ${selectedProfile}.`);
+    const success = await runAction(() => installProfile(profileId), `Installed package: ${profileId}.`);
     if (success) {
       setCollapsed(true);
     }
@@ -315,43 +295,10 @@ export function LootManager({
     : "Check for loot models updates";
   const hasProfiles = (status?.downloadedProfiles?.length ?? 0) > 0;
   const canClearInstalled = Boolean(status?.installedProfile);
-  const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.installedProfile);
-  const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
-  const installButtonDisabled = loading || !canInstall || selectedProfileAlreadyInstalled;
   const canManageInstalledFolders = Boolean(status?.installedProfile && status.selectedGameItemFolder);
 
   return (
     <>
-      {expandedPreview ? (
-        <div
-          onClick={() => setExpandedPreview(null)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 2147483647,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0, 0, 0, 0.78)",
-            padding: 24,
-            isolation: "isolate"
-          }}
-        >
-          <img
-            src={expandedPreview}
-            alt="Expanded preview"
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              maxWidth: "90vw",
-              maxHeight: "90vh",
-              borderRadius: 12,
-              boxShadow: "0 20px 50px rgba(0,0,0,0.45)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(255,255,255,0.04)"
-            }}
-          />
-        </div>
-      ) : null}
       <section className="lootManager">
       <div className="lootAccordion">
         <div className="accordionHeader">
@@ -475,82 +422,32 @@ export function LootManager({
           </div>
         ) : null}
 
-        <ServiceDetailModal
+        <PackageBrowserModal
           open={!collapsed}
           title="Loot models"
-          description="Choose a package, preview it, and install it into the selected game folder."
-          onClose={() => setCollapsed(true)}
+          profiles={availableProfiles}
+          installedProfile={status?.installedProfile}
+          selectedProfile={selectedProfile}
+          recommendedId={recommendedProfile?.id}
+          loading={loading}
+          canInstall={Boolean(status?.selectedGameItemFolder)}
+          onSelect={setSelectedProfile}
+          onInstall={onInstallProfile}
+          onDetails={profile => setModelDetailsProfileId(profile.id)}
+          onClose={() => {setCollapsed(true); setModelDetailsProfileId(null);}}
+          onMessage={onMessage}
+        />
+        <ServiceDetailModal
+          open={!collapsed && modelDetailsProfile !== null}
+          title={modelDetailsProfile ? resolveProfileName(modelDetailsProfile.name, modelDetailsProfile.id) : "Models"}
+          onClose={() => setModelDetailsProfileId(null)}
         >
-          <div className="accordionSection">
-            <div className="profilePickerRow">
-              <p className="settingsSectionLabel">Available packages</p>
-              <ProfileDropdown
-                groups={profileOptionGroups}
-                disabled={loading || availableProfiles.length === 0}
-                value={selectedProfile}
-                onChange={setSelectedProfile}
-              />
-            </div>
-            {selectedProfileData ? (
-              <div className={`profileCard${hasSelectedProfilePreviewImages ? "" : " profileCardNoPreview"}`}>
-                <div className="profileCardHeader">
-                  <div>
-                    <p className="profileCardName">{resolveProfileName(selectedProfileData.name, selectedProfileData.id)}</p>
-                    {selectedProfileMeta && (
-                      <p className="profileCardMeta">
-                        {selectedProfileMeta}
-                      </p>
-                    )}
-                  </div>
-                  {selectedProfileData.url ? (
-                    <button
-                      type="button"
-                      className="iconBtn iconBtnSubtle iconBtnDim"
-                      onClick={() => openUrl(selectedProfileData.url!)}
-                      title="Open package page"
-                      aria-label="Open package page"
-                    >
-                      <ArrowTopRightOnSquareIcon className="heroIcon" />
-                    </button>
-                  ) : null}
-                </div>
-                {hasSelectedProfilePreviewImages ? (
-                  <div className="profileCardPreviewGrid">
-                    {selectedProfilePreviewImages.map((image, index) => (
-                      <img
-                        key={`${selectedProfileData.id}-preview-${index}`}
-                        src={image}
-                        alt={`${resolveProfileName(selectedProfileData.name, selectedProfileData.id)} preview ${index + 1}`}
-                        onClick={() => setExpandedPreview(image)}
-                        className="profileCardPreviewImage"
-                      />
-                    ))}
-                  </div>
-                ) : null}
-                {selectedProfileData.description ? (
-                  <p className="profileCardDesc">{selectedProfileData.description}</p>
-                ) : null}
-                <IncludedFoldersTable
-                  folders={selectedProfileData.managedSubfolders || []}
-                  profileId={selectedProfileData.id}
-                />
-                <button
-                  className={`buttonStrong profileInstallBtn${hasSelectedProfilePreviewImages ? "" : " profileInstallBtnCompact"}`}
-                  disabled={installButtonDisabled}
-                  onClick={onInstallProfile}
-                >
-                  {installButtonLabel}
-                </button>
-              </div>
-            ) : (
-              <>
-                <p className="profileCardEmpty">No package selected</p>
-                <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
-                  {installButtonLabel}
-                </button>
-              </>
-            )}
-          </div>
+          {modelDetailsProfile && <IncludedFoldersTable
+            key={modelDetailsProfile.id}
+            folders={modelDetailsProfile.managedSubfolders || []}
+            profileId={modelDetailsProfile.id}
+            initiallyExpanded
+          />}
         </ServiceDetailModal>
       </div>
       </section>
@@ -571,32 +468,6 @@ export function LootManager({
       />
     </>
   );
-}
-
-function buildLootProfileOptionGroups(profiles: AppStatus["availableProfiles"]): ProfileOptionGroup[] {
-  const recommendedProfile = profiles.find(isRecommendedLootProfile);
-  const defaultGroups = buildProfileOptionGroups(
-    recommendedProfile
-      ? profiles.filter((profile) => profile.id !== recommendedProfile.id)
-      : profiles
-  ).filter((group) => group.options.length > 0);
-
-  if (!recommendedProfile) {
-    return defaultGroups;
-  }
-
-  return [
-    {
-      label: "Recommended",
-      options: [
-        {
-          profile: recommendedProfile,
-          label: resolveProfileName(recommendedProfile.name, recommendedProfile.id)
-        }
-      ]
-    },
-    ...defaultGroups
-  ];
 }
 
 function isRecommendedLootProfile(profile: AppStatus["availableProfiles"][number]) {

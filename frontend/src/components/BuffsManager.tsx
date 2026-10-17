@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
-  ArrowTopRightOnSquareIcon,
   MagnifyingGlassIcon,
   FolderIcon,
   FolderOpenIcon,
@@ -21,16 +20,12 @@ import {
 } from "../backendConnector/api.ts";
 import { useApplicationContext } from "../context/ApplicationContext.tsx";
 import {
-  buildProfileMeta,
-  buildProfileOptionGroups,
   findInstalledAvailableProfileId,
   formatManifestVersion,
-  isProfileAlreadyInstalled,
   resolveProfileName
 } from "../formatting.ts";
-import { ProfileDropdown } from "./ProfileDropdown.tsx";
 import { ConfirmationModal } from "../elements/ConfirmationModal.tsx";
-import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
+import { PackageBrowserModal } from "../elements/PackageBrowserModal";
 import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 
 type BuffsManagerProps = {
@@ -51,27 +46,12 @@ export function BuffsManager({
   const { backendReady, debugMode } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
-  const [expandedPreview, setExpandedPreview] = useState<string | null>(null);
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
 
   const availableProfiles = status?.buffsAvailableProfiles ?? [];
-  const profileOptionGroups = useMemo(
-    () => buildProfileOptionGroups(availableProfiles),
-    [availableProfiles]
-  );
-  const canInstall = Boolean(selectedProfile);
-  const selectedProfileData = availableProfiles.find((profile) => profile.id === selectedProfile) ?? null;
-  const selectedProfilePreviewImages = (selectedProfileData?.previewImages ?? []).filter((image) => image.trim().length > 0);
-  const hasSelectedProfilePreviewImages = selectedProfilePreviewImages.length > 0;
-  const selectedProfileMeta = buildProfileMeta({
-    version: selectedProfileData?.version,
-    author: selectedProfileData?.author,
-    createdAt: selectedProfileData?.createdAt,
-    separator: " · "
-  });
   const installedProfileUrl = status?.buffsInstalledProfile?.url ?? null;
   const installedAvailableProfileId = findInstalledAvailableProfileId(availableProfiles, status?.buffsInstalledProfile);
   const hasInstalledProfile = Boolean(status?.buffsInstalledProfile);
@@ -202,19 +182,20 @@ export function BuffsManager({
     }
   }
 
-  async function onInstallProfile() {
-    if (!selectedProfile) return;
+  async function onInstallProfile(profileId: string) {
+    if (!profileId) return;
     if (!status?.buffsSelectedGameItemFolder) {
       onMessage("Set the game folder first. It must contain trose.exe.");
       return;
     }
+    setSelectedProfile(profileId);
     const confirmed = window.confirm(
-      `Install buff package "${selectedProfile}"? This will clear current installed models first.`
+      `Install buff package "${profileId}"? This will clear current installed models first.`
     );
     if (!confirmed) return;
     const success = await runAction(
-      () => installBuffsProfile(selectedProfile),
-      `Installed buff package: ${selectedProfile}.`
+      () => installBuffsProfile(profileId),
+      `Installed buff package: ${profileId}.`
     );
     if (success) {
       setCollapsed(true);
@@ -243,42 +224,9 @@ export function BuffsManager({
     : "Check for buffs updates";
   const hasProfiles = (status?.buffsDownloadedProfiles?.length ?? 0) > 0;
   const canClearInstalled = Boolean(status?.buffsInstalledProfile);
-  const selectedProfileAlreadyInstalled = isProfileAlreadyInstalled(selectedProfileData, status?.buffsInstalledProfile);
-  const installButtonLabel = selectedProfileAlreadyInstalled ? "Already installed" : "Install";
-  const installButtonDisabled = loading || !canInstall || selectedProfileAlreadyInstalled;
 
   return (
     <>
-      {expandedPreview ? (
-        <div
-          onClick={() => setExpandedPreview(null)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            zIndex: 2147483647,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "rgba(0, 0, 0, 0.78)",
-            padding: 24,
-            isolation: "isolate"
-          }}
-        >
-          <img
-            src={expandedPreview}
-            alt="Expanded preview"
-            onClick={(event) => event.stopPropagation()}
-            style={{
-              maxWidth: "90vw",
-              maxHeight: "90vh",
-              borderRadius: 12,
-              boxShadow: "0 20px 50px rgba(0,0,0,0.45)",
-              border: "1px solid rgba(255,255,255,0.2)",
-              background: "rgba(255,255,255,0.04)"
-            }}
-          />
-        </div>
-      ) : null}
       <section className="lootManager">
         <div className="lootAccordion">
           <div className="accordionHeader">
@@ -374,79 +322,19 @@ export function BuffsManager({
             </div>
           </div>
 
-          <ServiceDetailModal
+          <PackageBrowserModal
             open={!collapsed}
             title="Buffs"
-            description="Choose a package, preview it, and install it into the selected game folder."
+            profiles={availableProfiles}
+            installedProfile={status?.buffsInstalledProfile}
+            selectedProfile={selectedProfile}
+            loading={loading}
+            canInstall={Boolean(status?.buffsSelectedGameItemFolder)}
+            onSelect={setSelectedProfile}
+            onInstall={onInstallProfile}
             onClose={() => setCollapsed(true)}
-          >
-            <div className="accordionSection">
-              <div className="profilePickerRow">
-                <p className="settingsSectionLabel">Choose package</p>
-                <ProfileDropdown
-                  groups={profileOptionGroups}
-                  disabled={loading || availableProfiles.length === 0}
-                  value={selectedProfile}
-                  onChange={setSelectedProfile}
-                />
-              </div>
-              {selectedProfileData ? (
-                <div className={`profileCard${hasSelectedProfilePreviewImages ? "" : " profileCardNoPreview"}`}>
-                  <div className="profileCardHeader">
-                    <div>
-                      <p className="profileCardName">{resolveProfileName(selectedProfileData.name, selectedProfileData.id)}</p>
-                      {selectedProfileMeta && (
-                        <p className="profileCardMeta">
-                          {selectedProfileMeta}
-                        </p>
-                      )}
-                    </div>
-                    {selectedProfileData.url ? (
-                      <button
-                        type="button"
-                        className="iconBtn iconBtnSubtle iconBtnDim"
-                        onClick={() => openUrl(selectedProfileData.url!)}
-                        title="Open package page"
-                        aria-label="Open package page"
-                      >
-                        <ArrowTopRightOnSquareIcon className="heroIcon" />
-                      </button>
-                    ) : null}
-                  </div>
-                  {hasSelectedProfilePreviewImages ? (
-                    <div className="profileCardPreviewGrid">
-                      {selectedProfilePreviewImages.map((image, index) => (
-                        <img
-                          key={`${selectedProfileData.id}-preview-${index}`}
-                          src={image}
-                          alt={`${resolveProfileName(selectedProfileData.name, selectedProfileData.id)} preview ${index + 1}`}
-                          onClick={() => setExpandedPreview(image)}
-                          className="profileCardPreviewImage"
-                        />
-                      ))}
-                    </div>
-                  ) : null}
-                  {selectedProfileData.description ? (
-                    <p className="profileCardDesc">{selectedProfileData.description}</p>
-                  ) : null}
-                  <button
-                    className={`buttonStrong profileInstallBtn${hasSelectedProfilePreviewImages ? "" : " profileInstallBtnCompact"}`}
-                    disabled={installButtonDisabled}
-                    onClick={onInstallProfile}
-                  >
-                    {installButtonLabel}
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <p className="profileCardEmpty">No package selected</p>
-                  <button className="buttonStrong profileInstallBtn" disabled={installButtonDisabled} onClick={onInstallProfile}>
-                    {installButtonLabel}
-                  </button>
-                </>
-              )}
-            </div>
-          </ServiceDetailModal>
+            onMessage={onMessage}
+          />
         </div>
       </section>
       <ConfirmationModal

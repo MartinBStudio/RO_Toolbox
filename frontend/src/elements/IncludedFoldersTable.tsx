@@ -16,13 +16,14 @@ interface IncludedFoldersTableProps {
   folders: string[];
   profileId?: string | null;
   showPreviews?: boolean;
+  initiallyExpanded?: boolean;
 }
 
-export function IncludedFoldersTable({ folders, profileId, showPreviews }: IncludedFoldersTableProps) {
+export function IncludedFoldersTable({ folders, profileId, showPreviews, initiallyExpanded = false }: IncludedFoldersTableProps) {
   const [dictionary, setDictionary] = useState<Record<string, LootFolderInfo>>({});
   const [previews, setPreviews] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
-  const [collapsed, setCollapsed] = useState(true);
+  const [collapsed, setCollapsed] = useState(!initiallyExpanded);
   const [selectedPreviewImage, setSelectedPreviewImage] = useState<string | null>(null);
   const [selectedModelPreviewFolder, setSelectedModelPreviewFolder] = useState<string | null>(null);
 
