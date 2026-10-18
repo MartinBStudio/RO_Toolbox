@@ -5,11 +5,12 @@ type ServiceDetailModalProps = {
   title: string;
   description?: string;
   headerContent?: ReactNode;
+  hideCloseButton?: boolean;
   onClose: () => void;
   children: ReactNode;
 };
 
-export function ServiceDetailModal({ open, title, description, headerContent, onClose, children }: ServiceDetailModalProps) {
+export function ServiceDetailModal({ open, title, description, headerContent, hideCloseButton = false, onClose, children }: ServiceDetailModalProps) {
   if (!open) {
     return null;
   }
@@ -24,7 +25,7 @@ export function ServiceDetailModal({ open, title, description, headerContent, on
             {description ? <p className="serviceDetailModalDescription">{description}</p> : null}
             {headerContent}
           </div>
-          <button type="button" className="buttonSubtle serviceDetailModalClose" onClick={onClose} aria-label="Close package browser">✕</button>
+          {!hideCloseButton && <button type="button" className="buttonSubtle serviceDetailModalClose" onClick={onClose} aria-label="Close package browser">✕</button>}
         </div>
         <div className="serviceDetailModalBody">
           {children}

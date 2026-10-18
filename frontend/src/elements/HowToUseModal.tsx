@@ -8,7 +8,7 @@ type HowToUseModalProps = {
 const GUIDE_SECTIONS = [
   { id: "quick-launch", label: "Quick Launch" },
   { id: "login-manager", label: "Login Manager" },
-  { id: "texture-replacer", label: "Texture replacer" },
+  { id: "texture-replacer", label: "Asset replacer" },
   { id: "config-editor", label: "Config editor" }
 ] as const;
 

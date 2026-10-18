@@ -1,14 +1,15 @@
-﻿# RO Toolbox – Release Notes
+# RO Toolbox - Release Notes
 
-## v1.1.6 - Package Preview Fix
+## v1.2.0 - UI & UX Overhaul
 
-* **Favorite packages**: Star packages in every resource browser to save favorites and show them at the top of the list. Use the favorites-only toggle beside search to show favorites and the installed package.
-* **Package installation**: Fixed installing UI after uninstalling it deleting custom combat text. Cleanup now skips file removal when no package is installed in that resource category.
-* **Package previews**: Fixed fullscreen preview images appearing behind the package browser modal in other services.
+* Redesigned package browsing with grid/list layouts, favorites, and consistent icon controls.
+* Install, uninstall, and preview packages directly in the browser; manage installed loot models there too.
+* Simplified service overview: click a row to browse packages, with advanced controls in debug mode.
+* Clearer names: Asset replacer and Buffs Animations.
+* Clearer loot recommendations with Fix it and Don't show again actions linked to the config warnings setting.
+* Fixed overlapping modals and UI package installation removing custom combat text.
 
-## v1.1.5 - Package browser UI Improvements
+## v1.1.6 - UI Improvements
 
-* **Improved UI**: Adjusted the package browser UI to make it more user-friendly.
-* **Download progress**: App and resource updates now show live download progress.
-* **Cleaner restores**: Restoring backups no longer creates extra pre-restore folders.
-* **Backup location**: Choose where your backups are stored.
+* Improved package browser and live download progress.
+* Choose a backup location; restores no longer create extra folders.

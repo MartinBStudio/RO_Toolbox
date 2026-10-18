@@ -18,13 +18,6 @@ export function ServiceAccordionTitle({
       <div className="serviceAccordionTitleRow">
         <span className="serviceAccordionAccent" aria-hidden="true" />
         <p className="sectionTitle serviceAccordionTitle">{title}</p>
-        <span
-          className={`serviceAccordionBadge ${
-            hasInstalledProfile ? "serviceAccordionBadgeActive" : "serviceAccordionBadgeInactive"
-          }`}
-        >
-          {hasInstalledProfile ? "Installed" : "Not installed"}
-        </span>
       </div>
       <div className="serviceAccordionDetailsRow">
         {hasInstalledProfile ? (

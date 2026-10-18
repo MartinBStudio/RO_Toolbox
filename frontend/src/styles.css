@@ -623,31 +623,47 @@ p {
 }
 
 .lootWarningBanner {
-  border: 1px solid #5a6479;
-  background: rgba(25, 34, 50, 0.55);
-  color: #aebcd2;
-  border-radius: 7px;
-  padding: 0.32rem 0.5rem;
-  font-size: 0.75rem;
-  line-height: 1.35;
+  border: 1px solid #806435;
+  border-left: 3px solid #f4c55b;
+  background: #292419;
+  color: #eee0c2;
+  border-radius: 8px;
+  margin: 0.3rem 0.75rem 0.65rem;
+  padding: 0.7rem 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
+
+.lootWarningIcon { width: 1.3rem; height: 1.3rem; flex-shrink: 0; color: #f4c55b; }
+.lootWarningText { flex: 1; min-width: 0; }
+.lootWarningText > strong { color: #f4d58b; font-size: 0.85rem; }
+.lootWarningText p { margin: 0.15rem 0 0; }
+.lootWarningActions { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; flex-shrink: 0; }
+.lootWarningActions > button { font-size: 0.82rem; }
 
 .lootWarningFixButton {
   flex-shrink: 0;
-  padding: 0.2rem 0.5rem;
-  font-size: 0.76rem;
-  background: #0b7a5a;
-  border-color: #21a67f;
-  color: #eaf8f2;
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+  background: #f4c55b;
+  border-color: #f4c55b;
+  color: #241c0b;
 }
 
 .lootWarningFixButton:hover:enabled {
-  background: #2f8f69;
-  border-color: #69d0a6;
+  background: #ffda83;
+  border-color: #ffda83;
+}
+
+@media (max-width: 700px) {
+  .lootWarningBanner { flex-wrap: wrap; }
+  .lootWarningText { flex-basis: calc(100% - 2.1rem); }
+  .lootWarningActions { margin-left: 2.05rem; flex-shrink: 1; }
 }
 
 .accordionHeader {
@@ -1928,15 +1944,74 @@ button .heroIcon {
   align-items: stretch;
 }
 
+.lootAccordion > .serviceBrowserTrigger[aria-disabled="false"] { cursor: pointer; }
+.lootAccordion > .serviceBrowserTrigger:focus-visible {
+  outline: 2px solid #6289cb;
+  outline-offset: 2px;
+}
+
 .packageBrowserFilters {
   display: flex;
   flex-wrap: nowrap;
   align-items: center;
-  gap: 0.65rem;
+  gap: 0.15rem;
   margin-top: 0.4rem;
 }
 
 .packageBrowserFilters .profileBrowserSearch { margin-top: 0; flex: 1 1 24rem; width: 0; }
+
+.packageLayoutToggle {
+  display: inline-flex;
+  flex-shrink: 0;
+  gap: 0.15rem;
+}
+
+.packageLayoutToggle button[aria-pressed="true"] {
+  color: #dce4ef;
+  border-color: #6289cb;
+  background: rgba(98, 137, 203, 0.25);
+}
+
+.profileListBrowser {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.profileListBrowser .profileBrowseCard {
+  grid-template-columns: 5rem minmax(0, 1fr);
+  grid-template-rows: auto;
+}
+
+.profileListBrowser .profileBrowsePreviewWrap {
+  border-bottom: 0;
+  border-right: 1px solid var(--panel-blue-border);
+}
+
+.profileListBrowser .profileBrowsePreviewButton img { max-height: 3.5rem; }
+.profileListBrowser .profileBrowsePlaceholder { min-height: 0; font-size: 0.7rem; }
+.profileListBrowser .profileBrowseCounter { right: 0.15rem; bottom: 0.15rem; font-size: 0.6rem; }
+
+.profileListBrowser .profileBrowseBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+  padding: 0.45rem 0.65rem;
+}
+
+.profileListBrowser .profileBrowseHeader { grid-column: 1; align-items: center; }
+.profileListBrowser .profileBrowseDesc { grid-column: 1; -webkit-line-clamp: 1; }
+.profileListBrowser .servicePanelMetaChip { grid-column: 1; justify-self: start; }
+.profileListBrowser .profileBrowseActions { grid-column: 2; grid-row: 1 / span 3; margin-top: 0; }
+.profileListBrowser .profileBrowseActionBtn { flex: 0 0 auto; }
+
+@media (max-width: 600px) {
+  .packageBrowserFilters { flex-wrap: wrap; }
+  .packageBrowserFilters .profileBrowserSearch { flex-basis: 100%; }
+  .profileListBrowser .profileBrowseBody { column-gap: 0.4rem; }
+  .profileListBrowser .profileBrowseActions { flex-direction: column; }
+}
 
 .packageFavoritesFilter {
   display: inline-flex;
@@ -1949,14 +2024,22 @@ button .heroIcon {
   cursor: pointer;
 }
 
-.packageFavoritesFilter input { width: auto; margin: 0; accent-color: #f4c55b; cursor: pointer; }
-.packageFavoritesFilter:has(input:checked) { color: #f4c55b; }
+.packageFavoritesFilter .heroIcon { color: #f4c55b; }
+.packageFavoritesFilter[aria-pressed="true"] .heroIcon { fill: currentColor; }
 
 .profileBrowserSearch {
+  appearance: none;
+  border-color: #3a4a64;
   width: min(24rem, 100%);
   min-width: 0;
   box-sizing: border-box;
   margin-top: 0.4rem;
+}
+
+.profileBrowserSearch:focus {
+  outline: none;
+  border-color: #6289cb;
+  box-shadow: 0 0 0 2px rgba(98, 137, 203, 0.2);
 }
 
 .profileBrowseCard {
@@ -2068,13 +2151,45 @@ button .heroIcon {
   margin-top: auto;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.15rem;
 }
 
 .profileBrowseActionBtn {
-  flex: 1;
+  flex: 0 0 auto;
   white-space: nowrap;
   font-size: 0.78rem;
+}
+
+.profileBrowseActions .iconBtn.packageInstallButton {
+  background: #226cf1;
+  border-color: #226cf1;
+  color: #fff;
+}
+
+.profileBrowseActions .iconBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  min-width: 1.9rem;
+  min-height: 1.9rem;
+  padding: 0;
+  opacity: 1;
+}
+
+.profileBrowseActions .iconBtn .heroIcon {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.profileBrowseActions .iconBtn:hover:enabled { opacity: 1; }
+.profileBrowseActions .iconBtn:disabled { opacity: 0.5; }
+
+.profileBrowseActions .iconBtn.packageInstallButton:hover:enabled {
+  background: #3b7ef8;
+  border-color: #5591ff;
 }
 
 .packageGalleryNav {
@@ -3519,7 +3634,8 @@ a {
   align-items: center;
   justify-content: center;
   padding: 1rem;
-  z-index: 1000;
+  /* Render after the package browser at its modal layer; previews stay above both. */
+  z-index: 2147483646;
 }
 
 .lootManageModal {
@@ -4691,7 +4807,7 @@ a {
 .packageNameWithFavorite { display: flex; align-items: center; gap: 0.35rem; }
 .packageNameWithFavorite .profileBrowseName { min-width: 0; }
 .packageFavoriteButton { flex-shrink: 0; }
-.packageFavoriteButton.isFavorite { color: #f4c55b; }
+.packageFavoriteButton .heroIcon { color: #f4c55b; }
 .packageFavoriteButton.isFavorite svg { fill: currentColor; }
 .themeTransparencyControl input { width: 100%; margin: 0; }
 .themeTransparencyControl small, .themeHint { color: #a7b8cd; font-size: 12px; }

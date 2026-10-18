@@ -4,7 +4,6 @@ import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
   ArrowTopRightOnSquareIcon,
-  MagnifyingGlassIcon,
   FolderIcon,
   FolderOpenIcon,
   TrashIcon
@@ -32,6 +31,7 @@ import { ServiceDetailModal } from "../elements/ServiceDetailModal.tsx";
 import { ServiceAccordionTitle } from "../elements/ServiceAccordionTitle.tsx";
 import { FavoritePackageButton } from "../elements/FavoritePackageButton";
 import { FavoritesFilterToggle } from "../elements/FavoritesFilterToggle";
+import { PackageLayoutToggle, type PackageLayout } from "../elements/PackageLayoutToggle";
 import { usePackageFavorites } from "../hooks/usePackageFavorites";
 import { packageBrowserSummary } from "../utils/packageBrowserSummary";
 
@@ -55,6 +55,7 @@ export function UserInterfaceManager({
   const {isFavorite, isSortingFavorite, toggleFavorite, favoritesDisabled, hasFavorites, favoritesOnly, setFavoritesOnly} = usePackageFavorites("userInterface", backendReady && !collapsed, onMessage);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [packageSearch, setPackageSearch] = useState("");
+  const [packageLayout, setPackageLayout] = useState<PackageLayout>("grid");
   const [previewGalleryOpen, setPreviewGalleryOpen] = useState(false);
   const [previewGalleryImages, setPreviewGalleryImages] = useState<string[]>([]);
   const [previewGalleryIndex, setPreviewGalleryIndex] = useState(0);
@@ -418,7 +419,21 @@ export function UserInterfaceManager({
 
       <section className="lootManager">
         <div className="lootAccordion">
-          <div className="accordionHeader">
+          <div className="accordionHeader serviceBrowserTrigger"
+            role="button"
+            tabIndex={loading || !hasProfiles ? -1 : 0}
+            aria-label="Browse packages"
+            aria-disabled={loading || !hasProfiles}
+            title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
+            onClick={() => {if (!loading && hasProfiles) openPackageBrowser();}}
+            onKeyDown={event => {
+              if (event.target !== event.currentTarget) return;
+              if ((event.key === "Enter" || event.key === " ") && !loading && hasProfiles) {
+                event.preventDefault();
+                openPackageBrowser();
+              }
+            }}
+          >
             <ServiceAccordionTitle
               title="User interface"
               activeProfileName={activeProfileName}
@@ -426,8 +441,8 @@ export function UserInterfaceManager({
               activeProfileVersion={activeProfileVersion}
               hasInstalledProfile={hasInstalledProfile}
             />
-            <div className="headerActions">
-              {installedProfileUrl ? (
+            <div className="headerActions" onClick={event => event.stopPropagation()}>
+              {debugMode && installedProfileUrl ? (
                 <button
                   type="button"
                   className="iconBtn iconBtnSubtle iconBtnDim"
@@ -473,7 +488,7 @@ export function UserInterfaceManager({
                   </button>
                 </>
               ) : null}
-              {canClearInstalled ? (
+              {debugMode && canClearInstalled ? (
                 <>
                   <button
                     type="button"
@@ -498,16 +513,7 @@ export function UserInterfaceManager({
               >
                 {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
               </button>
-              <button
-                type="button"
-                className="iconBtn iconBtnToggle"
-                disabled={loading || !hasProfiles}
-                title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
-                aria-label="Browse packages"
-                onClick={openPackageBrowser}
-              >
-                <MagnifyingGlassIcon className="heroIcon" />
-              </button>
+              
             </div>
           </div>
 
@@ -527,6 +533,7 @@ export function UserInterfaceManager({
                 autoFocus
               />
               {hasFavorites && <FavoritesFilterToggle checked={favoritesOnly} disabled={favoritesDisabled} onChange={setFavoritesOnly}/>}
+              <PackageLayoutToggle layout={packageLayout} onChange={setPackageLayout}/>
               </div>
             }
             onClose={() => setCollapsed(true)}
@@ -539,7 +546,7 @@ export function UserInterfaceManager({
               ) : matchingProfiles.length === 0 ? (
                 <p className="profileCardEmpty" role="status">No packages match your search.</p>
               ) : (
-                <div className="profileGridBrowser">
+                <div className={packageLayout === "list" ? "profileListBrowser" : "profileGridBrowser"}>
                   {matchingProfiles.map((profile) => {
                     const previewImages = (profile.previewImages ?? []).filter((image) => image.trim().length > 0);
                     const isInstalled = isProfileAlreadyInstalled(profile, status?.userInterfaceInstalledProfile);
@@ -585,10 +592,16 @@ export function UserInterfaceManager({
                             <div>
                               <div className="packageNameWithFavorite">
                                 <p className="profileBrowseName">{resolveProfileName(profile.name, profile.id)}</p>
-                                <FavoritePackageButton name={resolveProfileName(profile.name, profile.id)} favorite={isFavorite(resolveProfileName(profile.name, profile.id))} disabled={favoritesDisabled} onToggle={() => void toggleFavorite(resolveProfileName(profile.name, profile.id))}/>
+
                               </div>
                               {profileMeta ? <p className="profileCardMeta">{profileMeta}</p> : null}
                             </div>
+
+                          </div>
+
+                          {profile.description ? <p className="profileBrowseDesc">{profile.description}</p> : null}
+
+                          <div className="profileBrowseActions">
                             {profile.url ? (
                               <button
                                 type="button"
@@ -600,18 +613,16 @@ export function UserInterfaceManager({
                                 <ArrowTopRightOnSquareIcon className="heroIcon" />
                               </button>
                             ) : null}
-                          </div>
-
-                          {profile.description ? <p className="profileBrowseDesc">{profile.description}</p> : null}
-
-                          <div className="profileBrowseActions">
+                            <FavoritePackageButton name={resolveProfileName(profile.name, profile.id)} favorite={isFavorite(resolveProfileName(profile.name, profile.id))} disabled={favoritesDisabled} onToggle={() => void toggleFavorite(resolveProfileName(profile.name, profile.id))}/>
                             <button
                               type="button"
-                              className="buttonStrong profileBrowseActionBtn"
-                              disabled={loading || !status?.userInterfaceSelectedGameItemFolder || isInstalled}
-                              onClick={() => onInstallProfile(profile.id)}
+                              className={`iconBtn ${isInstalled ? "iconBtnDanger iconBtnDim" : "buttonStrong packageInstallButton"}`}
+                              title={isInstalled ? "Uninstall" : "Install"}
+                              aria-label={`${isInstalled ? "Uninstall" : "Install"} ${resolveProfileName(profile.name, profile.id)}`}
+                              disabled={loading || (!isInstalled && !status?.userInterfaceSelectedGameItemFolder)}
+                              onClick={() => isInstalled ? onClearInstalled() : onInstallProfile(profile.id)}
                             >
-                              {isInstalled ? "Installed" : "Install"}
+                              {isInstalled ? <TrashIcon className="heroIcon" /> : <ArrowDownTrayIcon className="heroIcon" />}
                             </button>
                           </div>
                         </div>
@@ -627,9 +638,9 @@ export function UserInterfaceManager({
 
       <ConfirmationModal
         open={clearInstalledConfirmOpen}
-        title="Clear installed models"
-        message="Clear all installed user interface models from the selected game folder?"
-        confirmLabel="Clear"
+        title="Uninstall package"
+        message="Uninstall the active package from the selected game folder?"
+        confirmLabel="Uninstall"
         onConfirm={confirmClearInstalled}
         onClose={() => setClearInstalledConfirmOpen(false)}
       />

@@ -163,7 +163,7 @@ export function SettingsModal({
           <div className="settingsToggleRow">
             <div>
               <p className="settingsSectionLabel">Debug mode</p>
-              <p className="settingsToggleHelp">Show debug information.</p>
+              <p className="settingsToggleHelp">Show debug controls.</p>
             </div>
             <label className="settingsToggle" aria-label="Toggle debug mode">
               <input

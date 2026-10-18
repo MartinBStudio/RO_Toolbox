@@ -42,7 +42,7 @@ import {
 } from "./backendConnector/api.ts";
 
 const SERVICES = [
-    {id: "texture-replacer", title: "Texture replacer", icon: SwatchIcon},
+    {id: "texture-replacer", title: "Asset replacer", icon: SwatchIcon},
     {id: "login-manager", title: "Login manager", icon: KeyIcon},
     {id: "config-editor", title: "Config editor", icon: WrenchScrewdriverIcon},
     {id: "backups", title: "Backups", icon: CloudIcon}
@@ -555,7 +555,7 @@ function App() {
                                                 </div>
                                             )}
                                             <div>
-                                                <p className="sectionTitle">Texture replacer</p>
+                                                <p className="sectionTitle">Asset replacer</p>
                                             <p className="activeProfileMeta">Manage texture and animation packages.</p>
                                             </div>
                                             <LootManager

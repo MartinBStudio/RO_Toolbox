@@ -3,8 +3,8 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
-  MagnifyingGlassIcon,
   Cog6ToothIcon,
+  ExclamationTriangleIcon,
   FolderOpenIcon,
   FolderIcon,
   TrashIcon
@@ -50,7 +50,7 @@ export function LootManager({
   onStatusRefresh,
   onMessage
 }: LootManagerProps) {
-  const { backendReady, debugMode, ignoreConfigWarnings } = useApplicationContext();
+  const { backendReady, debugMode, ignoreConfigWarnings, setIgnoreConfigWarnings } = useApplicationContext();
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [modelDetailsProfileId, setModelDetailsProfileId] = useState<string | null>(null);
@@ -143,6 +143,18 @@ export function LootManager({
       setShowDroppedItemNameEnabled(roseConfigState.showDroppedItemName);
     } catch (_err) {
       setShowDroppedItemNameEnabled(false);
+    }
+  }
+
+  async function onHideConfigWarnings() {
+    onBusyChange(true);
+    try {
+      await setIgnoreConfigWarnings(true);
+      onMessage("Config warnings hidden. You can enable them again in Settings.");
+    } catch (err) {
+      onMessage(toErrorMessage(err, "Failed to save config warning preference."));
+    } finally {
+      onBusyChange(false);
     }
   }
 
@@ -301,7 +313,21 @@ export function LootManager({
     <>
       <section className="lootManager">
       <div className="lootAccordion">
-        <div className="accordionHeader">
+        <div className="accordionHeader serviceBrowserTrigger"
+            role="button"
+            tabIndex={loading || !hasProfiles ? -1 : 0}
+            aria-label="Browse packages"
+            aria-disabled={loading || !hasProfiles}
+            title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
+            onClick={() => {if (!loading && hasProfiles) openPackageBrowser();}}
+            onKeyDown={event => {
+              if (event.target !== event.currentTarget) return;
+              if ((event.key === "Enter" || event.key === " ") && !loading && hasProfiles) {
+                event.preventDefault();
+                openPackageBrowser();
+              }
+            }}
+          >
           <ServiceAccordionTitle
             title="Loot models"
             activeProfileName={activeProfileName}
@@ -309,8 +335,8 @@ export function LootManager({
             activeProfileVersion={activeProfileVersion}
             hasInstalledProfile={hasInstalledProfile}
           />
-          <div className="headerActions">
-            {installedProfileUrl ? (
+          <div className="headerActions" onClick={event => event.stopPropagation()}>
+            {debugMode && installedProfileUrl ? (
               <button
                 type="button"
                 className="iconBtn iconBtnSubtle iconBtnDim"
@@ -356,7 +382,7 @@ export function LootManager({
                 </button>
               </>
             ) : null}
-            {canClearInstalled ? (
+            {debugMode && canClearInstalled ? (
               <>
                 <button
                   type="button"
@@ -396,29 +422,29 @@ export function LootManager({
             >
               {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
             </button>
-            <button
-              type="button"
-              className="iconBtn iconBtnToggle"
-              disabled={loading || !hasProfiles}
-              title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
-              aria-label="Browse packages"
-              onClick={openPackageBrowser}
-            >
-              <MagnifyingGlassIcon className="heroIcon" />
-            </button>
+            
           </div>
         </div>
         {showDroppedItemNameEnabled && showDropNameWarningForProfile && !ignoreConfigWarnings ? (
           <div className="lootWarningBanner" role="status">
-            <span>Recommended: disable item drop names (<strong>show_dropped_item_name = false</strong>).</span>
+            <ExclamationTriangleIcon className="lootWarningIcon" aria-hidden="true" />
+            <div className="lootWarningText">
+              <strong>Recommended</strong>
+              <p>Disable item drop names in your game settings.</p>
+            </div>
+            <div className="lootWarningActions">
             <button
               type="button"
               className="buttonSubtle lootWarningFixButton"
               disabled={loading}
               onClick={onFixDroppedItemNames}
+              title="Set show_dropped_item_name to false"
+              aria-label="Disable item drop names"
             >
               Fix it
             </button>
+            <button type="button" className="buttonSubtle" disabled={loading} onClick={onHideConfigWarnings} title="Hide all config warnings. You can enable them again in Settings.">Don't show again</button>
+            </div>
           </div>
         ) : null}
 
@@ -434,7 +460,9 @@ export function LootManager({
           canInstall={Boolean(status?.selectedGameItemFolder)}
           onSelect={setSelectedProfile}
           onInstall={onInstallProfile}
+          onUninstall={onClearInstalled}
           onDetails={profile => setModelDetailsProfileId(profile.id)}
+          onManage={() => setManageModalOpen(true)}
           onClose={() => {setCollapsed(true); setModelDetailsProfileId(null);}}
           onMessage={onMessage}
         />
@@ -461,9 +489,9 @@ export function LootManager({
       />
       <ConfirmationModal
         open={clearInstalledConfirmOpen}
-        title="Clear installed models"
-        message="Clear all installed models from the selected game folder?"
-        confirmLabel="Clear"
+        title="Uninstall package"
+        message="Uninstall the active package from the selected game folder?"
+        confirmLabel="Uninstall"
         onConfirm={confirmClearInstalled}
         onClose={() => setClearInstalledConfirmOpen(false)}
       />

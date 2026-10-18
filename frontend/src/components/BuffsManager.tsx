@@ -3,7 +3,6 @@ import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   ArrowDownTrayIcon,
   ArrowPathIcon,
-  MagnifyingGlassIcon,
   FolderIcon,
   FolderOpenIcon,
   TrashIcon
@@ -229,16 +228,30 @@ export function BuffsManager({
     <>
       <section className="lootManager">
         <div className="lootAccordion">
-          <div className="accordionHeader">
+          <div className="accordionHeader serviceBrowserTrigger"
+            role="button"
+            tabIndex={loading || !hasProfiles ? -1 : 0}
+            aria-label="Browse packages"
+            aria-disabled={loading || !hasProfiles}
+            title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
+            onClick={() => {if (!loading && hasProfiles) openPackageBrowser();}}
+            onKeyDown={event => {
+              if (event.target !== event.currentTarget) return;
+              if ((event.key === "Enter" || event.key === " ") && !loading && hasProfiles) {
+                event.preventDefault();
+                openPackageBrowser();
+              }
+            }}
+          >
             <ServiceAccordionTitle
-              title="Buffs"
+              title="Buffs Animations"
               activeProfileName={activeProfileName}
               activeProfileAuthor={activeProfileAuthor}
               activeProfileVersion={activeProfileVersion}
               hasInstalledProfile={hasInstalledProfile}
             />
-            <div className="headerActions">
-              {installedProfileUrl ? (
+            <div className="headerActions" onClick={event => event.stopPropagation()}>
+              {debugMode && installedProfileUrl ? (
                 <button
                   type="button"
                   className="iconBtn iconBtnSubtle iconBtnDim"
@@ -284,7 +297,7 @@ export function BuffsManager({
                   </button>
                 </>
               ) : null}
-              {canClearInstalled ? (
+              {debugMode && canClearInstalled ? (
                 <>
                   <button
                     type="button"
@@ -309,23 +322,14 @@ export function BuffsManager({
               >
                 {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
               </button>
-              <button
-                type="button"
-                className="iconBtn iconBtnToggle"
-                disabled={loading || !hasProfiles}
-                title={!hasProfiles ? "No downloaded packages yet" : "Browse packages"}
-                aria-label="Browse packages"
-                onClick={openPackageBrowser}
-              >
-                <MagnifyingGlassIcon className="heroIcon" />
-              </button>
+              
             </div>
           </div>
 
           <PackageBrowserModal
             resourceType="buffs"
             open={!collapsed}
-            title="Buffs"
+            title="Buffs Animations"
             profiles={availableProfiles}
             installedProfile={status?.buffsInstalledProfile}
             selectedProfile={selectedProfile}
@@ -333,6 +337,7 @@ export function BuffsManager({
             canInstall={Boolean(status?.buffsSelectedGameItemFolder)}
             onSelect={setSelectedProfile}
             onInstall={onInstallProfile}
+          onUninstall={onClearInstalled}
             onClose={() => setCollapsed(true)}
             onMessage={onMessage}
           />
@@ -340,9 +345,9 @@ export function BuffsManager({
       </section>
       <ConfirmationModal
         open={clearInstalledConfirmOpen}
-        title="Clear installed buffs"
-        message="Clear all installed buffs from the selected game folder?"
-        confirmLabel="Clear"
+        title="Uninstall package"
+        message="Uninstall the active package from the selected game folder?"
+        confirmLabel="Uninstall"
         onConfirm={confirmClearInstalled}
         onClose={() => setClearInstalledConfirmOpen(false)}
       />
