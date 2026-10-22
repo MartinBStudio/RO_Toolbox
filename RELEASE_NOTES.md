@@ -1,18 +1,12 @@
 # RO Toolbox - Release Notes
 
-## v1.2.1 - Tags & UI Overhaul
+## v1.2.1 - Tags & Package Browser Improvements
 
-* Simplified selected tags with capitalized labels and a Remove All button.
-
+* Larger package browser modals and flexible, narrower grid columns fit more cards per row.
 * Favorites obey search and tag filters. Only the installed package stays visible when it does not match.
-
 * One layout toggle now switches between grid and list views, showing the current layout. Package browser close buttons stay aligned at the top.
-
 * Choose tag filters in a searchable modal, grouped by category with on/off toggles.
 * Compact tag picker with shorter, full-width toggles, tighter spacing, scrollable groups, and subtle dark button backgrounds.
-
-* Fixed package tags being dropped by the frontend, preventing tag filters from appearing.
-
 * Filter packages by optional tags across all package browsers. Combine tags with name search and favorites.
 
 ## v1.2.0 - UI & UX Overhaul

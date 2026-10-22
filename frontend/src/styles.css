@@ -1937,11 +1937,17 @@ button .heroIcon {
 
 .profileGridBrowser {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 21rem));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
   grid-auto-rows: 1fr;
   justify-content: center;
   gap: 0.75rem;
   align-items: stretch;
+}
+
+.profileGridBrowser > .profileBrowseCard {
+  width: 100%;
+  max-width: 21rem;
+  justify-self: center;
 }
 
 .lootAccordion > .serviceBrowserTrigger[aria-disabled="false"] { cursor: pointer; }
@@ -3218,9 +3224,9 @@ a {
 }
 
 .modalCard.serviceDetailModalCard {
-  width: min(720px, calc(100vw - 1.2rem));
-  max-height: min(90vh, 700px);
-  height: min(90vh, 700px);
+  width: min(1440px, calc(100vw - 2rem));
+  max-height: min(92dvh, 960px);
+  height: min(92dvh, 960px);
   display: grid;
   background: var(--rose-panel-surface);
   grid-template-rows: auto minmax(0, 1fr);
