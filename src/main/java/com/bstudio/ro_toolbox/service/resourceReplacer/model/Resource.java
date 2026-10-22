@@ -15,6 +15,7 @@ public class Resource {
   private String url;
   private String createdAt;
   private String version;
+  private List<String> tags;
   private long normalizedVersion;
   private Path source;
   private List<String> previewImages;

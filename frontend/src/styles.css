@@ -1960,16 +1960,41 @@ button .heroIcon {
 
 .packageBrowserFilters .profileBrowserSearch { margin-top: 0; flex: 1 1 24rem; width: 0; }
 
+.packageMetadataFilters { display: grid; gap: 0.4rem; margin-top: 0.4rem; min-width: 0; }
+.packageMetadataFilterRow { display: flex; flex-wrap: wrap; align-items: end; gap: 0.5rem; }
+.packageMetadataFilterRow label { display: grid; gap: 0.2rem; color: #9eb4cf; font-size: 0.75rem; min-width: 0; flex: 1 1 9rem; max-width: 18rem; }
+.packageMetadataFilterRow select { width: 100%; min-width: 0; font-size: 0.8rem; }
+.packageMetadataFilterRow > button { font-size: 0.75rem; }
+.packageSelectedTags { display: flex; align-items: center; flex-wrap: wrap; gap: 0.3rem; color: #9eb4cf; font-size: 0.75rem; }
+.packageTagChip { display: inline-flex; gap: 0.4rem; align-items: center; padding: 0.2rem 0.45rem; min-height: 0; font-size: 0.73rem; border-radius: 999px; border: 1px solid #48638a; background: rgba(98, 137, 203, 0.18); }
+
+.modalBackdrop.packageTagsBackdrop { z-index: 2147483647; }
+.modalCard.packageTagsModal { display: grid; grid-template-rows: auto auto auto minmax(0, 1fr) auto; gap: 0.45rem; width: min(760px, calc(100vw - 2rem)); max-height: min(620px, calc(100dvh - 2rem)); overflow: hidden; padding: 0.7rem; }
+.packageTagsModal .modalHeader h2, .packageTagsModal > p { margin: 0; }
+.packageTagsModal > input { width: 100%; min-width: 0; box-sizing: border-box; }
+.packageTagGroups { overflow-y: auto; overscroll-behavior: contain; min-height: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr)); align-content: start; align-items: start; gap: 0.4rem; padding: 0.1rem; }
+.packageTagGroup { min-width: 0; padding: 0.45rem; border: 1px solid var(--panel-blue-border); border-radius: 6px; background: var(--panel-blue-surface-soft); }
+.packageTagGroup h3 { margin: 0 0 0.3rem; font-size: 0.7rem; }
+.packageTagToggles { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0.3rem; }
+.packageTagToggle { display: flex; align-items: center; justify-content: space-between; gap: 0.4rem; text-align: left; padding: 0.15rem 0.4rem; width: 100%; height: 2rem; min-width: 0; max-width: 100%; font-size: 0.78rem; line-height: 1.3; background: linear-gradient(180deg, #1b293d, #142033); border-color: #3e526e; color: #dce4ef; }
+.packageTagToggle > span:first-child { overflow-wrap: anywhere; text-transform: capitalize; }
+.packageTagChip { text-transform: capitalize; }
+.packageTagToggle:hover:enabled { background: linear-gradient(180deg, #25374e, #1b2c43); border-color: #6582a8; }
+.packageTagToggle[aria-checked="true"] { border-color: #6289cb; background: rgba(98, 137, 203, 0.2); }
+.packageTagToggle[aria-checked="true"]:hover:enabled { background: rgba(98, 137, 203, 0.3); }
+.packageTagSwitch { display: block; flex-shrink: 0; width: 24px; height: 14px; padding: 2px; box-sizing: border-box; border-radius: 999px; background: #46536a; }
+.packageTagSwitch::after { content: ""; display: block; width: 10px; height: 10px; border-radius: 50%; background: #edf5ff; transition: transform 120ms ease; }
+.packageTagToggle[aria-checked="true"] .packageTagSwitch { background: #226cf1; }
+.packageTagToggle[aria-checked="true"] .packageTagSwitch::after { transform: translateX(10px); }
+.packageTagsFooter { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--panel-blue-border); }
+.packageTagsFooter > span { margin-right: auto; }
+@media (max-width: 600px) { .packageTagGroups { grid-template-columns: minmax(0, 1fr); } }
+
 .packageLayoutToggle {
   display: inline-flex;
   flex-shrink: 0;
-  gap: 0.15rem;
-}
-
-.packageLayoutToggle button[aria-pressed="true"] {
-  color: #dce4ef;
-  border-color: #6289cb;
-  background: rgba(98, 137, 203, 0.25);
+  align-items: center;
+  justify-content: center;
 }
 
 .profileListBrowser {
@@ -3481,6 +3506,11 @@ a {
   min-width: 0;
 }
 
+.serviceDetailModalCard > .modalHeader {
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
 .serviceDetailModalEyebrow {
   margin: 0;
   color: #8db2ea;
@@ -3509,6 +3539,13 @@ a {
 }
 
 .serviceDetailModalClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  flex: 0 0 2rem;
+  width: 2rem;
+  height: 2rem;
   min-width: 2rem;
   min-height: 2rem;
   padding: 0.2rem;

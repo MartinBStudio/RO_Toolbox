@@ -1,4 +1,5 @@
 export type ProfileInfo = {
+  tags?: string[] | null;
   name: string | null;
   author: string | null;
   description: string | null;
@@ -10,6 +11,7 @@ export type ProfileInfo = {
 };
 
 export type AvailableProfile = {
+  tags?: string[] | null;
   id: string;
   name: string | null;
   author: string | null;

@@ -9,9 +9,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import org.springframework.stereotype.Component;
+import tools.jackson.databind.json.JsonMapper;
 
 @Component
 public class PackageManifestReader implements ICommonResourceMethods {
+  private static final JsonMapper METADATA_MAPPER = JsonMapper.builder().build();
 
   public Resource readManifest(String manifestFileName, Path installedPackageFolder) {
     if (installedPackageFolder == null || !Files.exists(installedPackageFolder)) {
@@ -21,6 +23,7 @@ public class PackageManifestReader implements ICommonResourceMethods {
     if (!Files.isRegularFile(manifest)) {
       return null;
     }
+    Map<?, ?> metadata = readOptionalMetadata(manifest);
     return Resource.builder()
         .id(readManifestName(manifest))
         .name(readManifestName(manifest))
@@ -29,11 +32,32 @@ public class PackageManifestReader implements ICommonResourceMethods {
         .url(readManifestUrl2(manifest))
         .createdAt(readManifestCreatedAt2(manifest))
         .version(readManifestVersion2(manifest))
+        .tags(optionalTags(metadata.get("tags")))
         .managedSubfolders(readManifestManagedSubfolders(manifest))
         .disabledManagedSubfolders(
             readManifestDisabledManagedSubfolders(
                 manifest.getParent(), readManifestManagedSubfolders(manifest)))
         .build();
+  }
+
+  private Map<?, ?> readOptionalMetadata(Path manifest) {
+    try {
+      String content = Files.readString(manifest);
+      if (content.startsWith("\uFEFF")) content = content.substring(1);
+      Map<?, ?> metadata = METADATA_MAPPER.readValue(content, Map.class);
+      return metadata == null ? Map.of() : metadata;
+    } catch (Exception ignored) {
+      return Map.of();
+    }
+  }
+
+  private String optionalString(Object value) {
+    return value instanceof String text && !text.isBlank() ? text.trim() : null;
+  }
+
+  private List<String> optionalTags(Object value) {
+    if (!(value instanceof List<?> values)) return List.of();
+    return values.stream().map(this::optionalString).filter(Objects::nonNull).distinct().toList();
   }
 
   public void deleteManifestFiles(Path directory, String... manifestNames) throws IOException {

@@ -9,6 +9,9 @@ import {FavoritesFilterToggle} from "./FavoritesFilterToggle";
 import {PackageLayoutToggle, type PackageLayout} from "./PackageLayoutToggle";
 import {packageBrowserSummary} from "../utils/packageBrowserSummary";
 import {usePackageFavorites, type ResourceType} from "../hooks/usePackageFavorites";
+import {usePackageMetadataFilters} from "../hooks/usePackageMetadataFilters";
+import {PackageMetadataFilters} from "./PackageMetadataFilters";
+import {filterPackageProfiles} from "../utils/packageBrowserFilters";
 
 type Props = {
     open: boolean;
@@ -32,12 +35,10 @@ type Props = {
 export function PackageBrowserModal({open, resourceType, title, profiles, installedProfile, selectedProfile, recommendedId, loading, canInstall, onSelect, onInstall, onUninstall, onDetails, onManage, onClose, onMessage}: Props) {
     const {isFavorite, isSortingFavorite, toggleFavorite, favoritesDisabled, hasFavorites, favoritesOnly, setFavoritesOnly} = usePackageFavorites(resourceType, open, onMessage);
     const [search, setSearch] = useState("");
+    const {filters, setFilters, options} = usePackageMetadataFilters(profiles, open);
     const [layout, setLayout] = useState<PackageLayout>("grid");
     const [gallery, setGallery] = useState<{images: string[]; index: number; name: string} | null>(null);
-    const visible = profiles.filter(profile =>
-        (!favoritesOnly || isFavorite(resolveProfileName(profile.name, profile.id)) || isProfileAlreadyInstalled(profile, installedProfile))
-        && resolveProfileName(profile.name, profile.id).toLowerCase().includes(search.trim().toLowerCase())
-    );
+    const visible = filterPackageProfiles(profiles, {installedProfile, search, favoritesOnly, isFavorite, metadata: filters});
     const sorted = [...visible].sort((a, b) =>
         Number(isSortingFavorite(resolveProfileName(b.name, b.id))) - Number(isSortingFavorite(resolveProfileName(a.name, a.id)))
         || Number(isProfileAlreadyInstalled(b, installedProfile)) - Number(isProfileAlreadyInstalled(a, installedProfile))
@@ -68,13 +69,16 @@ export function PackageBrowserModal({open, resourceType, title, profiles, instal
 
     return <>
         <ServiceDetailModal open={open} title={title} description={packageBrowserSummary(profiles, visible, installedProfile, isFavorite, favoritesOnly)} onClose={onClose} headerContent={
+            <>
             <div className="packageBrowserFilters">
                 <input type="search" className="profileBrowserSearch" aria-label={`Search ${title.toLowerCase()} packages by name`} placeholder="Search packages by name..." value={search} onChange={event => setSearch(event.target.value)} autoFocus/>
                 {hasFavorites && <FavoritesFilterToggle checked={favoritesOnly} disabled={favoritesDisabled} onChange={setFavoritesOnly}/>}
                 <PackageLayoutToggle layout={layout} onChange={setLayout}/>
             </div>
+            <PackageMetadataFilters filters={filters} options={options} onChange={setFilters}/>
+            </>
         }>
-            {profiles.length === 0 ? <p className="profileCardEmpty">No packages downloaded yet.</p> : sorted.length === 0 ? <p className="profileCardEmpty" role="status">No packages match your search.</p> :
+            {profiles.length === 0 ? <p className="profileCardEmpty">No packages downloaded yet.</p> : sorted.length === 0 ? <p className="profileCardEmpty" role="status">No packages match your search or filters.</p> :
                 <div className={layout === "list" ? "profileListBrowser" : "profileGridBrowser"}>
                     {sorted.map(profile => {
                         const name = resolveProfileName(profile.name, profile.id);

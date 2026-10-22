@@ -34,6 +34,9 @@ import { FavoritesFilterToggle } from "../elements/FavoritesFilterToggle";
 import { PackageLayoutToggle, type PackageLayout } from "../elements/PackageLayoutToggle";
 import { usePackageFavorites } from "../hooks/usePackageFavorites";
 import { packageBrowserSummary } from "../utils/packageBrowserSummary";
+import {usePackageMetadataFilters} from "../hooks/usePackageMetadataFilters";
+import {PackageMetadataFilters} from "../elements/PackageMetadataFilters";
+import {filterPackageProfiles} from "../utils/packageBrowserFilters";
 
 type UserInterfaceManagerProps = {
   status: AppStatus | null;
@@ -65,10 +68,10 @@ export function UserInterfaceManager({
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
 
   const availableProfiles = status?.userInterfaceAvailableProfiles ?? [];
-  const matchingProfiles = availableProfiles.filter(profile =>
-    (!favoritesOnly || isFavorite(resolveProfileName(profile.name, profile.id)) || isProfileAlreadyInstalled(profile, status?.userInterfaceInstalledProfile))
-    && resolveProfileName(profile.name, profile.id).toLowerCase().includes(packageSearch.trim().toLowerCase())
-  ).sort((a, b) =>
+  const {filters, setFilters, options} = usePackageMetadataFilters(availableProfiles, !collapsed);
+  const matchingProfiles = filterPackageProfiles(availableProfiles, {
+    installedProfile: status?.userInterfaceInstalledProfile, search: packageSearch, favoritesOnly, isFavorite, metadata: filters
+  }).sort((a, b) =>
     Number(isSortingFavorite(resolveProfileName(b.name, b.id))) - Number(isSortingFavorite(resolveProfileName(a.name, a.id)))
     || Number(isProfileAlreadyInstalled(b, status?.userInterfaceInstalledProfile))
     - Number(isProfileAlreadyInstalled(a, status?.userInterfaceInstalledProfile))
@@ -522,6 +525,7 @@ export function UserInterfaceManager({
             title="User interface"
             description={packageBrowserSummary(availableProfiles, matchingProfiles, status?.userInterfaceInstalledProfile, isFavorite, favoritesOnly)}
             headerContent={
+              <>
               <div className="packageBrowserFilters">
               <input
                 type="search"
@@ -535,6 +539,8 @@ export function UserInterfaceManager({
               {hasFavorites && <FavoritesFilterToggle checked={favoritesOnly} disabled={favoritesDisabled} onChange={setFavoritesOnly}/>}
               <PackageLayoutToggle layout={packageLayout} onChange={setPackageLayout}/>
               </div>
+              <PackageMetadataFilters filters={filters} options={options} onChange={setFilters}/>
+              </>
             }
             onClose={() => setCollapsed(true)}
           >
@@ -544,7 +550,7 @@ export function UserInterfaceManager({
                   <p className="profileCardEmpty">No user interface packages downloaded yet.</p>
                 </div>
               ) : matchingProfiles.length === 0 ? (
-                <p className="profileCardEmpty" role="status">No packages match your search.</p>
+                <p className="profileCardEmpty" role="status">No packages match your search or filters.</p>
               ) : (
                 <div className={packageLayout === "list" ? "profileListBrowser" : "profileGridBrowser"}>
                   {matchingProfiles.map((profile) => {

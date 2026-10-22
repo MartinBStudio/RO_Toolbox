@@ -1,7 +1,21 @@
 # RO Toolbox - Release Notes
 
-## v1.2.0 - UI & UX Overhaul
+## v1.2.1 - Tags & UI Overhaul
 
+* Simplified selected tags with capitalized labels and a Remove All button.
+
+* Favorites obey search and tag filters. Only the installed package stays visible when it does not match.
+
+* One layout toggle now switches between grid and list views, showing the current layout. Package browser close buttons stay aligned at the top.
+
+* Choose tag filters in a searchable modal, grouped by category with on/off toggles.
+* Compact tag picker with shorter, full-width toggles, tighter spacing, scrollable groups, and subtle dark button backgrounds.
+
+* Fixed package tags being dropped by the frontend, preventing tag filters from appearing.
+
+* Filter packages by optional tags across all package browsers. Combine tags with name search and favorites.
+
+## v1.2.0 - UI & UX Overhaul
 * Redesigned package browsing with grid/list layouts, favorites, and consistent icon controls.
 * Install, uninstall, and preview packages directly in the browser; manage installed loot models there too.
 * Simplified service overview: click a row to browse packages, with advanced controls in debug mode.

@@ -41,6 +41,7 @@ function asProfileInfo(value: unknown): AppStatus["installedProfile"] {
     url: asNullableString(record.url),
     createdAt: asNullableString(record.createdAt),
     version: asNullableString(record.version),
+    tags: asStringArray(record.tags),
     managedSubfolders: asStringArray(record.managedSubfolders),
     disabledManagedSubfolders: asStringArray(record.disabledManagedSubfolders)
   };
@@ -60,6 +61,7 @@ function asAvailableProfiles(value: unknown): AppStatus["availableProfiles"] {
       url: asNullableString(profile.url),
       createdAt: asNullableString(profile.createdAt),
       version: asNullableString(profile.version),
+      tags: asStringArray(profile.tags),
       managedSubfolders: asStringArray(profile.managedSubfolders),
       previewImages: asStringArray(profile.previewImages)
     }))
