@@ -73,6 +73,7 @@ export type UpdateInstallResult = {
 export type ResourcesUpdateCheckResult = {
   localVersion: string;
   remoteVersion: string;
+  remoteDescription?: string;
   localExists: boolean;
   updateAvailable: boolean;
   success: boolean;

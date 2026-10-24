@@ -46,9 +46,11 @@ export function BuffsManager({
   const [collapsed, setCollapsed] = useState(true);
   const [selectedProfile, setSelectedProfile] = useState("");
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
+  const [resourcesUpdateDescription, setResourcesUpdateDescription] = useState("");
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
+  const [pendingInstall, setPendingInstall] = useState<{ id: string; message: string } | null>(null);
 
   const availableProfiles = status?.buffsAvailableProfiles ?? [];
   const installedProfileUrl = status?.buffsInstalledProfile?.url ?? null;
@@ -101,13 +103,16 @@ export function BuffsManager({
       if (result.success && result.updateAvailable) {
         setResourcesUpdateAvailable(true);
         setResourcesUpdateVersion(result.remoteVersion);
+        setResourcesUpdateDescription(result.remoteDescription?.trim() ?? "");
       } else {
         setResourcesUpdateAvailable(false);
         setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
       }
     } catch (_err) {
       setResourcesUpdateAvailable(false);
       setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
     } finally {
       setResourcesUpdateChecking(false);
     }
@@ -154,6 +159,7 @@ export function BuffsManager({
         onMessage("Buff packages downloaded.");
         setResourcesUpdateAvailable(false);
         setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
       } catch (err) {
         onMessage(toErrorMessage(err, "Request failed."));
       } finally {
@@ -166,9 +172,11 @@ export function BuffsManager({
         if (result.success && result.updateAvailable) {
           setResourcesUpdateAvailable(true);
           setResourcesUpdateVersion(result.remoteVersion);
+        setResourcesUpdateDescription(result.remoteDescription?.trim() ?? "");
         } else if (result.success) {
           setResourcesUpdateAvailable(false);
           setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
           onMessage("Buff resources are up to date.");
         } else {
           onMessage(result.message || "Update check failed.");
@@ -188,13 +196,17 @@ export function BuffsManager({
       return;
     }
     setSelectedProfile(profileId);
-    const confirmed = window.confirm(
-      `Install buff package "${profileId}"? This will clear current installed models first.`
-    );
-    if (!confirmed) return;
+    setPendingInstall({ id: profileId, message: `Install buff package "${resolveProfileName(availableProfiles.find((profile) => profile.id === profileId)?.name ?? profileId, profileId)}"? This will clear current installed models first.` });
+  }
+
+  async function confirmInstallProfile() {
+    if (!pendingInstall) return;
+    const profileId = pendingInstall.id;
+    setPendingInstall(null);
     const success = await runAction(
       () => installBuffsProfile(profileId),
-      `Installed buff package: ${profileId}.`
+      `Installed buff package: ${profileId}.`,
+      "Installing..."
     );
     if (success) {
       setCollapsed(true);
@@ -312,16 +324,27 @@ export function BuffsManager({
                   <span className="headerSep" />
                 </>
               ) : null}
-              <button
-                type="button"
-                className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
-                disabled={loading || resourcesUpdateChecking}
-                onClick={onResourcesUpdateAction}
-                title={resourcesUpdateTitle}
-                aria-label={resourcesUpdateTitle}
-              >
-                {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
-              </button>
+              <span className="resourceUpdateAnchor">
+              {resourcesUpdateAvailable && resourcesUpdateDescription ? (
+              <span id="BuffsManager-update-tooltip" className="resourceUpdateBubble" role="tooltip">
+                <strong>Update{resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}</strong>
+                <span>{resourcesUpdateDescription}</span>
+              </span>
+            ) : null}
+            {debugMode || resourcesUpdateAvailable ? (
+                <button
+                  type="button"
+                  className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
+                  disabled={loading || resourcesUpdateChecking}
+                  onClick={onResourcesUpdateAction}
+                  title={resourcesUpdateAvailable && resourcesUpdateDescription ? undefined : resourcesUpdateTitle}
+                  aria-label={resourcesUpdateTitle}
+                  aria-describedby={resourcesUpdateAvailable && resourcesUpdateDescription ? "BuffsManager-update-tooltip" : undefined}
+                >
+                  {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
+                </button>
+              ) : null}
+            </span>
               
             </div>
           </div>
@@ -343,6 +366,16 @@ export function BuffsManager({
           />
         </div>
       </section>
+      <ConfirmationModal
+        open={pendingInstall !== null}
+        title="Install package"
+        message={pendingInstall?.message ?? ""}
+        confirmLabel="Install"
+        confirmButtonClassName="buttonStrong"
+        onConfirm={confirmInstallProfile}
+        onClose={() => setPendingInstall(null)}
+      />
+
       <ConfirmationModal
         open={clearInstalledConfirmOpen}
         title="Uninstall package"

@@ -55,11 +55,13 @@ export function LootManager({
   const [selectedProfile, setSelectedProfile] = useState("");
   const [modelDetailsProfileId, setModelDetailsProfileId] = useState<string | null>(null);
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
+  const [resourcesUpdateDescription, setResourcesUpdateDescription] = useState("");
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const [showDroppedItemNameEnabled, setShowDroppedItemNameEnabled] = useState(false);
   const [manageModalOpen, setManageModalOpen] = useState(false);
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
+  const [pendingInstall, setPendingInstall] = useState<{ id: string; message: string } | null>(null);
   const availableProfiles = status?.availableProfiles ?? [];
   const recommendedProfile = availableProfiles.find(isRecommendedLootProfile) ?? null;
   const modelDetailsProfile = availableProfiles.find(profile => profile.id === modelDetailsProfileId) ?? null;
@@ -125,13 +127,16 @@ export function LootManager({
       if (result.success && result.updateAvailable) {
         setResourcesUpdateAvailable(true);
         setResourcesUpdateVersion(result.remoteVersion);
+        setResourcesUpdateDescription(result.remoteDescription?.trim() ?? "");
       } else {
         setResourcesUpdateAvailable(false);
         setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
       }
     } catch (_err) {
       setResourcesUpdateAvailable(false);
       setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
     } finally {
       setResourcesUpdateChecking(false);
     }
@@ -216,6 +221,7 @@ export function LootManager({
         onMessage("Profiles downloaded.");
         setResourcesUpdateAvailable(false);
         setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
       } catch (err) {
         onMessage(toErrorMessage(err, "Request failed."));
       } finally {
@@ -228,9 +234,11 @@ export function LootManager({
         if (result.success && result.updateAvailable) {
           setResourcesUpdateAvailable(true);
           setResourcesUpdateVersion(result.remoteVersion);
+        setResourcesUpdateDescription(result.remoteDescription?.trim() ?? "");
         } else if (result.success) {
           setResourcesUpdateAvailable(false);
           setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
           onMessage("Loot models are up to date.");
         } else {
           onMessage(result.message || "Update check failed.");
@@ -250,11 +258,14 @@ export function LootManager({
       return;
     }
     setSelectedProfile(profileId);
-    const confirmed = window.confirm(
-      `Install package "${profileId}"? This will clear current installed models first.`
-    );
-    if (!confirmed) return;
-    const success = await runAction(() => installProfile(profileId), `Installed package: ${profileId}.`);
+    setPendingInstall({ id: profileId, message: `Install package "${resolveProfileName(availableProfiles.find((profile) => profile.id === profileId)?.name ?? profileId, profileId)}"? This will clear current installed models first.` });
+  }
+
+  async function confirmInstallProfile() {
+    if (!pendingInstall) return;
+    const profileId = pendingInstall.id;
+    setPendingInstall(null);
+    const success = await runAction(() => installProfile(profileId), `Installed package: ${profileId}.`, "Installing...");
     if (success) {
       setCollapsed(true);
     }
@@ -412,16 +423,27 @@ export function LootManager({
                 <span className="headerSep" />
               </>
             ) : null}
-            <button
-              type="button"
-              className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
-              disabled={loading || resourcesUpdateChecking}
-              onClick={onResourcesUpdateAction}
-              title={resourcesUpdateTitle}
-              aria-label={resourcesUpdateTitle}
-            >
-              {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
-            </button>
+            <span className="resourceUpdateAnchor">
+              {resourcesUpdateAvailable && resourcesUpdateDescription ? (
+              <span id="LootManager-update-tooltip" className="resourceUpdateBubble" role="tooltip">
+                <strong>Update{resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}</strong>
+                <span>{resourcesUpdateDescription}</span>
+              </span>
+            ) : null}
+            {debugMode || resourcesUpdateAvailable ? (
+              <button
+                type="button"
+                className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
+                disabled={loading || resourcesUpdateChecking}
+                onClick={onResourcesUpdateAction}
+                title={resourcesUpdateAvailable && resourcesUpdateDescription ? undefined : resourcesUpdateTitle}
+                aria-label={resourcesUpdateTitle}
+                  aria-describedby={resourcesUpdateAvailable && resourcesUpdateDescription ? "LootManager-update-tooltip" : undefined}
+              >
+                {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
+              </button>
+            ) : null}
+            </span>
             
           </div>
         </div>
@@ -487,6 +509,16 @@ export function LootManager({
         onClose={() => setManageModalOpen(false)}
         onSave={onSaveManagedFolders}
       />
+      <ConfirmationModal
+        open={pendingInstall !== null}
+        title="Install package"
+        message={pendingInstall?.message ?? ""}
+        confirmLabel="Install"
+        confirmButtonClassName="buttonStrong"
+        onConfirm={confirmInstallProfile}
+        onClose={() => setPendingInstall(null)}
+      />
+
       <ConfirmationModal
         open={clearInstalledConfirmOpen}
         title="Uninstall package"

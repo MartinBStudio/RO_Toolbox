@@ -59,10 +59,9 @@ public class ResourcesUpdater implements ICommonResourceMethods {
                   .lines()
                   .collect(java.util.stream.Collectors.joining("\n"));
         }
-        java.util.regex.Matcher matcher =
-            java.util.regex.Pattern.compile("\"version\"\\s*:\\s*\"((?:\\\\.|[^\"\\\\])*)\"")
-                .matcher(content);
-        String remoteVersion = matcher.find() ? matcher.group(1).trim() : "0.0.0";
+        var manifest = tools.jackson.databind.json.JsonMapper.builder().build().readTree(content);
+        String remoteVersion = manifest.path("version").asText("0.0.0").trim();
+        String remoteDescription = manifest.path("description").asText("").trim();
         boolean updateAvailable =
             !localExists || normalizeVersion(remoteVersion) > normalizeVersion(localVersion);
         String message =
@@ -72,14 +71,20 @@ public class ResourcesUpdater implements ICommonResourceMethods {
                     + (localExists ? " (local: v" + localVersion + ")" : " (not downloaded)")
                 : "Resources are up to date (v" + localVersion + ").";
         return new ResourcesUpdateCheckResult(
-            localVersion, remoteVersion, localExists, updateAvailable, true, message);
+            localVersion,
+            remoteVersion,
+            localExists,
+            updateAvailable,
+            true,
+            message,
+            remoteDescription);
       } catch (Exception e) {
         log.info("Remote manifest check failed for branch " + branch + ": " + e.getMessage());
       }
     }
 
     return new ResourcesUpdateCheckResult(
-        localVersion, "unknown", localExists, false, false, "Unable to check remote manifest.");
+        localVersion, "unknown", localExists, false, false, "Unable to check remote manifest.", "");
   }
 
   public void runUpdate(
@@ -276,7 +281,8 @@ public class ResourcesUpdater implements ICommonResourceMethods {
       boolean localExists,
       boolean updateAvailable,
       boolean success,
-      String message) {}
+      String message,
+      String remoteDescription) {}
 
   public record DownloadProgress(long downloadedBytes, long totalBytes) {}
 }

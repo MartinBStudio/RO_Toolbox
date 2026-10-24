@@ -63,9 +63,11 @@ export function UserInterfaceManager({
   const [previewGalleryImages, setPreviewGalleryImages] = useState<string[]>([]);
   const [previewGalleryIndex, setPreviewGalleryIndex] = useState(0);
   const [resourcesUpdateAvailable, setResourcesUpdateAvailable] = useState(false);
+  const [resourcesUpdateDescription, setResourcesUpdateDescription] = useState("");
   const [resourcesUpdateChecking, setResourcesUpdateChecking] = useState(false);
   const [resourcesUpdateVersion, setResourcesUpdateVersion] = useState<string | undefined>(undefined);
   const [clearInstalledConfirmOpen, setClearInstalledConfirmOpen] = useState(false);
+  const [pendingInstall, setPendingInstall] = useState<{ id: string; message: string } | null>(null);
 
   const availableProfiles = status?.userInterfaceAvailableProfiles ?? [];
   const {filters, setFilters, options} = usePackageMetadataFilters(availableProfiles, !collapsed);
@@ -165,13 +167,16 @@ export function UserInterfaceManager({
       if (result.success && result.updateAvailable) {
         setResourcesUpdateAvailable(true);
         setResourcesUpdateVersion(result.remoteVersion);
+        setResourcesUpdateDescription(result.remoteDescription?.trim() ?? "");
       } else {
         setResourcesUpdateAvailable(false);
         setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
       }
     } catch (_err) {
       setResourcesUpdateAvailable(false);
       setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
     } finally {
       setResourcesUpdateChecking(false);
     }
@@ -201,6 +206,7 @@ export function UserInterfaceManager({
         onMessage("User interface packages downloaded.");
         setResourcesUpdateAvailable(false);
         setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
       } catch (err) {
         onMessage(toErrorMessage(err, "Request failed."));
       } finally {
@@ -215,9 +221,11 @@ export function UserInterfaceManager({
       if (result.success && result.updateAvailable) {
         setResourcesUpdateAvailable(true);
         setResourcesUpdateVersion(result.remoteVersion);
+        setResourcesUpdateDescription(result.remoteDescription?.trim() ?? "");
       } else if (result.success) {
         setResourcesUpdateAvailable(false);
         setResourcesUpdateVersion(undefined);
+        setResourcesUpdateDescription("");
         onMessage("User interface resources are up to date.");
       } else {
         onMessage(result.message || "Update check failed.");
@@ -240,14 +248,20 @@ export function UserInterfaceManager({
     }
 
     const targetName = resolveProfileName(targetProfile?.name ?? targetProfileId, targetProfileId);
-    const confirmed = window.confirm(
-      `Install user interface package "${targetName}"? This will clear current installed models first.`
-    );
-    if (!confirmed) return;
+    setPendingInstall({ id: targetProfileId, message: `Install user interface package "${targetName}"? This will clear current installed models first.` });
+  }
+
+  async function confirmInstallProfile() {
+    if (!pendingInstall) return;
+    const targetProfileId = pendingInstall.id;
+    setPendingInstall(null);
+    const targetProfile = availableProfiles.find((profile) => profile.id === targetProfileId) ?? null;
+    const targetName = resolveProfileName(targetProfile?.name ?? targetProfileId, targetProfileId);
 
     const success = await runAction(
       () => installUserInterfaceProfile(targetProfileId),
-      `Installed user interface package: ${targetName}.`
+      `Installed user interface package: ${targetName}.`,
+      "Installing..."
     );
 
     if (success) {
@@ -506,16 +520,27 @@ export function UserInterfaceManager({
                   <span className="headerSep" />
                 </>
               ) : null}
-              <button
-                type="button"
-                className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
-                disabled={loading || resourcesUpdateChecking}
-                onClick={onResourcesUpdateAction}
-                title={resourcesUpdateTitle}
-                aria-label={resourcesUpdateTitle}
-              >
-                {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
-              </button>
+              <span className="resourceUpdateAnchor">
+              {resourcesUpdateAvailable && resourcesUpdateDescription ? (
+              <span id="UserInterfaceManager-update-tooltip" className="resourceUpdateBubble" role="tooltip">
+                <strong>Update{resourcesUpdateVersion ? ` v${resourcesUpdateVersion}` : ""}</strong>
+                <span>{resourcesUpdateDescription}</span>
+              </span>
+            ) : null}
+            {debugMode || resourcesUpdateAvailable ? (
+                <button
+                  type="button"
+                  className={`iconBtn updateCog${resourcesUpdateAvailable ? " updateAvailable" : ""}`}
+                  disabled={loading || resourcesUpdateChecking}
+                  onClick={onResourcesUpdateAction}
+                  title={resourcesUpdateAvailable && resourcesUpdateDescription ? undefined : resourcesUpdateTitle}
+                  aria-label={resourcesUpdateTitle}
+                  aria-describedby={resourcesUpdateAvailable && resourcesUpdateDescription ? "UserInterfaceManager-update-tooltip" : undefined}
+                >
+                  {resourcesUpdateAvailable ? <ArrowDownTrayIcon className="heroIcon" /> : <ArrowPathIcon className="heroIcon" />}
+                </button>
+              ) : null}
+            </span>
               
             </div>
           </div>
@@ -641,6 +666,16 @@ export function UserInterfaceManager({
           </ServiceDetailModal>
         </div>
       </section>
+
+      <ConfirmationModal
+        open={pendingInstall !== null}
+        title="Install package"
+        message={pendingInstall?.message ?? ""}
+        confirmLabel="Install"
+        confirmButtonClassName="buttonStrong"
+        onConfirm={confirmInstallProfile}
+        onClose={() => setPendingInstall(null)}
+      />
 
       <ConfirmationModal
         open={clearInstalledConfirmOpen}
