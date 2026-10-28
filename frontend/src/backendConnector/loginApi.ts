@@ -4,7 +4,6 @@ export type LoginAccount = {
   id: string;
   name: string;
   email: string;
-  password: string;
   displayInQuick: boolean;
   icon: string;
 };
@@ -64,7 +63,7 @@ export function createLoginAccount(data: {
 export function updateLoginAccount(id: string, data: {
   name: string;
   email: string;
-  password: string;
+  password?: string;
   displayInQuick?: boolean;
   icon?: string;
 }) {

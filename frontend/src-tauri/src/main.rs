@@ -1,8 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use serde::Deserialize;
-use std::fs;
-use std::io::{BufRead, BufReader};
+use serde::{Deserialize, Serialize};
+use std::io::{BufRead, BufReader, Write};
+use std::net::{SocketAddr, TcpStream};
 use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{mpsc, Mutex};
@@ -52,6 +52,7 @@ const PKEY_TITLE: PROPERTYKEY = PROPERTYKEY {
 struct BackendState {
     child: Mutex<Option<Child>>,
     port: Mutex<Option<u16>>,
+    token: String,
     #[cfg(windows)]
     job_handle: Mutex<Option<isize>>,
 }
@@ -68,39 +69,80 @@ fn stop_backend(state: tauri::State<BackendState>) {
     stop_backend_child(&state);
 }
 
-#[tauri::command]
-fn get_backend_url(state: tauri::State<BackendState>) -> Result<String, String> {
-    if let Some(port) = *state
-        .port
-        .lock()
-        .expect("backend lock poisoned")
-    {
-        return Ok(format!("http://127.0.0.1:{port}/api"));
-    }
-
-    let port_file = std::env::temp_dir().join("ro_toolbox_backend_port");
-
-    let port_text = std::fs::read_to_string(&port_file)
-        .map_err(|e| {
-            format!(
-                "Failed to read backend port file '{}': {e}",
-                port_file.display()
-            )
-        })?;
-
-    let port = port_text
-        .trim()
-        .parse::<u16>()
-        .map_err(|e| {
-            format!(
-                "Invalid backend port '{}' in '{}': {e}",
-                port_text.trim(),
-                port_file.display()
-            )
-        })?;
-
-    Ok(format!("http://127.0.0.1:{port}/api"))
+#[derive(Serialize)]
+struct BackendConnection {
+    url: String,
+    token: String,
 }
+
+#[tauri::command]
+fn get_backend_connection(state: tauri::State<BackendState>) -> Result<BackendConnection, String> {
+    let port = state.port.lock().expect("backend lock poisoned")
+        .ok_or_else(|| "Backend is not ready".to_string())?;
+    Ok(BackendConnection {
+        url: format!("http://127.0.0.1:{port}"),
+        token: state.token.clone(),
+    })
+}
+
+fn create_backend_token() -> Result<String, String> {
+    if use_external_backend() {
+        let token = std::env::var("RO_TOOLBOX_BACKEND_TOKEN")
+            .map_err(|_| "External development backend requires RO_TOOLBOX_BACKEND_TOKEN")?;
+        if !valid_backend_token(&token) {
+            return Err("Invalid external backend token".into());
+        }
+        return Ok(token);
+    }
+    let mut bytes = [0u8; 32];
+    getrandom::fill(&mut bytes).map_err(|_| "Could not generate backend credential")?;
+    Ok(bytes.iter().map(|byte| format!("{byte:02x}")).collect())
+}
+
+fn valid_backend_token(token: &str) -> bool {
+    token.len() == 64 && token.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+}
+
+fn quick_launch_account_id(args: &[String]) -> Option<&str> {
+    if args.len() != 3 || args[1] != "--quick-launch" {
+        return None;
+    }
+    let id = &args[2];
+    let valid = id.len() == 36 && id.bytes().enumerate().all(|(i, b)| {
+        if [8, 13, 18, 23].contains(&i) { b == b'-' } else { b.is_ascii_hexdigit() }
+    });
+    valid.then_some(id.as_str())
+}
+
+fn dispatch_taskbar_launch(app: &AppHandle, args: &[String]) {
+    let Some(id) = quick_launch_account_id(args) else { return };
+    let Some(state) = app.try_state::<BackendState>() else { return };
+    let Some(port) = *state.port.lock().expect("backend lock poisoned") else { return };
+    let token = state.token.clone();
+    let id = id.to_string();
+    thread::spawn(move || {
+        if send_taskbar_launch(port, &token, &id).is_err() {
+            // Never log request headers, credential material, or backend response bodies.
+            eprintln!("[RO Toolbox] Taskbar launch failed");
+        }
+    });
+}
+
+fn send_taskbar_launch(port: u16, token: &str, id: &str) -> std::io::Result<()> {
+    let address = SocketAddr::from(([127, 0, 0, 1], port));
+    let mut stream = TcpStream::connect_timeout(&address, Duration::from_secs(5))?;
+    stream.set_write_timeout(Some(Duration::from_secs(5)))?;
+    stream.set_read_timeout(Some(Duration::from_secs(15)))?;
+    write!(stream,
+        "POST /api/login/{id}/launch HTTP/1.1\r\nHost: 127.0.0.1:{port}\r\nAuthorization: Bearer {token}\r\nX-RO-Toolbox-Source: taskbar\r\nContent-Length: 0\r\nConnection: close\r\n\r\n")?;
+    let mut status = String::new();
+    BufReader::new(stream).read_line(&mut status)?;
+    if !status.starts_with("HTTP/1.1 200 ") {
+        return Err(std::io::Error::other("Backend rejected taskbar launch"));
+    }
+    Ok(())
+}
+
 fn debug_log(message: &str) {
     let path = std::env::temp_dir().join("ro_toolbox_debug.log");
 
@@ -133,7 +175,11 @@ fn sync_taskbar_quick_launch(
 }
 
 fn main() {
+    let token = create_backend_token().expect("Could not initialize backend authentication");
     let app = tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            dispatch_taskbar_launch(app, &args);
+        }))
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
@@ -141,16 +187,23 @@ fn main() {
         .manage(BackendState {
             child: Mutex::new(None),
             port: Mutex::new(None),
+            token,
             #[cfg(windows)]
             job_handle: Mutex::new(None),
         })
         .invoke_handler(tauri::generate_handler![
             stop_backend,
-            get_backend_url,
+            get_backend_connection,
             sync_taskbar_quick_launch
         ])
         .setup(|app| {
             if use_external_backend() {
+                let port: u16 = std::env::var("RO_TOOLBOX_BACKEND_PORT")
+                    .map_err(|_| "External backend requires RO_TOOLBOX_BACKEND_PORT")?
+                    .parse()?;
+                if port == 0 { return Err("External backend port cannot be zero".into()); }
+                *app.state::<BackendState>().port.lock().expect("backend lock poisoned") = Some(port);
+                dispatch_taskbar_launch(app.handle(), &std::env::args().collect::<Vec<_>>());
                 return Ok(());
             }
 
@@ -205,6 +258,7 @@ fn main() {
                         .port
                         .lock()
                         .expect("backend lock poisoned") = Some(port);
+                    dispatch_taskbar_launch(app.handle(), &std::env::args().collect::<Vec<_>>());
                 }
 
                 Err(e) => {
@@ -378,6 +432,9 @@ fn spawn_backend_with_retry(
 
         cmd.arg("-jar")
             .arg(jar_path)
+            .arg("--server.address=127.0.0.1")
+            .env("RO_TOOLBOX_BACKEND_TOKEN", &app_handle.state::<BackendState>().token)
+            .env("RO_TOOLBOX_DEV_MODE", if cfg!(debug_assertions) { "true" } else { "false" })
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
@@ -485,7 +542,7 @@ fn extract_tomcat_port(line: &str) -> Option<u16> {
 }
 
 fn use_external_backend() -> bool {
-    matches!(
+    cfg!(debug_assertions) && matches!(
         std::env::var("RO_TOOLBOX_EXTERNAL_BACKEND")
             .ok()
             .as_deref(),
@@ -584,32 +641,18 @@ fn sync_taskbar_quick_launch_windows(
     app_handle: &AppHandle,
     accounts: &[TaskbarQuickAccount],
 ) -> Result<(), String> {
-    let state = app_handle.state::<BackendState>();
-
-    let port = state
-        .port
-        .lock()
-        .expect("backend lock poisoned")
-        .ok_or_else(|| {
-            "Backend port is not available".to_string()
-        })?;
-
     let mut tasks = Vec::new();
 
     for account in accounts {
         let name = account.name.trim();
 
-        if name.is_empty() {
+        if name.is_empty() || quick_launch_account_id(&["app".into(), "--quick-launch".into(), account.id.clone()]).is_none() {
             continue;
         }
 
         tasks.push((
             name.to_string(),
-            format!(
-                "http://localhost:{}/api/login/{}/launch",
-                port,
-                account.id
-            ),
+            account.id.clone(),
             resolve_taskbar_icon_path(
                 app_handle,
                 &account.icon,
@@ -700,15 +743,6 @@ fn update_windows_jump_list_inner(
         })?
     };
 
-    let wscript_path =
-        HSTRING::from(r"C:\Windows\System32\wscript.exe");
-
-    let launcher_script =
-        ensure_taskbar_launcher_script()?;
-
-    let launcher_script_path =
-        launcher_script.to_string_lossy().to_string();
-
     let app_exe = std::env::current_exe()
         .map_err(|err| {
             format!(
@@ -718,7 +752,7 @@ fn update_windows_jump_list_inner(
 
     let max_entries = max_slots.max(1) as usize;
 
-    for (title, endpoint, icon_path) in
+    for (title, account_id, icon_path) in
         tasks.into_iter().take(max_entries)
     {
         let task_item: IShellLinkW = unsafe {
@@ -734,17 +768,11 @@ fn update_windows_jump_list_inner(
             })?
         };
 
-        let script_args = HSTRING::from(format!(
-            "//B //Nologo \"{}\" \"{}\"",
-            escape_shell_link_argument(
-                &launcher_script_path
-            ),
-            escape_shell_link_argument(&endpoint)
-        ));
+        let launch_args = HSTRING::from(format!("--quick-launch {account_id}"));
 
         unsafe {
             task_item
-                .SetPath(&wscript_path)
+                .SetPath(&HSTRING::from(app_exe.to_string_lossy().as_ref()))
                 .map_err(|err| {
                     format!(
                         "Failed to set taskbar command path: {err}"
@@ -752,7 +780,7 @@ fn update_windows_jump_list_inner(
                 })?;
 
             task_item
-                .SetArguments(&script_args)
+                .SetArguments(&launch_args)
                 .map_err(|err| {
                     format!(
                         "Failed to set taskbar command arguments: {err}"
@@ -925,30 +953,66 @@ fn resolve_taskbar_icon_path(
         .find(|candidate| candidate.exists())
 }
 
-#[cfg(windows)]
-fn ensure_taskbar_launcher_script() -> Result<PathBuf, String> {
-    let script_path =
-        std::env::temp_dir()
-            .join("ro_toolbox_taskbar_launch.vbs");
-
-    let script = "On Error Resume Next\r\nDim url\r\nurl = WScript.Arguments.Item(0)\r\nSet http = CreateObject(\"MSXML2.XMLHTTP\")\r\nhttp.open \"POST\", url, False\r\nhttp.setRequestHeader \"Content-Type\", \"application/json\"\r\nhttp.setRequestHeader \"X-RO-Toolbox-Source\", \"taskbar\"\r\nhttp.send \"\"\r\n";
-
-    fs::write(&script_path, script)
-        .map_err(|err| {
-            format!(
-                "Failed to prepare taskbar launcher script: {err}"
-            )
-        })?;
-
-    Ok(script_path)
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
+        create_backend_token,
         extract_tomcat_port,
+        quick_launch_account_id,
+        send_taskbar_launch,
         taskbar_icon_file_name,
+        valid_backend_token,
     };
+
+    #[test]
+    fn creates_distinct_strong_session_credentials() {
+        let first = create_backend_token().unwrap();
+        let second = create_backend_token().unwrap();
+        assert!(valid_backend_token(&first));
+        assert!(valid_backend_token(&second));
+        assert_ne!(first, second);
+        assert!(!valid_backend_token("short"));
+        assert!(!valid_backend_token(&"z".repeat(64)));
+    }
+
+    #[test]
+    fn taskbar_only_accepts_an_account_id_without_extra_arguments() {
+        let id = "12345678-1234-1234-1234-123456789abc";
+        let args = vec!["app".into(), "--quick-launch".into(), id.into()];
+        assert_eq!(quick_launch_account_id(&args), Some(id));
+        assert_eq!(quick_launch_account_id(&["app".into()]), None);
+        for invalid in ["../launch", "id\r\nInjected: yes", "id?token=secret", ""] {
+            assert_eq!(quick_launch_account_id(&["app".into(), "--quick-launch".into(), invalid.into()]), None);
+        }
+        assert_eq!(quick_launch_account_id(&["app".into(), "--quick-launch".into(), id.into(), "extra".into()]), None);
+    }
+
+    #[test]
+    fn native_taskbar_request_is_authenticated_without_origin_or_url_secrets() {
+        use std::io::{BufRead, BufReader, Write};
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let token = "a".repeat(64);
+        let server_token = token.clone();
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            stream.set_read_timeout(Some(std::time::Duration::from_secs(5))).unwrap();
+            let mut reader = BufReader::new(stream.try_clone().unwrap());
+            let mut lines = Vec::new();
+            loop {
+                let mut line = String::new();
+                reader.read_line(&mut line).unwrap();
+                if line == "\r\n" { break; }
+                lines.push(line);
+            }
+            assert_eq!(lines[0], "POST /api/login/12345678-1234-1234-1234-123456789abc/launch HTTP/1.1\r\n");
+            assert!(lines.contains(&format!("Host: 127.0.0.1:{port}\r\n")));
+            assert!(lines.contains(&format!("Authorization: Bearer {server_token}\r\n")));
+            stream.write_all(b"HTTP/1.1 200 OK\r\nContent-Length: 0\r\nConnection: close\r\n\r\n").unwrap();
+        });
+        send_taskbar_launch(port, &token, "12345678-1234-1234-1234-123456789abc").unwrap();
+        server.join().unwrap();
+    }
 
     #[test]
     fn extracts_tomcat_port() {
@@ -1025,9 +1089,4 @@ mod tests {
             "person.ico"
         );
     }
-}
-
-#[cfg(windows)]
-fn escape_shell_link_argument(value: &str) -> String {
-    value.replace('"', "\"\"")
 }

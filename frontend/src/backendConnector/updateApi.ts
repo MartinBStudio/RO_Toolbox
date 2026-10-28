@@ -1,14 +1,13 @@
 import type { UpdateCheckResult } from "../types.ts";
 import { request } from "./apiClient.ts";
-import { invoke } from "@tauri-apps/api/core";
+import { apiFetch } from "./apiClient.ts";
 
 export function checkBackendUpdate() {
   return request<UpdateCheckResult>("/update/check");
 }
 
 export async function fetchLatestReleaseDownload() {
-  const apiBase = await invoke<string>("get_backend_url");
-  const response = await fetch(`${apiBase}/update/latest-release/download`);
+  const response = await apiFetch("/update/latest-release/download");
 
   if (!response.ok) {
     const body = await response.text();

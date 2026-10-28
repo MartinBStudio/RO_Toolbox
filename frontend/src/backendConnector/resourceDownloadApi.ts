@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { apiFetch } from "./apiClient.ts";
 
 export type ResourceDownloadProgress = {
   type: "started" | "progress" | "complete" | "error";
@@ -12,8 +12,7 @@ export async function downloadResourceWithProgress(
   onProgress: (progress: ResourceDownloadProgress) => void,
   completeMessage: string
 ) {
-  const apiBase = await invoke<string>("get_backend_url");
-  const response = await fetch(`${apiBase}${path}`, { method: "POST" });
+  const response = await apiFetch(path, { method: "POST" });
 
   if (!response.ok) {
     const body = await response.text();

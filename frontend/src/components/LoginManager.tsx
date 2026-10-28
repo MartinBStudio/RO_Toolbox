@@ -86,7 +86,7 @@ export function LoginManager({
 
     try {
       if (editingId) {
-        await updateLoginAccount(editingId, form);
+        await updateLoginAccount(editingId, { ...form, password: form.password || undefined });
       } else {
         await createLoginAccount(form);
       }
@@ -129,7 +129,6 @@ export function LoginManager({
       await updateLoginAccount(account.id, {
         name: account.name,
         email: account.email,
-        password: account.password,
         displayInQuick: !account.displayInQuick,
         icon: account.icon || "👤"
       });
@@ -147,7 +146,7 @@ export function LoginManager({
     setForm({
       name: account.name,
       email: account.email,
-      password: account.password,
+      password: "",
       displayInQuick: account.displayInQuick,
       icon: account.icon || "👤"
     });
@@ -280,8 +279,9 @@ export function LoginManager({
                       type="password"
                       value={form.password}
                       onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
-                      placeholder="Password"
-                      required
+                      placeholder={editingId ? "Leave blank to keep current password" : "Password"}
+                      autoComplete="new-password"
+                      required={!editingId}
                     />
                   </label>
                 </div>
