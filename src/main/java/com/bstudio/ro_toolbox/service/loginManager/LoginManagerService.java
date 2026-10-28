@@ -4,7 +4,6 @@ import com.bstudio.ro_toolbox.service.app.AppConfigService;
 import com.bstudio.ro_toolbox.service.backup.BackupProviderResolver;
 import com.bstudio.ro_toolbox.service.backup.BackupProviderResolver.BackupProvider;
 import com.bstudio.ro_toolbox.util.AppDataPaths;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -65,18 +64,17 @@ public class LoginManagerService {
     this.backupProviderResolver = new BackupProviderResolver(appConfigService);
   }
 
-  public List<AccountSummary> listAccounts() throws IOException {
-    return readAccounts().stream().map(this::summary).toList();
+  public List<LoginAccount> listAccounts() throws IOException {
+    return readAccounts();
   }
 
-  public List<AccountSummary> listQuickAccounts() throws IOException {
+  public List<LoginAccount> listQuickAccounts() throws IOException {
     return readAccounts().stream()
         .filter(account -> Boolean.TRUE.equals(account.displayInQuick()))
-        .map(this::summary)
         .toList();
   }
 
-  public AccountSummary createAccount(CreateAccountRequest request) throws IOException {
+  public LoginAccount createAccount(CreateAccountRequest request) throws IOException {
     if (request == null) {
       throw new IllegalArgumentException("Account payload is required.");
     }
@@ -86,17 +84,17 @@ public class LoginManagerService {
             UUID.randomUUID().toString(),
             normalizeText(request.name(), "name"),
             normalizeText(request.email(), "email"),
-            encryptPassword(requirePassword(request.password())),
+            normalizeText(request.password(), "password"),
             request.displayInQuick() == null ? Boolean.TRUE : request.displayInQuick(),
             normalizeIcon(request.icon()));
 
     List<LoginAccount> accounts = readAccounts();
     accounts.add(account);
     writeAccounts(accounts);
-    return summary(account);
+    return account;
   }
 
-  public AccountSummary updateAccount(String id, UpdateAccountRequest request) throws IOException {
+  public LoginAccount updateAccount(String id, UpdateAccountRequest request) throws IOException {
     if (id == null || id.isBlank()) {
       throw new IllegalArgumentException("Account id is required.");
     }
@@ -116,9 +114,7 @@ public class LoginManagerService {
             existing.id(),
             normalizeText(request.name(), "name"),
             normalizeText(request.email(), "email"),
-            request.password() == null
-                ? existing.password()
-                : encryptPassword(requirePassword(request.password())),
+            normalizeText(request.password(), "password"),
             request.displayInQuick() == null ? existing.displayInQuick() : request.displayInQuick(),
             normalizeIcon(request.icon()));
 
@@ -131,10 +127,10 @@ public class LoginManagerService {
       }
     }
     writeAccounts(replaced);
-    return summary(updated);
+    return updated;
   }
 
-  public AccountSummary deleteAccount(String id) throws IOException {
+  public LoginAccount deleteAccount(String id) throws IOException {
     if (id == null || id.isBlank()) {
       throw new IllegalArgumentException("Account id is required.");
     }
@@ -149,38 +145,8 @@ public class LoginManagerService {
     List<LoginAccount> filtered =
         accounts.stream().filter(entry -> !id.equals(entry.id())).toList();
     writeAccounts(filtered);
-    return summary(removed);
+    return removed;
   }
-
-  public LoginAccount getAccountForLaunch(String id) throws IOException {
-    LoginAccount account =
-        readAccounts().stream()
-            .filter(item -> item.id().equals(id))
-            .findFirst()
-            .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
-    return new LoginAccount(
-        account.id(),
-        account.name(),
-        account.email(),
-        decryptIfNeeded(account.password()),
-        account.displayInQuick(),
-        account.icon());
-  }
-
-  private AccountSummary summary(LoginAccount account) {
-    return new AccountSummary(
-        account.id(), account.name(), account.email(), account.displayInQuick(), account.icon());
-  }
-
-  private String requirePassword(String password) {
-    if (password == null || password.isBlank()) {
-      throw new IllegalArgumentException("password is required.");
-    }
-    return password;
-  }
-
-  public record AccountSummary(
-      String id, String name, String email, Boolean displayInQuick, String icon) {}
 
   public Path getAccountsFile() {
     return accountsFile;
@@ -354,13 +320,13 @@ public class LoginManagerService {
       }
       String displayValue = data.get("displayInQuick");
       String iconValue = data.get("icon");
-      // Keep ciphertext until a particular account is launched.
+      String resolvedPassword = decryptIfNeeded(password);
       accounts.add(
           new LoginAccount(
               id,
               name,
               email,
-              password,
+              resolvedPassword,
               displayValue == null ? Boolean.TRUE : Boolean.parseBoolean(displayValue),
               iconValue == null || iconValue.isBlank() ? "👤" : iconValue));
     }
@@ -399,14 +365,6 @@ public class LoginManagerService {
     return icon.trim();
   }
 
-  private String encryptPassword(String value) {
-    try {
-      return ENCRYPTION_PREFIX + encrypt(value);
-    } catch (GeneralSecurityException e) {
-      throw new IllegalStateException("Unable to encrypt password for local storage.", e);
-    }
-  }
-
   private String encryptIfNeeded(String value) {
     if (value == null || value.isBlank()) {
       return value;
@@ -414,7 +372,11 @@ public class LoginManagerService {
     if (value.startsWith(ENCRYPTION_PREFIX)) {
       return value;
     }
-    return encryptPassword(value);
+    try {
+      return ENCRYPTION_PREFIX + encrypt(value);
+    } catch (GeneralSecurityException e) {
+      throw new IllegalStateException("Unable to encrypt password for local storage.", e);
+    }
   }
 
   private String decryptIfNeeded(String value) {
@@ -543,12 +505,7 @@ public class LoginManagerService {
   }
 
   public record LoginAccount(
-      String id,
-      String name,
-      String email,
-      @JsonIgnore String password,
-      Boolean displayInQuick,
-      String icon) {
+      String id, String name, String email, String password, Boolean displayInQuick, String icon) {
     public LoginAccount {
       Objects.requireNonNull(id, "id is required");
       Objects.requireNonNull(name, "name is required");

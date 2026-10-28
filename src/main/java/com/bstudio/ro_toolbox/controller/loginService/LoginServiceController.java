@@ -23,12 +23,12 @@ public class LoginServiceController {
   private final AppNotificationService appNotificationService;
 
   @GetMapping
-  public List<LoginManagerService.AccountSummary> listAccounts() throws IOException {
+  public List<LoginManagerService.LoginAccount> listAccounts() throws IOException {
     return loginManagerService.listAccounts();
   }
 
   @GetMapping("/quick")
-  public List<LoginManagerService.AccountSummary> listQuickAccounts() throws IOException {
+  public List<LoginManagerService.LoginAccount> listQuickAccounts() throws IOException {
     return loginManagerService.listQuickAccounts();
   }
 
@@ -80,7 +80,11 @@ public class LoginServiceController {
       @PathVariable String id,
       @RequestHeader(value = "X-RO-Toolbox-Source", required = false) String source)
       throws IOException {
-    LoginManagerService.LoginAccount account = loginManagerService.getAccountForLaunch(id);
+    LoginManagerService.LoginAccount account =
+        loginManagerService.listAccounts().stream()
+            .filter(item -> id.equals(item.id()))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException("Account not found: " + id));
 
     Path selectedGame = resolveSelectedGame();
     Path executable = selectedGame.resolve("trose.exe");
@@ -109,20 +113,20 @@ public class LoginServiceController {
   }
 
   @PostMapping
-  public LoginManagerService.AccountSummary createAccount(
+  public LoginManagerService.LoginAccount createAccount(
       @RequestBody LoginManagerService.CreateAccountRequest request) throws IOException {
     return loginManagerService.createAccount(request);
   }
 
   @PutMapping("/{id}")
-  public LoginManagerService.AccountSummary updateAccount(
+  public LoginManagerService.LoginAccount updateAccount(
       @PathVariable String id, @RequestBody LoginManagerService.UpdateAccountRequest request)
       throws IOException {
     return loginManagerService.updateAccount(id, request);
   }
 
   @DeleteMapping("/{id}")
-  public LoginManagerService.AccountSummary deleteAccount(@PathVariable String id)
+  public LoginManagerService.LoginAccount deleteAccount(@PathVariable String id)
       throws IOException {
     return loginManagerService.deleteAccount(id);
   }

@@ -25,11 +25,11 @@ class LoginManagerServiceTests {
     LoginManagerService service = new LoginManagerService(tempDir);
     Files.deleteIfExists(service.getAccountsFile());
     try {
-      LoginManagerService.AccountSummary first =
+      LoginManagerService.LoginAccount first =
           service.createAccount(
               new LoginManagerService.CreateAccountRequest(
                   "Alpha", "alpha@example.com", "pass1", null, "🧑"));
-      LoginManagerService.AccountSummary second =
+      LoginManagerService.LoginAccount second =
           service.createAccount(
               new LoginManagerService.CreateAccountRequest(
                   "Beta", "beta@example.com", "pass2", Boolean.FALSE, "🤖"));
@@ -42,9 +42,15 @@ class LoginManagerServiceTests {
           service.listQuickAccounts().stream()
               .anyMatch(account -> account.id().equals(second.id())));
       assertTrue(Files.readString(service.getAccountsFile()).contains("enc"));
-      assertEquals("pass1", service.getAccountForLaunch(first.id()).password());
+      assertEquals(
+          "pass1",
+          service.listAccounts().stream()
+              .filter(account -> account.id().equals(first.id()))
+              .findFirst()
+              .orElseThrow()
+              .password());
 
-      LoginManagerService.AccountSummary updated =
+      LoginManagerService.LoginAccount updated =
           service.updateAccount(
               first.id(),
               new LoginManagerService.UpdateAccountRequest(
@@ -55,9 +61,15 @@ class LoginManagerServiceTests {
                   "🧑‍💻"));
       assertEquals("Alpha Updated", updated.name());
       assertFalse(updated.displayInQuick());
-      assertEquals("new-pass", service.getAccountForLaunch(first.id()).password());
+      assertEquals(
+          "new-pass",
+          service.listAccounts().stream()
+              .filter(account -> account.id().equals(first.id()))
+              .findFirst()
+              .orElseThrow()
+              .password());
 
-      LoginManagerService.AccountSummary deleted = service.deleteAccount(second.id());
+      LoginManagerService.LoginAccount deleted = service.deleteAccount(second.id());
       assertEquals("Beta", deleted.name());
       assertEquals(1, service.listAccounts().size());
 

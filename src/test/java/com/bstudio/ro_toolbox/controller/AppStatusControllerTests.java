@@ -9,9 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-@org.springframework.test.context.TestPropertySource(
-    properties =
-        "RO_TOOLBOX_BACKEND_TOKEN=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 class AppStatusControllerTests {
   @Autowired private TroseExecutableMonitor troseExecutableMonitor;
 

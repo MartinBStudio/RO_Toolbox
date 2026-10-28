@@ -1,4 +1,8 @@
-import { apiFetch, backendFetch } from "../backendConnector/apiClient.ts";
+import { invoke } from "@tauri-apps/api/core";
+
+async function getApiBase(): Promise<string> {
+  return await invoke<string>("get_backend_url");
+}
 
 export interface LootFolderInfo {
   key: string;
@@ -12,29 +16,36 @@ export interface LootFolderInfo {
 let cachedDictionary: Record<string, LootFolderInfo> | null = null;
 let cachedPreviews: Record<string, string[]> | null = null;
 
+export function resolvePreviewUrl(path: string, apiBase?: string): string {
+  if (!path) return "";
+  if (path.startsWith("data:") || path.startsWith("http://") || path.startsWith("https://")) {
+    return path;
+  }
+  if (!apiBase) {
+    return path;
+  }
+  const staticBase = apiBase.endsWith("/api") ? apiBase.slice(0, -4) : apiBase;
+  return `${staticBase}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 export async function loadItemPreviews(): Promise<Record<string, string[]>> {
   if (cachedPreviews) {
     return cachedPreviews;
   }
 
   try {
-    const response = await apiFetch("/loot/item-previews");
+    const apiBase = await getApiBase();
+    const response = await fetch(`${apiBase}/loot/item-previews`, { cache: "no-store" });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
     const data: Record<string, string[]> = await response.json();
-    const previews: Record<string, string[]> = {};
-    await Promise.all(Object.entries(data).map(async ([key, items]) => {
-      previews[key.toUpperCase()] = await Promise.all(
-        (Array.isArray(items) ? items : []).map(async (path) => {
-          if (!path.startsWith("/ITEM_previews/")) throw new Error("Invalid preview path.");
-          const image = await backendFetch(path);
-          if (!image.ok) throw new Error(`HTTP ${image.status}`);
-          return URL.createObjectURL(await image.blob());
-        })
-      );
-    }));
-    cachedPreviews = previews;
+    cachedPreviews = {};
+    Object.entries(data).forEach(([key, items]) => {
+      cachedPreviews![key.toUpperCase()] = Array.isArray(items)
+        ? items.map((path) => resolvePreviewUrl(path, apiBase))
+        : [];
+    });
     return cachedPreviews;
   } catch (error) {
     console.error("Error loading item previews:", error);
@@ -48,7 +59,8 @@ export async function loadLootDictionary(): Promise<Record<string, LootFolderInf
   }
 
   try {
-    const response = await apiFetch("/loot/dictionary");
+    const apiBase = await getApiBase();
+    const response = await fetch(`${apiBase}/loot/dictionary`, { cache: "no-store" });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }

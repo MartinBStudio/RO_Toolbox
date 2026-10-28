@@ -166,29 +166,6 @@ The goal is to keep the repositories open and community-driven while giving prop
 
 ## Configuration and Reset Behavior
 
-### Backend authentication for development
-
-Normal Tauri startup generates a random backend token and passes it privately to the Java child process. All HTTP routes, including downloads and static previews, require this token. The backend listens on `127.0.0.1`; browser access is restricted to the Tauri origins. Direct JAR/IDE startup requires `RO_TOOLBOX_BACKEND_TOKEN` (64 lowercase hexadecimal characters) and fails closed if it is absent or malformed.
-
-For a separately launched development backend, generate a fresh token in PowerShell without printing it:
-
-```powershell
-$tokenBytes = New-Object byte[] 32
-$tokenRandom = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-$tokenRandom.GetBytes($tokenBytes)
-$tokenRandom.Dispose()
-$env:RO_TOOLBOX_BACKEND_TOKEN = -join ($tokenBytes | ForEach-Object { $_.ToString('x2') })
-$env:RO_TOOLBOX_DEV_MODE = 'true'
-$env:RO_TOOLBOX_BACKEND_PORT = '43123'
-$env:SERVER_PORT = $env:RO_TOOLBOX_BACKEND_PORT
-```
-
-Start the backend and frontend from processes that inherit these same environment values (for an IDE backend, configure its run environment too). `npm run tauri:dev:external` connects to that explicit port and token in debug builds only. An externally managed backend must already be running. Production builds always start their own backend. There is no shared temporary port file or unauthenticated fallback. Do not commit tokens or put them in URLs, shortcuts, command-line arguments, or logs.
-
-Account responses contain metadata only. Update requests may omit `password` to retain it; a supplied replacement must be nonblank. Saved passwords are decrypted only for the selected launch operation.
-
-Run the security regression checks with `./gradlew test`, `npm run test:security` from `frontend`, and `cargo test` from `frontend/src-tauri`.
-
 The app stores its own settings under:
 
 * Windows: `%APPDATA%\RO_Toolbox\config\config.properties`

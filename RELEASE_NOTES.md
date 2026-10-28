@@ -1,12 +1,5 @@
 # RO Toolbox - Release Notes
 
-## v1.2.3 - Security hardening
-
-* Backend access is restricted to loopback and requires a private token generated for each app session.
-* Only trusted app origins are accepted; development origins require explicit development mode.
-* Account lists and account changes no longer return saved passwords. Leave the password blank when editing to keep the current password.
-* Taskbar quick launch now routes account IDs through the native app instead of an unauthenticated temporary script.
-
 
 ## v1.2.2 - Minor ui changes
 
