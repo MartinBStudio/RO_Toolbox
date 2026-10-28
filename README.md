@@ -1,6 +1,6 @@
 # RO Toolbox
 
-Desktop app for managing ROSE Online profile packs, combat text packs, user interface profiles, and other client customization resources.
+Desktop app for managing ROSE Online profile packs, combat text packs, user interface profiles,bacup config and other client customization resources.
 
 ## Features
 
@@ -147,12 +147,6 @@ The goal is to keep the repositories open and community-driven while giving prop
 4. Click an account icon in the **Quick Launch** section to launch ROSE with that account's credentials.
 5. Alternatively, click **Launch Rose Launcher** to start `rose-updater.exe`.
 
-### Backup and Restore Accounts
-
-1. In **Login Manager**, click **Export** to download a backup file.
-2. Choose where to save the backup (passwords are encrypted).
-3. To restore, click **Import**, select the backup file, and confirm to replace current accounts.
-
 ### Edit Game Config
 
 1. Open **Config Editor**.
@@ -161,6 +155,14 @@ The goal is to keep the repositories open and community-driven while giving prop
 4. For `ignore.toml`, use **Ignore list manager** to add/remove entries.
 5. Click **See files** to view the raw TOML source and parsed preview.
 6. Click **Save** to write changes to disk.
+
+### Backups
+
+1. Open **Backups**.
+2. Select folder on your pc where backups should be stored.
+3. Make backup.
+4. Now your ROSE online config, accounts, RO Toolbox config are backed up in folder you selected.
+
 
 ## Configuration and Reset Behavior
 
