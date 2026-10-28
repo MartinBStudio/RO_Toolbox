@@ -1,6 +1,6 @@
 # RO Toolbox - Release Notes
 
-## Unreleased - Security hardening
+## v1.2.3 - Security hardening
 
 * Backend access is restricted to loopback and requires a private token generated for each app session.
 * Only trusted app origins are accepted; development origins require explicit development mode.
